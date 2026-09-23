@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463115339836",
+    "project_id": "shoot-bc845",
+    "storage_bucket": "shoot-bc845.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463115339836:android:9e54378647b1122c1b1b39",
+        "android_client_info": {
+          "package_name": "com.f0otball.c"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_RTsJ_UoQ04frF9BvsMYt56y5h7J225s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
