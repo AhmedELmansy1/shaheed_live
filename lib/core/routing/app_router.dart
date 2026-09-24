@@ -4,14 +4,23 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/match_model.dart';
+import '../../data/models/team_model.dart';
 import '../../presentation/home/home_screen.dart';
+import '../../presentation/leagues/leagues_placeholder_screen.dart';
 import '../../presentation/match_details/match_details_screen.dart';
 import '../../presentation/onboarding/league_selection_screen.dart';
 import '../../presentation/onboarding/notification_permission_screen.dart';
 import '../../presentation/onboarding/team_selection_screen.dart';
+import '../../presentation/search/team_fixtures_screen.dart';
+import '../../presentation/search/team_search_screen.dart';
+import '../../presentation/settings/settings_screen.dart';
+import '../../presentation/shell/main_shell.dart';
 import '../../presentation/splash/splash_screen.dart';
 import '../../presentation/update/force_update_screen.dart';
+import '../services/notification_service.dart';
 import '../services/update_service.dart';
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Helper ChangeNotifier for triggering GoRouter refresh on Riverpod state changes.
 class AppRouterRefreshNotifier extends ChangeNotifier {
@@ -30,7 +39,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshNotifier.refresh();
   });
 
-  final router = GoRouter(
+  late final GoRouter router;
+
+  router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: refreshNotifier,
     routes: [
@@ -54,12 +66,61 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/onboarding/teams',
         builder: (context, state) => const TeamSelectionScreen(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
+      // StatefulShellRoute hosting the 3 main tabs with BottomNavigationBar
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainShell(navigationShell: navigationShell);
+        },
+        branches: [
+          // Branch 0: Home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          // Branch 1: Leagues
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/leagues',
+                builder: (context, state) => const LeaguesPlaceholderScreen(),
+              ),
+            ],
+          ),
+          // Branch 2: Settings
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
+      // Search screen
+      GoRoute(
+        path: '/search',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const TeamSearchScreen(),
+      ),
+      // Team fixtures screen
+      GoRoute(
+        path: '/team/:name/fixtures',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final teamName = state.pathParameters['name'] ?? '';
+          final teamModel = state.extra is TeamModel ? state.extra as TeamModel : null;
+          return TeamFixturesScreen(teamName: teamName, teamModel: teamModel);
+        },
+      ),
+      // Match details screen
       GoRoute(
         path: '/match/:id',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '0';
           final match = state.extra is MatchModel ? state.extra as MatchModel : null;
@@ -103,13 +164,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // 3. Guard: Require Onboarding (leagues & teams selection) before Home & Match Details
-      if (notifSetup && !onboardingDone && (location == '/home' || location.startsWith('/match/'))) {
+      if (notifSetup &&
+          !onboardingDone &&
+          (location == '/home' ||
+              location == '/leagues' ||
+              location == '/settings' ||
+              location.startsWith('/match/') ||
+              location == '/search' ||
+              location.startsWith('/team/'))) {
         return '/onboarding/leagues';
       }
 
       return null;
     },
   );
+
+  // Configure global notification deep link callback
+  NotificationService.onMatchNotificationTap = (matchId) {
+    try {
+      router.push('/match/$matchId');
+    } catch (e) {
+      debugPrint('Error navigating from notification tap: $e');
+    }
+  };
+
+  // Check if there was a pending cold start notification tap
+  if (NotificationService.pendingColdStartMatchId != null) {
+    final pendingId = NotificationService.pendingColdStartMatchId!;
+    NotificationService.pendingColdStartMatchId = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        router.push('/match/$pendingId');
+      } catch (e) {
+        debugPrint('Error navigating to pending cold start match: $e');
+      }
+    });
+  }
 
   ref.onDispose(router.dispose);
   return router;

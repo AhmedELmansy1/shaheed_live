@@ -1,18 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/services/fcm_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/app_logo.dart';
 import 'providers/onboarding_provider.dart';
-
-/// Top-level background message handler for FCM
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling background FCM message: ${message.messageId}');
-}
 
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key});
@@ -60,43 +55,12 @@ class _NotificationPermissionScreenState
   }
 
   Future<void> _onPermissionGranted() async {
-    // Initialize Messaging Handlers safely
+    // Initialize Messaging Handlers via services
     try {
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const iosSettings = DarwinInitializationSettings();
-      const initSettings = InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      );
-
-      final localNotifications = FlutterLocalNotificationsPlugin();
-      await localNotifications.initialize(settings: initSettings);
-
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        final notification = message.notification;
-        if (notification != null) {
-          localNotifications.show(
-            id: notification.hashCode,
-            title: notification.title,
-            body: notification.body,
-            notificationDetails: const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'matches_channel',
-                'تنبيهات المباريات',
-                channelDescription: 'تنبيهات الأهداف والمباريات المباشرة',
-                importance: Importance.max,
-                priority: Priority.high,
-              ),
-              iOS: DarwinNotificationDetails(),
-            ),
-          );
-        }
-      });
+      await ref.read(notificationServiceProvider).init();
+      ref.read(fcmServiceProvider).init();
     } catch (e) {
-      debugPrint('FCM listener setup skipped/failed: $e');
+      debugPrint('Notification/FCM service setup error: $e');
     }
 
     // Persist completed notification setup

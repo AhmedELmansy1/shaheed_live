@@ -4,6 +4,7 @@ import '../../../core/network/dio_client.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/match_model.dart';
 import '../../../data/repositories/matches_repository.dart';
+import '../../onboarding/providers/onboarding_provider.dart';
 
 final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient();
@@ -41,6 +42,27 @@ class SelectedCustomDateNotifier extends Notifier<DateTime?> {
 final selectedCustomDateProvider =
     NotifierProvider<SelectedCustomDateNotifier, DateTime?>(() {
   return SelectedCustomDateNotifier();
+});
+
+enum MatchFilterType {
+  upcoming,
+  live,
+  favorites,
+  all,
+}
+
+class MatchFilterNotifier extends Notifier<MatchFilterType> {
+  @override
+  MatchFilterType build() => MatchFilterType.all;
+
+  void setFilter(MatchFilterType filter) {
+    state = filter;
+  }
+}
+
+final matchFilterProvider =
+    NotifierProvider<MatchFilterNotifier, MatchFilterType>(() {
+  return MatchFilterNotifier();
 });
 
 /// State notifier managing matches fetching, error handling, and 30-second auto-polling for live matches.
@@ -108,4 +130,41 @@ class MatchesNotifier extends AsyncNotifier<List<MatchModel>> {
 final matchesProvider =
     AsyncNotifierProvider<MatchesNotifier, List<MatchModel>>(() {
   return MatchesNotifier();
+});
+
+/// Provider that returns matches filtered by the active [MatchFilterType]
+final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
+  final rawAsync = ref.watch(matchesProvider);
+  final filter = ref.watch(matchFilterProvider);
+  final onboardingState = ref.watch(onboardingProvider);
+  final selectedTeamIds = onboardingState.selectedTeamIds;
+
+  return rawAsync.whenData((matches) {
+    switch (filter) {
+      case MatchFilterType.all:
+        return matches;
+      case MatchFilterType.live:
+        return matches.where((m) => m.isLive).toList();
+      case MatchFilterType.upcoming:
+        return matches.where((m) => !m.isLive && !m.isFinished).toList();
+      case MatchFilterType.favorites:
+        if (selectedTeamIds.isEmpty) {
+          return matches;
+        }
+        return matches.where((m) {
+          final homeId = m.homeTeam.rowId?.toString() ?? '';
+          final awayId = m.awayTeam.rowId?.toString() ?? '';
+          final homeTitle = m.homeTeam.title.toLowerCase();
+          final awayTitle = m.awayTeam.title.toLowerCase();
+
+          return selectedTeamIds.any((id) {
+            final idLower = id.toLowerCase();
+            return id == homeId ||
+                id == awayId ||
+                homeTitle.contains(idLower) ||
+                awayTitle.contains(idLower);
+          });
+        }).toList();
+    }
+  });
 });

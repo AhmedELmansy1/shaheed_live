@@ -247,6 +247,7 @@ void main() {
       // ignore: avoid_print
       print('[LIVE TEST 2] Verified: SoftUpdateBanner reappeared on fresh cold start as expected.');
 
+      await tester.pump(const Duration(milliseconds: 300));
       freshContainer.dispose();
       await streamController.close();
     });

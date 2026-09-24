@@ -2,16 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/services/auth_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/remote_config_service.dart';
-import '../../core/services/user_sync_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
-import '../onboarding/providers/onboarding_provider.dart';
 import '../update/widgets/soft_update_banner.dart';
-import '../widgets/app_logo.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/hero_match_card.dart';
 import '../widgets/match_card.dart';
 import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
@@ -24,17 +22,49 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeTab = ref.watch(activeTabProvider);
     final customDate = ref.watch(selectedCustomDateProvider);
-    final matchesAsync = ref.watch(matchesProvider);
+    final activeFilter = ref.watch(matchFilterProvider);
+    final matchesAsync = ref.watch(filteredMatchesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const AppLogo(size: 34, showSubtitle: true, isHorizontal: true),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'شوت لايف',
+              style: GoogleFonts.cairo(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                height: 1.1,
+              ),
+            ),
+            Text(
+              'كرة القدم في متناول يدك',
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.liveIndicator,
+                height: 1.1,
+              ),
+            ),
+          ],
+        ),
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-            onPressed: () => _showSettingsModal(context, ref),
+            icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 24),
+            tooltip: 'البحث عن فريق',
+            onPressed: () => context.push('/search'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_outline_rounded, color: AppColors.textSecondary, size: 24),
+            tooltip: 'الإعدادات',
+            onPressed: () => context.go('/settings'),
           ),
         ],
       ),
@@ -44,7 +74,10 @@ class HomeScreen extends ConsumerWidget {
             // Top Date Tabs / Custom Date Selector Bar
             _buildDateHeader(context, ref, activeTab, customDate),
 
-            // In-session Soft Update Notification Banner (collapses if dismissed or not applicable)
+            // Filter Chips Row (sitting directly below Date Tabs)
+            _buildFilterChipsRow(context, ref, activeFilter),
+
+            // In-session Soft Update Notification Banner
             const SoftUpdateBanner(),
 
             // Matches List Area
@@ -62,7 +95,7 @@ class HomeScreen extends ConsumerWidget {
                     if (matches.isEmpty) {
                       return _buildEmptyView();
                     }
-                    return _buildGroupedMatchesList(context, ref, matches);
+                    return _buildHomeContent(context, ref, matches);
                   },
                 ),
               ),
@@ -83,12 +116,9 @@ class HomeScreen extends ConsumerWidget {
     DateTime? customDate,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 1),
-        ),
       ),
       child: Column(
         children: [
@@ -96,7 +126,7 @@ class HomeScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: Container(
-                  height: 42,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.background,
                     borderRadius: BorderRadius.circular(12),
@@ -133,8 +163,8 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () => _pickCustomDate(context, ref),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: activeTab == HomeTab.customDate
                         ? AppColors.liveIndicator
@@ -151,7 +181,7 @@ class HomeScreen extends ConsumerWidget {
                     color: activeTab == HomeTab.customDate
                         ? Colors.black
                         : AppColors.liveIndicator,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
               ),
@@ -192,6 +222,102 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChipsRow(
+    BuildContext context,
+    WidgetRef ref,
+    MatchFilterType activeFilter,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider, width: 1),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildChip(
+              label: 'الكل',
+              isActive: activeFilter == MatchFilterType.all,
+              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.all),
+            ),
+            const SizedBox(width: 8),
+            _buildChip(
+              label: 'مباشر',
+              icon: Icons.fiber_manual_record,
+              iconColor: AppColors.livePulse,
+              isActive: activeFilter == MatchFilterType.live,
+              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.live),
+            ),
+            const SizedBox(width: 8),
+            _buildChip(
+              label: 'القادمة',
+              isActive: activeFilter == MatchFilterType.upcoming,
+              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.upcoming),
+            ),
+            const SizedBox(width: 8),
+            _buildChip(
+              label: 'المفضلة',
+              icon: Icons.star_rounded,
+              iconColor: Colors.amber,
+              isActive: activeFilter == MatchFilterType.favorites,
+              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.favorites),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip({
+    required String label,
+    IconData? icon,
+    Color? iconColor,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.liveIndicator : AppColors.background,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? AppColors.liveIndicator : AppColors.cardBorder,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 12,
+                color: isActive ? Colors.black : (iconColor ?? AppColors.textSecondary),
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.black : AppColors.textPrimary,
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -259,11 +385,16 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildGroupedMatchesList(
+  Widget _buildHomeContent(
     BuildContext context,
     WidgetRef ref,
     List<MatchModel> matches,
   ) {
+    final liveMatches = matches.where((m) => m.isLive).toList();
+    final featuredMatch = liveMatches.isNotEmpty
+        ? liveMatches.first
+        : (matches.isNotEmpty ? matches.first : null);
+
     final adConfig = ref.watch(currentAdConfigProvider);
     final nativeConfig = adConfig.nativeMatchList;
     final insertEvery = nativeConfig.insertEveryNItems;
@@ -277,45 +408,51 @@ class HomeScreen extends ConsumerWidget {
 
     int matchCounter = 0;
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 24),
-      itemCount: grouped.keys.length,
-      itemBuilder: (context, index) {
-        final title = grouped.keys.elementAt(index);
-        final champMatches = grouped[title]!;
-        final champLogo = champMatches.first.championship.image;
-
-        final List<Widget> items = [];
-
-        // Competition Header
-        items.add(
+      children: [
+        // 1. Featured / Hero Match Card
+        if (featuredMatch != null) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: const [
+                Icon(Icons.star_rounded, size: 18, color: AppColors.liveIndicator),
+                SizedBox(width: 6),
+                Text(
+                  'المباراة المميزة',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          HeroMatchCard(match: featuredMatch),
+          const SizedBox(height: 12),
+        ],
+
+        // 2. Live Now Section (if there are live matches)
+        if (liveMatches.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
-                if (champLogo != null && champLogo.isNotEmpty)
-                  CachedNetworkImage(
-                    imageUrl: champLogo,
-                    width: 20,
-                    height: 20,
-                    fit: BoxFit.contain,
-                    errorWidget: (context, url, error) => const Icon(
-                      Icons.emoji_events_outlined,
-                      size: 18,
-                      color: AppColors.liveIndicator,
-                    ),
-                  )
-                else
-                  const Icon(
-                    Icons.emoji_events_outlined,
-                    size: 18,
-                    color: AppColors.liveIndicator,
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.livePulse,
+                    shape: BoxShape.circle,
                   ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'مباشر الآن',
+                  style: TextStyle(
+                    color: AppColors.livePulse,
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
@@ -324,13 +461,14 @@ class HomeScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
+                    color: AppColors.livePulse.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.livePulse.withValues(alpha: 0.5)),
                   ),
                   child: Text(
-                    DateFormatter.toArabicNumerals(champMatches.length.toString()),
+                    DateFormatter.toArabicNumerals(liveMatches.length.toString()),
                     style: const TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.livePulse,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -339,25 +477,90 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
-        );
+          ...liveMatches.map((m) => MatchCard(match: m)),
+          const SizedBox(height: 16),
+        ],
 
-        // Match Cards & Native Ad insertion
-        for (final m in champMatches) {
-          items.add(MatchCard(match: m));
-          matchCounter++;
+        // 3. All Grouped Matches
+        ...grouped.entries.map((entry) {
+          final title = entry.key;
+          final champMatches = entry.value;
+          final champLogo = champMatches.first.championship.image;
 
-          if (nativeConfig.enabled &&
-              insertEvery > 0 &&
-              matchCounter % insertEvery == 0) {
-            items.add(const NativeAdCard());
+          final List<Widget> items = [];
+
+          // Competition Header
+          items.add(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+              child: Row(
+                children: [
+                  if (champLogo != null && champLogo.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: champLogo,
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.emoji_events_outlined,
+                        size: 18,
+                        color: AppColors.liveIndicator,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.emoji_events_outlined,
+                      size: 18,
+                      color: AppColors.liveIndicator,
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      DateFormatter.toArabicNumerals(champMatches.length.toString()),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          // Match Cards & Native Ad insertion
+          for (final m in champMatches) {
+            items.add(MatchCard(match: m));
+            matchCounter++;
+
+            if (nativeConfig.enabled &&
+                insertEvery > 0 &&
+                matchCounter % insertEvery == 0) {
+              items.add(const NativeAdCard());
+            }
           }
-        }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: items,
-        );
-      },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: items,
+          );
+        }),
+      ],
     );
   }
 
@@ -373,7 +576,7 @@ class HomeScreen extends ConsumerWidget {
             Icon(Icons.sports_soccer, size: 64, color: AppColors.textMuted),
             SizedBox(height: 16),
             Text(
-              'لا توجد مباريات متوفرة لهذا اليوم',
+              'لا توجد مباريات متوفرة لهذا الفلتر',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 16,
@@ -382,7 +585,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             SizedBox(height: 6),
             Text(
-              'يرجى تفقّد جدول يوم آخر أو تحديث القائمة',
+              'يرجى اختيار فلتر آخر أو تفقّد جدول يوم مختلف',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ],
@@ -434,140 +637,6 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showSettingsModal(BuildContext context, WidgetRef ref) {
-    final uid = ref.read(currentUidProvider);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (bottomSheetContext) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Center(
-                child: Text(
-                  'إعدادات التطبيق والمزامنة',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Firebase Anonymous UID Info Card
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'معرف الجلسة السحابية (Firebase UID):',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-                    ),
-                    const SizedBox(height: 4),
-                    SelectableText(
-                      uid ?? 'غير متصل (يعمل محلياً)',
-                      style: TextStyle(
-                        color: uid != null ? AppColors.liveIndicator : AppColors.textSecondary,
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Manual Cloud Sync Button
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.cloud_sync_outlined, color: AppColors.liveIndicator),
-                title: const Text(
-                  'مزامنة الآن مع السحابة',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                subtitle: const Text(
-                  'رفع التفضيلات والأندية المختارة إلى Firestore',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                ),
-                onTap: () async {
-                  Navigator.of(bottomSheetContext).pop();
-                  try {
-                    await ref.read(userSyncServiceProvider).pushLocalToFirestore();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تمت المزامنة بنجاح مع السحابة'),
-                          backgroundColor: AppColors.surface,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('فشلت المزامنة: $e'),
-                          backgroundColor: AppColors.livePulse,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-              const Divider(color: AppColors.divider),
-
-              // Reset Onboarding Debug Option
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.restart_alt, color: AppColors.livePulse),
-                title: const Text(
-                  'إعادة ضبط التهيئة والتهيئة الأولية',
-                  style: TextStyle(color: AppColors.livePulse, fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                subtitle: const Text(
-                  'تفريغ البيانات واختبار شاشة الترحيب والإشعارات مجدداً',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                ),
-                onTap: () async {
-                  Navigator.of(bottomSheetContext).pop();
-                  await ref.read(onboardingProvider.notifier).resetOnboarding();
-                  if (context.mounted) {
-                    context.go('/onboarding/notifications');
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

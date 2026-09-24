@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/match_reminder_service.dart';
 import '../../core/services/remote_config_service.dart';
 import '../../core/services/update_service.dart';
 import '../../core/services/user_sync_service.dart';
@@ -14,8 +15,10 @@ import '../../firebase_options.dart';
 /// 1. Initialize Firebase (try/catch — non-blocking on failure)
 /// 2. Authenticate anonymously via AuthService (try/catch — non-blocking)
 /// 3. Pull Firestore data to local if cloud is newer (try/catch — non-blocking)
-/// 4. Read SharedPreferences for onboarding state
-/// 5. Determine target route
+/// 4. Reschedule all pending match reminders
+/// 5. Check remote config and force update
+/// 6. Read SharedPreferences for onboarding state
+/// 7. Determine target route
 class SplashController {
   final Ref _ref;
 
@@ -62,7 +65,16 @@ class SplashController {
       }
     }
 
-    // 4. Check remote configuration and evaluate force-update hard block FIRST
+    // 4. Reschedule all pending match notifications
+    try {
+      final reminderService = _ref.read(matchReminderServiceProvider);
+      await reminderService.rescheduleAllReminders();
+      debugPrint('[SplashController] Match reminders successfully rescheduled.');
+    } catch (e) {
+      debugPrint('[SplashController] WARNING: Match reminder reschedule error: $e');
+    }
+
+    // 5. Check remote configuration and evaluate force-update hard block FIRST
     if (firebaseReady) {
       try {
         final remoteConfig =
@@ -86,14 +98,14 @@ class SplashController {
       }
     }
 
-    // 5. Read onboarding state flags from SharedPreferences
+    // 6. Read onboarding state flags from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedNotificationSetup =
         prefs.getBool('hasCompletedNotificationSetup') ?? false;
     final hasCompletedOnboarding =
         prefs.getBool('hasCompletedOnboarding') ?? false;
 
-    // 6. Determine onboarding routing destination
+    // 7. Determine onboarding routing destination
     if (!hasCompletedNotificationSetup) {
       return '/onboarding/notifications';
     } else if (!hasCompletedOnboarding) {

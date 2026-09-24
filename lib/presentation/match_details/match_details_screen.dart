@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
@@ -42,6 +43,9 @@ class MatchDetailsScreen extends ConsumerWidget {
       );
     }
 
+    final isReminderSetAsync = ref.watch(isReminderSetProvider(match.matchId));
+    final isReminderSet = isReminderSetAsync.value ?? false;
+
     final params = MatchDetailsParams(
       matchId: match.id,
       homeTeamId: match.homeTeamId,
@@ -50,7 +54,8 @@ class MatchDetailsScreen extends ConsumerWidget {
     );
 
     return DefaultTabController(
-      length: 4,
+      length: 6,
+      initialIndex: 1, // Start on Events tab by default
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -69,24 +74,45 @@ class MatchDetailsScreen extends ConsumerWidget {
             ),
           ),
           centerTitle: true,
+          actions: [
+            if (!match.isLive && !match.isFinished)
+              IconButton(
+                icon: Icon(
+                  isReminderSet
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_none_rounded,
+                  color: isReminderSet
+                      ? AppColors.liveIndicator
+                      : AppColors.textSecondary,
+                ),
+                tooltip: 'تفعيل تذكير قبل المباراة',
+                onPressed: () {
+                  ref.read(matchReminderServiceProvider).toggleReminder(match);
+                },
+              ),
+          ],
         ),
         body: Column(
           children: [
             // Sticky Match Header Card
-            _buildMatchHeaderCard(context, match),
+            _buildMatchHeaderCard(context, ref, match, isReminderSet),
 
             // Tab Bar
             Container(
               color: AppColors.surface,
               child: const TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 indicatorColor: AppColors.liveIndicator,
                 labelColor: AppColors.liveIndicator,
                 unselectedLabelColor: AppColors.textSecondary,
                 labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 tabs: [
+                  Tab(text: 'نظرة عامة'),
                   Tab(text: 'الأحداث'),
-                  Tab(text: 'الإحصائيات'),
                   Tab(text: 'التشكيلة'),
+                  Tab(text: 'الإحصائيات'),
+                  Tab(text: 'الترتيب'),
                   Tab(text: 'معلومات'),
                 ],
               ),
@@ -96,13 +122,15 @@ class MatchDetailsScreen extends ConsumerWidget {
             Expanded(
               child: TabBarView(
                 children: [
+                  _buildOverviewTab(context, match),
                   EventsTab(
                     params: params,
                     homeTeamId: match.homeTeamId,
                     awayTeamId: match.awayTeamId,
                   ),
-                  StatisticsTab(params: params),
                   LineupTab(params: params),
+                  StatisticsTab(params: params),
+                  _buildStandingsTab(),
                   InfoTab(match: match),
                 ],
               ),
@@ -116,7 +144,12 @@ class MatchDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMatchHeaderCard(BuildContext context, MatchModel match) {
+  Widget _buildMatchHeaderCard(
+    BuildContext context,
+    WidgetRef ref,
+    MatchModel match,
+    bool isReminderSet,
+  ) {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -125,7 +158,10 @@ class MatchDetailsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(
+            color: match.isLive ? AppColors.liveIndicator : AppColors.cardBorder,
+            width: match.isLive ? 1.5 : 1,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,6 +309,98 @@ class MatchDetailsScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewTab(BuildContext context, MatchModel match) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.sports_soccer, color: AppColors.liveIndicator, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'ملخص المباراة',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(color: AppColors.divider, height: 24),
+              _buildOverviewRow('البطولة', match.leagueName),
+              const SizedBox(height: 10),
+              _buildOverviewRow('التاريخ', DateFormatter.toArabicNumerals(match.displayDate)),
+              const SizedBox(height: 10),
+              _buildOverviewRow('التوقيت', match.formattedLocalTime),
+              const SizedBox(height: 10),
+              _buildOverviewRow('الحالة', match.statusName),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOverviewRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStandingsTab() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(
+            Icons.format_list_numbered_rounded,
+            size: 56,
+            color: AppColors.textMuted,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'جدول الترتيب',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'سيتم توفير جدول الترتيب قريباً',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/ad_service.dart';
+import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
 
-/// Polished match card displaying teams, logos, scores, live status pulse, and kick-off times.
+/// Polished match card displaying teams, logos, scores, live status pulse, kick-off times, and reminder toggle.
 class MatchCard extends ConsumerWidget {
   final MatchModel match;
 
@@ -16,6 +17,8 @@ class MatchCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLive = match.isLive;
+    final isReminderSetAsync = ref.watch(isReminderSetProvider(match.matchId));
+    final isReminderSet = isReminderSetAsync.value ?? false;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -70,10 +73,36 @@ class MatchCard extends ConsumerWidget {
                 ),
               ),
 
-              // Match Center Status / Score Block
+              // Match Center Status / Score Block + Bell Icon
               Expanded(
                 flex: 3,
-                child: _buildCenterStatus(context),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildCenterStatus(context),
+                    if (!isLive && !match.isFinished) ...[
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () {
+                          ref.read(matchReminderServiceProvider).toggleReminder(match);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Icon(
+                            isReminderSet
+                                ? Icons.notifications_active_rounded
+                                : Icons.notifications_none_rounded,
+                            size: 16,
+                            color: isReminderSet
+                                ? AppColors.liveIndicator
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
 
               // Away Team (Left side in RTL)

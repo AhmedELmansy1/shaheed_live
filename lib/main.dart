@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,9 +8,17 @@ import 'core/config/env_config.dart';
 import 'core/localization/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/ad_service.dart';
+import 'core/services/fcm_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/timezone_helper.dart';
 import 'firebase_options.dart';
+
+/// Top-level background message handler for FCM
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('Handling background FCM message: ${message.messageId}');
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +35,7 @@ void main() async {
     } catch (_) {
       await Firebase.initializeApp();
     }
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     debugPrint('[Main] Firebase initialized successfully.');
   } catch (e) {
     debugPrint('[Main] Firebase initialization fallback/skipped: $e');
@@ -33,6 +43,15 @@ void main() async {
 
   // Initialize timezone rules
   await TimezoneHelper.init();
+
+  // Initialize Local Notifications
+  try {
+    final notificationService = NotificationService();
+    await notificationService.init();
+    debugPrint('[Main] Local notifications initialized.');
+  } catch (e) {
+    debugPrint('[Main] Local notifications init error: $e');
+  }
 
   // Initialize AdMob SDK with test device configuration
   await MobileAds.instance.initialize();
@@ -57,6 +76,15 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize FCM foreground listener
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        ref.read(fcmServiceProvider).init();
+      } catch (e) {
+        debugPrint('[Main] FCM service init skipped/failed: $e');
+      }
+    });
   }
 
   @override
