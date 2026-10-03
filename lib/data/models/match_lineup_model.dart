@@ -5,6 +5,7 @@ class LineupPlayer {
   final int number;
   final String? position; // e.g. "G", "D", "M", "F" or "G", "D", "C", "A"
   final String? positionTitle; // Arabic position title if provided
+  final String? photoUrl;
   final bool isSubstitute;
 
   const LineupPlayer({
@@ -13,8 +14,20 @@ class LineupPlayer {
     required this.number,
     this.position,
     this.positionTitle,
+    this.photoUrl,
     this.isSubstitute = false,
   });
+
+  String get initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+      return '${parts[0][0]} ${parts[1][0]}';
+    }
+    if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0];
+    }
+    return '$number';
+  }
 
   factory LineupPlayer.fromMap(Map<String, dynamic> map, {bool isSubstitute = false}) {
     int parseNum(dynamic val) {
@@ -54,6 +67,20 @@ class LineupPlayer {
       return 'لاعب';
     }
 
+    String? extractImage() {
+      dynamic img = map['image'] ?? (map['player'] is Map ? map['player']['image'] : null);
+      if (img != null) {
+        final str = img.toString().trim();
+        if (str.isNotEmpty && str != 'null') {
+          if (str.startsWith('http://') || str.startsWith('https://')) {
+            return str;
+          }
+          return 'https://imgs.ysscores.com/players/128/$str';
+        }
+      }
+      return null;
+    }
+
     return LineupPlayer(
       id: map['player_id'] ?? map['id'] ?? map['person_id'] ?? 0,
       name: extractName(),
@@ -62,10 +89,12 @@ class LineupPlayer {
             map['number'] ??
             map['shirt_no'] ??
             map['jersey_number'] ??
-            map['num'],
+            map['num'] ??
+            (map['player'] is Map ? map['player']['player_number'] : null),
       ),
-      position: (map['pos'] ?? map['position'] ?? map['pos_short'] ?? map['position_short'])?.toString(),
+      position: (map['pos'] ?? map['position'] ?? map['pos_short'] ?? map['position_short'] ?? (map['player'] is Map ? map['player']['position'] : null))?.toString(),
       positionTitle: (map['pos_title'] ?? map['position_name'] ?? map['pos_name'])?.toString(),
+      photoUrl: extractImage(),
       isSubstitute: isSubstitute,
     );
   }
@@ -87,11 +116,6 @@ class TeamLineupData {
 }
 
 /// Data model for match lineup endpoint (`type=matches_lineup&id={id}`).
-///
-/// REAL API RESPONSE FIELDS (Empirically Verified):
-/// - `data["0"]` contains formation & coach metadata (`home_formation`, `away_formation`, `home_coach`, `away_coach`).
-/// - `data["lineup"]` contains `{ "{home_team_id}": {"lineup": [...], "substitutions": [...]}, ... }`.
-/// - Upcoming matches return `"data": {}` (empty map). Parsing safely returns `null`.
 class MatchLineupModel {
   final TeamLineupData homeLineup;
   final TeamLineupData awayLineup;

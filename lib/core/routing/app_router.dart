@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
+import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/leagues/leagues_placeholder_screen.dart';
 import '../../presentation/match_details/match_details_screen.dart';
@@ -106,6 +107,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/search',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const TeamSearchScreen(),
+      ),
+      // Favorite teams management screen
+      GoRoute(
+        path: '/favorites',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const FavoriteTeamsScreen(),
       ),
       // Team fixtures screen
       GoRoute(

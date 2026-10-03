@@ -97,6 +97,18 @@ class MatchModel {
   bool get isFinished => status == MatchStatus.finished;
   String get displayDate => matchDate ?? '';
   String get formattedLocalTime => DateFormatter.formatMatchTime(matchDate, matchTime);
+  DateTime? get kickoffDateTime => DateFormatter.parseCairoMatchDateTime(matchDate, matchTime);
+
+  /// Returns the formatted live minute or status (e.g. "٤٥'", "٩٠+٤'", "استراحة"), or null if not live.
+  String? get currentMinute {
+    if (!isLive) return null;
+    if (adminTitle == null || adminTitle!.trim().isEmpty) return null;
+    final trimmed = adminTitle!.trim();
+    if (trimmed == 'لم تبدأ' || trimmed == 'انتهت' || trimmed == 'تأجلت' || trimmed == 'ملغاة') {
+      return null;
+    }
+    return DateFormatter.toArabicNumerals(trimmed);
+  }
 
   String get statusName {
     if (adminTitle != null && adminTitle!.isNotEmpty) {
@@ -117,23 +129,20 @@ class MatchModel {
     final adminTitleStr = map['admin_title'] as String?;
 
     MatchStatus parseStatus() {
-      if (liveFlag ||
-          adminBadgeStr == 'live' ||
-          eventStatusStr == 'live' ||
-          forcedStatusStr == 'live') {
-        return MatchStatus.live;
-      }
-
+      // 1. Ended
       if (adminBadgeStr == 'ended' ||
           eventStatusStr == 'ended' ||
-          forcedStatusStr == 'ended') {
+          forcedStatusStr == 'ended' ||
+          adminTitleStr == 'انتهت') {
         return MatchStatus.finished;
       }
 
+      // 2. Postponed
       if (adminBadgeStr == 'postponed' || eventStatusStr == 'postponed') {
         return MatchStatus.postponed;
       }
 
+      // 3. Cancelled
       if (adminBadgeStr == 'canceled' ||
           adminBadgeStr == 'cancelled' ||
           eventStatusStr == 'canceled' ||
@@ -141,12 +150,32 @@ class MatchModel {
         return MatchStatus.cancelled;
       }
 
+      // 4. Halftime / Paused
       if (adminTitleStr != null && adminTitleStr.contains('استراحة')) {
         return MatchStatus.paused;
       }
 
+      // 5. Explicitly not started / soon
+      if (adminBadgeStr == 'soon' ||
+          forcedStatusStr == 'soon' ||
+          adminTitleStr == 'لم تبدأ' ||
+          eventStatusStr == 'not_ended' && (adminBadgeStr == 'soon' || forcedStatusStr == 'soon')) {
+        return MatchStatus.notStarted;
+      }
+
+      // 6. Actively Live
+      if (adminBadgeStr == 'live' ||
+          eventStatusStr == 'live' ||
+          forcedStatusStr == 'live' ||
+          (liveFlag && adminBadgeStr != 'soon' && forcedStatusStr != 'soon' && adminTitleStr != 'لم تبدأ')) {
+        return MatchStatus.live;
+      }
+
       return MatchStatus.notStarted;
     }
+
+    final computedStatus = parseStatus();
+    final isActuallyLive = computedStatus == MatchStatus.live || computedStatus == MatchStatus.paused;
 
     String? parseScore(dynamic val) {
       if (val == null) return null;
@@ -159,8 +188,8 @@ class MatchModel {
       matchId: (map['match_id'] as num?)?.toInt() ?? 0,
       matchDate: map['match_date'] as String?,
       matchTime: map['match_time'] as String?,
-      isLive: liveFlag || adminBadgeStr == 'live' || eventStatusStr == 'live',
-      status: parseStatus(),
+      isLive: isActuallyLive,
+      status: computedStatus,
       championship: ChampionshipInfo.fromMap(
         (map['championship'] as Map<String, dynamic>?) ?? {},
       ),

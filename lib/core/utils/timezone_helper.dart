@@ -10,9 +10,13 @@ class TimezoneHelper {
       final timezoneInfo = await FlutterTimezone.getLocalTimezone();
       final String currentTimeZone = timezoneInfo.identifier;
       tz.setLocalLocation(tz.getLocation(currentTimeZone));
-    } catch (_) {
+      // ignore: avoid_print
+      print('[TimezoneHelper] Device timezone detected: "$currentTimeZone" -> tz.local set to: "${tz.local.name}"');
+    } catch (e) {
       // Fallback to UTC if timezone detection fails on desktop/emulator
       tz.setLocalLocation(tz.getLocation('UTC'));
+      // ignore: avoid_print
+      print('[TimezoneHelper] Device timezone detection failed ($e) -> fallback tz.local set to: "${tz.local.name}"');
     }
   }
 

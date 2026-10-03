@@ -1,12 +1,22 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/ad_service.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../data/models/match_model.dart';
+import 'app_card.dart';
+import 'live_badge.dart';
+import 'match_countdown_widget.dart';
+import 'score_text.dart';
+import 'team_logo.dart';
 
+/// Featured Hero Match Card with 60px circular crests, prominent scores/kickoff time, and zero glow for non-live matches.
 class HeroMatchCard extends ConsumerWidget {
   final MatchModel match;
 
@@ -18,277 +28,237 @@ class HeroMatchCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLive = match.isLive;
-    final isReminderSetAsync = ref.watch(isReminderSetProvider(match.matchId));
-    final isReminderSet = isReminderSetAsync.value ?? false;
+    final isReminderSet = ref.watch(isReminderSetProvider(match.matchId));
 
-    return GestureDetector(
+    return AppCard(
+      isLive: isLive,
+      isFeatured: false,
       onTap: () {
         ref.read(adServiceProvider).handleMatchOpenInterstitial(isLiveMatch: match.isLive);
         context.push('/match/${match.matchId}', extra: match);
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isLive ? AppColors.liveIndicator : AppColors.cardBorder,
-            width: isLive ? 1.5 : 1,
-          ),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              isLive
-                  ? AppColors.liveIndicator.withValues(alpha: 0.15)
-                  : AppColors.surfaceLight,
-              AppColors.surface,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          // Header: League Logo & Name + Optional Bell
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  if (match.leagueLogo != null && match.leagueLogo!.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: match.leagueLogo!,
+                      width: 22,
+                      height: 22,
+                      fit: BoxFit.contain,
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.emoji_events_rounded,
+                        size: 18,
+                        color: AppColors.gold,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.emoji_events_rounded,
+                      size: 18,
+                      color: AppColors.gold,
+                    ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    match.leagueName,
+                    style: GoogleFonts.cairo(
+                      color: isLive ? AppColors.darkTextPrimary : AppColors.darkTextSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.0,
+                    ),
+                  ),
+                ],
+              ),
+              if (!isLive && !match.isFinished)
+                IconButton(
+                  icon: Icon(
+                    isReminderSet
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_none_rounded,
+                    color: isReminderSet ? AppColors.primary : AppColors.darkTextMuted,
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(matchReminderServiceProvider).toggleReminder(match);
+                  },
+                ),
             ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isLive
-                  ? AppColors.liveIndicator.withValues(alpha: 0.15)
-                  : Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+          const SizedBox(height: AppSpacing.md + 4),
+
+          // Main Center Stage: Home Team | Scores/Status | Away Team
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Home Team (Right side in RTL)
+              Expanded(
+                child: Column(
                   children: [
-                    if (match.leagueLogo != null && match.leagueLogo!.isNotEmpty)
-                      CachedNetworkImage(
-                        imageUrl: match.leagueLogo!,
-                        width: 18,
-                        height: 18,
-                        fit: BoxFit.contain,
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.emoji_events_outlined,
-                          size: 16,
-                          color: AppColors.liveIndicator,
-                        ),
-                      )
-                    else
-                      const Icon(
-                        Icons.emoji_events_outlined,
-                        size: 16,
-                        color: AppColors.liveIndicator,
-                      ),
-                    const SizedBox(width: 6),
+                    TeamLogo(
+                      logoUrl: match.homeTeamLogo,
+                      teamName: match.homeTeamName,
+                      size: 60,
+                      heroTag: 'hero_home_${match.matchId}',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
-                      match.leagueName,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      match.homeTeamName,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkTextPrimary,
+                        letterSpacing: 0.0,
+                        height: 1.2,
                       ),
                     ),
                   ],
                 ),
-                if (!isLive && !match.isFinished)
-                  IconButton(
-                    icon: Icon(
-                      isReminderSet
-                          ? Icons.notifications_active_rounded
-                          : Icons.notifications_none_rounded,
-                      color: isReminderSet
-                          ? AppColors.liveIndicator
-                          : AppColors.textMuted,
-                      size: 20,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      ref.read(matchReminderServiceProvider).toggleReminder(match);
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Home Team
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildTeamLogo(match.homeTeamLogo),
-                      const SizedBox(height: 8),
-                      Text(
-                        match.homeTeamName,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              ),
 
-                // Center Score / Status / Time
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isLive) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.livePulse.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.livePulse),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.livePulse,
-                                  shape: BoxShape.circle,
+              // Center Score / Status / Live Minute
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isLive) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const LiveBadge(isLarge: true),
+                          if (match.currentMinute != null &&
+                              match.currentMinute!.isNotEmpty &&
+                              match.currentMinute != 'مباشر') ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.live.withValues(alpha: 0.15),
+                                borderRadius: AppRadii.fullRadius,
+                                border: Border.all(
+                                  color: AppColors.live.withValues(alpha: 0.6),
+                                  width: 1,
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                match.statusName.isNotEmpty ? match.statusName : 'مباشر',
-                                style: const TextStyle(
-                                  color: AppColors.livePulse,
+                              child: Text(
+                                match.currentMinute!,
+                                style: GoogleFonts.cairo(
+                                  color: AppColors.live,
                                   fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.0,
+                                  height: 1.15,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${match.homeScore ?? '٠'} - ${match.awayScore ?? '٠'}',
-                          style: const TextStyle(
-                            color: AppColors.liveIndicator,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ] else if (match.isFinished) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text(
-                            'انتهت',
-                            style: TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
                             ),
-                          ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      ScoreText(
+                        homeScore: match.homeScore,
+                        awayScore: match.awayScore,
+                        isLive: true,
+                        fontSize: 30,
+                      ),
+                    ] else if (match.isFinished) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.darkSurfaceHigh,
+                          borderRadius: AppRadii.fullRadius,
+                          border: Border.all(color: AppColors.darkBorder, width: 0.8),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${match.homeScore ?? '٠'} - ${match.awayScore ?? '٠'}',
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 22,
+                        child: Text(
+                          match.adminTitle ?? 'انتهت',
+                          style: GoogleFonts.cairo(
+                            color: AppColors.darkTextMuted,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.0,
                           ),
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            match.formattedLocalTime,
-                            style: const TextStyle(
-                              color: AppColors.liveIndicator,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // Away Team
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildTeamLogo(match.awayTeamLogo),
-                      const SizedBox(height: 8),
-                      Text(
-                        match.awayTeamName,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      ScoreText(
+                        homeScore: match.homeScore,
+                        awayScore: match.awayScore,
+                        isLive: false,
+                        fontSize: 28,
+                      ),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.darkSurfaceHigh,
+                          borderRadius: AppRadii.mdRadius,
+                          border: Border.all(color: AppColors.darkBorder),
+                        ),
+                        child: Text(
+                          match.formattedLocalTime,
+                          style: GoogleFonts.cairo(
+                            color: AppColors.darkTextPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      MatchCountdownWidget(
+                        targetDateTime: match.kickoffDateTime,
+                        fallbackFormattedTime: match.formattedLocalTime,
+                        isHero: true,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              ),
 
-  Widget _buildTeamLogo(String? url) {
-    if (url == null || url.isEmpty) {
-      return Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.shield_outlined, size: 28, color: AppColors.textMuted),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: url,
-      width: 48,
-      height: 48,
-      fit: BoxFit.contain,
-      placeholder: (context, url) => Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-      ),
-      errorWidget: (context, url, error) => Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.shield_outlined, size: 28, color: AppColors.textMuted),
+              // Away Team (Left side in RTL)
+              Expanded(
+                child: Column(
+                  children: [
+                    TeamLogo(
+                      logoUrl: match.awayTeamLogo,
+                      teamName: match.awayTeamName,
+                      size: 60,
+                      heroTag: 'hero_away_${match.matchId}',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      match.awayTeamName,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkTextPrimary,
+                        letterSpacing: 0.0,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

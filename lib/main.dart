@@ -11,6 +11,7 @@ import 'core/services/ad_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/utils/timezone_helper.dart';
 import 'firebase_options.dart';
 
@@ -107,10 +108,14 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: AppStrings.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       locale: const Locale('ar'),
       supportedLocales: const [
         Locale('ar'),

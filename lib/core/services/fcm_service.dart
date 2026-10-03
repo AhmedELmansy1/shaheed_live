@@ -83,7 +83,7 @@ class FcmService {
       title,
       body,
       payload: payload,
-      channelId: 'live_events',
+      channelId: NotificationService.channelLiveEvents,
     );
   }
   

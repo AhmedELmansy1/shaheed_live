@@ -1,12 +1,23 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/match_share_helper.dart';
 import '../../data/models/match_model.dart';
+import '../widgets/app_card.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/live_badge.dart';
+import '../widgets/score_text.dart';
+import '../widgets/team_logo.dart';
 import 'providers/match_details_providers.dart';
 import 'tabs/events_tab.dart';
 import 'tabs/info_tab.dart';
@@ -29,22 +40,18 @@ class MatchDetailsScreen extends ConsumerWidget {
 
     if (match == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.darkBackground,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.darkSurface,
           title: const Text('تفاصيل المباراة'),
         ),
         body: const Center(
-          child: Text(
-            'جاري تحميل بيانات المباراة...',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
     }
 
-    final isReminderSetAsync = ref.watch(isReminderSetProvider(match.matchId));
-    final isReminderSet = isReminderSetAsync.value ?? false;
+    final isReminderSet = ref.watch(isReminderSetProvider(match.matchId));
 
     final params = MatchDetailsParams(
       matchId: match.id,
@@ -57,24 +64,36 @@ class MatchDetailsScreen extends ConsumerWidget {
       length: 6,
       initialIndex: 1, // Start on Events tab by default
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.darkBackground,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.darkSurface,
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.darkTextPrimary, size: 20),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
           ),
           title: Text(
             match.leagueName,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: GoogleFonts.cairo(
+              color: AppColors.darkTextPrimary,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           centerTitle: true,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: AppColors.darkTextPrimary, size: 21),
+              tooltip: 'مشاركة تفاصيل المباراة',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                MatchShareHelper.shareMatch(match);
+              },
+            ),
             if (!match.isLive && !match.isFinished)
               IconButton(
                 icon: Icon(
@@ -82,32 +101,43 @@ class MatchDetailsScreen extends ConsumerWidget {
                       ? Icons.notifications_active_rounded
                       : Icons.notifications_none_rounded,
                   color: isReminderSet
-                      ? AppColors.liveIndicator
-                      : AppColors.textSecondary,
+                      ? AppColors.primary
+                      : AppColors.darkTextSecondary,
+                  size: 22,
                 ),
                 tooltip: 'تفعيل تذكير قبل المباراة',
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   ref.read(matchReminderServiceProvider).toggleReminder(match);
                 },
               ),
+            const SizedBox(width: AppSpacing.xs),
           ],
         ),
         body: Column(
           children: [
-            // Sticky Match Header Card
+            // Atmospheric Match Scoreboard Header
             _buildMatchHeaderCard(context, ref, match, isReminderSet),
 
-            // Tab Bar
+            // Modern Sliding Tab Bar
             Container(
-              color: AppColors.surface,
-              child: const TabBar(
+              decoration: const BoxDecoration(
+                color: AppColors.darkSurface,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.darkDivider, width: 1),
+                ),
+              ),
+              child: TabBar(
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.liveIndicator,
-                labelColor: AppColors.liveIndicator,
-                unselectedLabelColor: AppColors.textSecondary,
-                labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                tabs: [
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 2.5,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.darkTextSecondary,
+                labelStyle: GoogleFonts.cairo(fontWeight: FontWeight.w800, fontSize: 13.5),
+                unselectedLabelStyle: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13.5),
+                tabs: const [
                   Tab(text: 'نظرة عامة'),
                   Tab(text: 'الأحداث'),
                   Tab(text: 'التشكيلة'),
@@ -151,34 +181,32 @@ class MatchDetailsScreen extends ConsumerWidget {
     bool isReminderSet,
   ) {
     return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      color: AppColors.darkSurface,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.md),
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: match.isLive ? AppColors.liveIndicator : AppColors.cardBorder,
-            width: match.isLive ? 1.5 : 1,
-          ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppDecorations.glassCard(
+          isLive: match.isLive,
+          isFeatured: !match.isLive,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Home Team (Right side in RTL)
             Expanded(
               child: Column(
                 children: [
-                  _buildTeamLogo(match.homeTeamLogo),
-                  const SizedBox(height: 8),
+                  TeamLogo(
+                    logoUrl: match.homeTeamLogo,
+                    teamName: match.homeTeamName,
+                    size: 52,
+                    heroTag: 'match_home_${match.matchId}',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     match.homeTeamName,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: AppTypography.bodyLarge(color: AppColors.darkTextPrimary),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -187,99 +215,68 @@ class MatchDetailsScreen extends ConsumerWidget {
               ),
             ),
 
-            // Match Score / Time Center Section
+            // Match Scoreboard Center Section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Column(
                 children: [
                   if (match.isLive) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.livePulse.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.livePulse),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: AppColors.livePulse,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            match.statusName.isNotEmpty ? match.statusName : 'مباشر',
-                            style: const TextStyle(
-                              color: AppColors.livePulse,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      DateFormatter.toArabicNumerals('${match.homeScore ?? 0} - ${match.awayScore ?? 0}'),
-                      style: const TextStyle(
-                        color: AppColors.liveIndicator,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
+                    LiveBadge(minuteText: match.statusName.isNotEmpty ? match.statusName : 'مباشر', isLarge: true),
+                    const SizedBox(height: AppSpacing.sm),
+                    ScoreText(
+                      homeScore: match.homeScore,
+                      awayScore: match.awayScore,
+                      isLive: true,
+                      fontSize: 28,
                     ),
                   ] else if (match.isFinished) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBorder,
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.darkSurfaceHigh,
+                        borderRadius: AppRadii.fullRadius,
                       ),
                       child: const Text(
                         'انتهت',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.darkTextMuted,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      DateFormatter.toArabicNumerals('${match.homeScore ?? 0} - ${match.awayScore ?? 0}'),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
+                    const SizedBox(height: AppSpacing.xs),
+                    ScoreText(
+                      homeScore: match.homeScore,
+                      awayScore: match.awayScore,
+                      isLive: false,
+                      fontSize: 24,
                     ),
                   ] else ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.liveIndicator.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.darkSurfaceHigh,
+                        borderRadius: AppRadii.mdRadius,
+                        border: Border.all(color: AppColors.darkBorder),
                       ),
                       child: Text(
                         match.statusName.isNotEmpty ? match.statusName : 'لم تبدأ',
                         style: const TextStyle(
-                          color: AppColors.liveIndicator,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs + 2),
                     Text(
                       match.formattedLocalTime,
-                      style: const TextStyle(
-                        color: AppColors.liveIndicator,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                      style: GoogleFonts.cairo(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        letterSpacing: 0.0,
                       ),
                     ),
                   ],
@@ -291,15 +288,16 @@ class MatchDetailsScreen extends ConsumerWidget {
             Expanded(
               child: Column(
                 children: [
-                  _buildTeamLogo(match.awayTeamLogo),
-                  const SizedBox(height: 8),
+                  TeamLogo(
+                    logoUrl: match.awayTeamLogo,
+                    teamName: match.awayTeamName,
+                    size: 52,
+                    heroTag: 'match_away_${match.matchId}',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     match.awayTeamName,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: AppTypography.bodyLarge(color: AppColors.darkTextPrimary),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -315,39 +313,42 @@ class MatchDetailsScreen extends ConsumerWidget {
 
   Widget _buildOverviewTab(BuildContext context, MatchModel match) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cardBorder),
-          ),
+        AppCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          margin: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.sports_soccer, color: AppColors.liveIndicator, size: 20),
-                  SizedBox(width: 8),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: AppRadii.xsRadius,
+                    ),
+                    child: const Icon(Icons.sports_soccer_rounded, color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     'ملخص المباراة',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
+                    style: GoogleFonts.cairo(
+                      color: AppColors.darkTextPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
-              const Divider(color: AppColors.divider, height: 24),
+              const Divider(color: AppColors.darkDivider, height: AppSpacing.xxl),
               _buildOverviewRow('البطولة', match.leagueName),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.md),
               _buildOverviewRow('التاريخ', DateFormatter.toArabicNumerals(match.displayDate)),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.md),
               _buildOverviewRow('التوقيت', match.formattedLocalTime),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.md),
               _buildOverviewRow('الحالة', match.statusName),
             ],
           ),
@@ -362,14 +363,14 @@ class MatchDetailsScreen extends ConsumerWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
         ),
         Text(
           value,
           style: const TextStyle(
-            color: AppColors.textPrimary,
+            color: AppColors.darkTextPrimary,
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -377,48 +378,10 @@ class MatchDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildStandingsTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(
-            Icons.format_list_numbered_rounded,
-            size: 56,
-            color: AppColors.textMuted,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'جدول الترتيب',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            'سيتم توفير جدول الترتيب قريباً',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      type: EmptyStateType.leagues,
+      title: 'جدول الترتيب غير متاح حالياً',
+      subtitle: 'بيانات جدول الترتيب لهذه البطولة غير متوفرة في الوقت الحالي',
     );
-  }
-
-  Widget _buildTeamLogo(String? url) {
-    if (url != null && url.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: url,
-        width: 48,
-        height: 48,
-        placeholder: (_, _) => const SizedBox(
-          width: 48,
-          height: 48,
-          child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.liveIndicator)),
-        ),
-        errorWidget: (_, _, _) => const Icon(Icons.shield, size: 48, color: AppColors.textSecondary),
-      );
-    }
-    return const Icon(Icons.shield, size: 48, color: AppColors.textSecondary);
   }
 }

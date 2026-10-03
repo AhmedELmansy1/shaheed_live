@@ -1,18 +1,27 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/remote_config_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
+import '../onboarding/providers/onboarding_provider.dart';
 import '../update/widgets/soft_update_banner.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_chip.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/hero_match_card.dart';
+import '../widgets/live_badge.dart';
 import '../widgets/match_card.dart';
 import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
+import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -26,66 +35,115 @@ class HomeScreen extends ConsumerWidget {
     final matchesAsync = ref.watch(filteredMatchesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.darkSurface,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 70,
+        titleSpacing: AppSpacing.lg,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'شوت لايف',
               style: GoogleFonts.cairo(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                height: 1.1,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: AppColors.darkTextPrimary,
+                letterSpacing: 0.0,
+                height: 1.15,
               ),
             ),
-            Text(
-              'كرة القدم في متناول يدك',
-              style: GoogleFonts.cairo(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.liveIndicator,
-                height: 1.1,
-              ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'كرة القدم في متناول يدك',
+                  style: GoogleFonts.cairo(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkTextSecondary,
+                    letterSpacing: 0.0,
+                    height: 1.15,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 24),
-            tooltip: 'البحث عن فريق',
-            onPressed: () => context.push('/search'),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.darkSurfaceHigh,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.darkBorder),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.search_rounded, color: AppColors.darkTextPrimary, size: 20),
+              tooltip: 'البحث عن فريق',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.push('/search');
+              },
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline_rounded, color: AppColors.textSecondary, size: 24),
-            tooltip: 'الإعدادات',
-            onPressed: () => context.go('/settings'),
+          const SizedBox(width: AppSpacing.sm),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.darkSurfaceHigh,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.darkBorder),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.person_outline_rounded, color: AppColors.darkTextSecondary, size: 20),
+              tooltip: 'الإعدادات',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.go('/settings');
+              },
+            ),
           ),
+          const SizedBox(width: AppSpacing.lg),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Top Date Tabs / Custom Date Selector Bar
+            // Top Sticky Date Selector Bar with Animated Pill
             _buildDateHeader(context, ref, activeTab, customDate),
 
-            // Filter Chips Row (sitting directly below Date Tabs)
+            // Modern Horizontal Filter Chips Row
             _buildFilterChipsRow(context, ref, activeFilter),
 
             // In-session Soft Update Notification Banner
             const SoftUpdateBanner(),
 
-            // Matches List Area
+            // Matches Scrollable Content Area
             Expanded(
               child: RefreshIndicator(
-                color: AppColors.liveIndicator,
-                backgroundColor: AppColors.surface,
+                color: AppColors.primary,
+                backgroundColor: AppColors.darkSurface,
                 onRefresh: () async {
+                  HapticFeedback.lightImpact();
                   await ref.read(matchesProvider.notifier).refresh();
                 },
                 child: matchesAsync.when(
@@ -93,7 +151,7 @@ class HomeScreen extends ConsumerWidget {
                   error: (error, stack) => _buildErrorView(context, ref, error),
                   data: (matches) {
                     if (matches.isEmpty) {
-                      return _buildEmptyView();
+                      return _buildEmptyView(context, ref, activeFilter);
                     }
                     return _buildHomeContent(context, ref, matches);
                   },
@@ -116,9 +174,9 @@ class HomeScreen extends ConsumerWidget {
     DateTime? customDate,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.darkSurface,
       ),
       child: Column(
         children: [
@@ -126,10 +184,12 @@ class HomeScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: Container(
-                  height: 40,
+                  height: 42,
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.darkBackground,
+                    borderRadius: AppRadii.mdRadius,
+                    border: Border.all(color: AppColors.darkBorder),
                   ),
                   child: Row(
                     children: [
@@ -158,29 +218,37 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              InkWell(
+              const SizedBox(width: AppSpacing.sm + 2),
+              GestureDetector(
                 onTap: () => _pickCustomDate(context, ref),
-                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: activeTab == HomeTab.customDate
-                        ? AppColors.liveIndicator
-                        : AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
+                        ? AppColors.primary
+                        : AppColors.darkBackground,
+                    borderRadius: AppRadii.mdRadius,
                     border: Border.all(
                       color: activeTab == HomeTab.customDate
-                          ? AppColors.liveIndicator
-                          : AppColors.cardBorder,
+                          ? AppColors.primary
+                          : AppColors.darkBorder,
                     ),
+                    boxShadow: activeTab == HomeTab.customDate
+                        ? [
+                            const BoxShadow(
+                              color: AppColors.primaryGlow,
+                              blurRadius: 10,
+                              offset: Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Icon(
                     Icons.calendar_month_rounded,
                     color: activeTab == HomeTab.customDate
                         ? Colors.black
-                        : AppColors.liveIndicator,
+                        : AppColors.primary,
                     size: 20,
                   ),
                 ),
@@ -188,34 +256,37 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           if (activeTab == HomeTab.customDate && customDate != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(20),
+                color: AppColors.darkSurfaceHigh,
+                borderRadius: AppRadii.fullRadius,
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.event_note, size: 16, color: AppColors.liveIndicator),
-                  const SizedBox(width: 6),
+                  const Icon(Icons.event_note_rounded, size: 15, color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.xs + 2),
                   Text(
                     DateFormatter.formatDisplayDate(customDate),
                     style: const TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppColors.darkTextPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSpacing.sm),
                   InkWell(
+                    borderRadius: AppRadii.fullRadius,
                     onTap: () {
+                      HapticFeedback.lightImpact();
                       ref.read(selectedCustomDateProvider.notifier).setDate(null);
                       ref.read(activeTabProvider.notifier).setTab(HomeTab.today);
                       ref.read(matchesProvider.notifier).refresh();
                     },
-                    child: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
+                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.darkTextMuted),
                   ),
                 ],
               ),
@@ -233,88 +304,55 @@ class HomeScreen extends ConsumerWidget {
   ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.darkSurface,
         border: Border(
-          bottom: BorderSide(color: AppColors.divider, width: 1),
+          bottom: BorderSide(color: AppColors.darkDivider, width: 1),
         ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildChip(
+            AppChip(
               label: 'الكل',
-              isActive: activeFilter == MatchFilterType.all,
-              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.all),
+              isSelected: activeFilter == MatchFilterType.all,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.all);
+              },
             ),
-            const SizedBox(width: 8),
-            _buildChip(
+            const SizedBox(width: AppSpacing.sm),
+            AppChip(
               label: 'مباشر',
-              icon: Icons.fiber_manual_record,
-              iconColor: AppColors.livePulse,
-              isActive: activeFilter == MatchFilterType.live,
-              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.live),
+              icon: Icons.fiber_manual_record_rounded,
+              iconColor: AppColors.live,
+              isSelected: activeFilter == MatchFilterType.live,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.live);
+              },
             ),
-            const SizedBox(width: 8),
-            _buildChip(
+            const SizedBox(width: AppSpacing.sm),
+            AppChip(
               label: 'القادمة',
-              isActive: activeFilter == MatchFilterType.upcoming,
-              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.upcoming),
+              isSelected: activeFilter == MatchFilterType.upcoming,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.upcoming);
+              },
             ),
-            const SizedBox(width: 8),
-            _buildChip(
+            const SizedBox(width: AppSpacing.sm),
+            AppChip(
               label: 'المفضلة',
               icon: Icons.star_rounded,
-              iconColor: Colors.amber,
-              isActive: activeFilter == MatchFilterType.favorites,
-              onTap: () => ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.favorites),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChip({
-    required String label,
-    IconData? icon,
-    Color? iconColor,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.liveIndicator : AppColors.background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? AppColors.liveIndicator : AppColors.cardBorder,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 12,
-                color: isActive ? Colors.black : (iconColor ?? AppColors.textSecondary),
-              ),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.black : AppColors.textPrimary,
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              ),
+              iconColor: AppColors.gold,
+              isSelected: activeFilter == MatchFilterType.favorites,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.favorites);
+              },
             ),
           ],
         ),
@@ -332,22 +370,33 @@ class HomeScreen extends ConsumerWidget {
     return Expanded(
       child: GestureDetector(
         onTap: () {
+          HapticFeedback.selectionClick();
           ref.read(selectedCustomDateProvider.notifier).setDate(null);
           ref.read(activeTabProvider.notifier).setTab(tab);
           ref.read(matchesProvider.notifier).refresh();
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: AppMotion.fast,
+          curve: AppMotion.standardCurve,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.liveIndicator : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            color: isActive ? AppColors.primary : Colors.transparent,
+            borderRadius: AppRadii.smRadius,
+            boxShadow: isActive
+                ? [
+                    const BoxShadow(
+                      color: AppColors.primaryGlow,
+                      blurRadius: 8,
+                      offset: Offset(0, 1),
+                    ),
+                  ]
+                : null,
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
-              color: isActive ? Colors.black : AppColors.textSecondary,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? Colors.black : AppColors.darkTextSecondary,
+              fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
               fontSize: 13,
             ),
           ),
@@ -367,10 +416,10 @@ class HomeScreen extends ConsumerWidget {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: AppColors.liveIndicator,
+              primary: AppColors.primary,
               onPrimary: Colors.black,
-              surface: AppColors.surface,
-              onSurface: AppColors.textPrimary,
+              surface: AppColors.darkSurface,
+              onSurface: AppColors.darkTextPrimary,
             ),
           ),
           child: child!,
@@ -409,66 +458,51 @@ class HomeScreen extends ConsumerWidget {
     int matchCounter = 0;
 
     return ListView(
-      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 120),
       children: [
         // 1. Featured / Hero Match Card
         if (featuredMatch != null) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
             child: Row(
-              children: const [
-                Icon(Icons.star_rounded, size: 18, color: AppColors.liveIndicator),
-                SizedBox(width: 6),
+              children: [
+                const Icon(Icons.star_rounded, size: 18, color: AppColors.gold),
+                const SizedBox(width: AppSpacing.xs + 2),
                 Text(
                   'المباراة المميزة',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
+                  style: GoogleFonts.cairo(
+                    color: AppColors.darkTextPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.0,
                   ),
                 ),
               ],
             ),
           ),
           HeroMatchCard(match: featuredMatch),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
         ],
 
-        // 2. Live Now Section (if there are live matches)
+        // 2. Live Now Horizontal Section (if there are live matches)
         if (liveMatches.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
             child: Row(
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.livePulse,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                const Text(
-                  'مباشر الآن',
-                  style: TextStyle(
-                    color: AppColors.livePulse,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const LiveBadge(minuteText: 'مباشر الآن', isLarge: true),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.livePulse.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.livePulse.withValues(alpha: 0.5)),
+                    color: AppColors.live.withValues(alpha: 0.15),
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(color: AppColors.live.withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     DateFormatter.toArabicNumerals(liveMatches.length.toString()),
                     style: const TextStyle(
-                      color: AppColors.livePulse,
+                      color: AppColors.live,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -478,10 +512,10 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           ...liveMatches.map((m) => MatchCard(match: m)),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
         ],
 
-        // 3. All Grouped Matches
+        // 3. All Grouped Matches with SectionHeader
         ...grouped.entries.map((entry) {
           final title = entry.key;
           final champMatches = entry.value;
@@ -489,57 +523,12 @@ class HomeScreen extends ConsumerWidget {
 
           final List<Widget> items = [];
 
-          // Competition Header
+          // Competition Header with SectionHeader
           items.add(
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-              child: Row(
-                children: [
-                  if (champLogo != null && champLogo.isNotEmpty)
-                    CachedNetworkImage(
-                      imageUrl: champLogo,
-                      width: 20,
-                      height: 20,
-                      fit: BoxFit.contain,
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.emoji_events_outlined,
-                        size: 18,
-                        color: AppColors.liveIndicator,
-                      ),
-                    )
-                  else
-                    const Icon(
-                      Icons.emoji_events_outlined,
-                      size: 18,
-                      color: AppColors.liveIndicator,
-                    ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      DateFormatter.toArabicNumerals(champMatches.length.toString()),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            SectionHeader(
+              title: title,
+              logoUrl: champLogo,
+              count: champMatches.length,
             ),
           );
 
@@ -564,78 +553,45 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyView() {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
-        height: 400,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.sports_soccer, size: 64, color: AppColors.textMuted),
-            SizedBox(height: 16),
-            Text(
-              'لا توجد مباريات متوفرة لهذا الفلتر',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'يرجى اختيار فلتر آخر أو تفقّد جدول يوم مختلف',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-          ],
+  Widget _buildEmptyView(BuildContext context, WidgetRef ref, MatchFilterType activeFilter) {
+    if (activeFilter == MatchFilterType.favorites) {
+      final onboardingState = ref.watch(onboardingProvider);
+      final hasFavorites = onboardingState.selectedTeamIds.isNotEmpty;
+
+      return AppEmptyState(
+        type: EmptyStateType.star,
+        title: hasFavorites
+            ? 'لا توجد مباريات لفرقك المفضلة اليوم'
+            : 'لم تختر أي فرق مفضلة بعد',
+        subtitle: hasFavorites
+            ? 'جرّب تفقّد جدول يوم آخر أو إضافة أندية مفضلة إضافية لتظهر هنا'
+            : 'اختر فرقك وأنديتك المفضلة لتصلك مبارياتها وتنبيهاتها في قسم خاص',
+        action: AppButton(
+          label: hasFavorites ? 'إدارة الفرق المفضلة' : 'اختيار الفرق المفضلة',
+          icon: Icons.star_rounded,
+          onPressed: () => context.push('/favorites'),
         ),
-      ),
+      );
+    }
+
+    return const AppEmptyState(
+      type: EmptyStateType.soccer,
+      title: 'لا توجد مباريات متوفرة لهذا الفلتر',
+      subtitle: 'يرجى اختيار فلتر آخر أو تفقّد جدول يوم مختلف',
     );
   }
 
   Widget _buildErrorView(BuildContext context, WidgetRef ref, Object error) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
-        height: 400,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.livePulse),
-            const SizedBox(height: 16),
-            const Text(
-              'عذراً، حدث خطأ أثناء جلب البيانات',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error.toString(),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                ref.read(matchesProvider.notifier).refresh();
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.liveIndicator,
-                foregroundColor: Colors.black,
-              ),
-            ),
-          ],
-        ),
+    return AppEmptyState(
+      type: EmptyStateType.error,
+      title: 'عذراً، حدث خطأ أثناء جلب البيانات',
+      subtitle: error.toString(),
+      action: AppButton(
+        label: 'إعادة المحاولة',
+        icon: Icons.refresh_rounded,
+        onPressed: () {
+          ref.read(matchesProvider.notifier).refresh();
+        },
       ),
     );
   }

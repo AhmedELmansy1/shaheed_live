@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/match_model.dart';
+import '../../widgets/app_card.dart';
 import '../providers/match_details_providers.dart';
 
 class InfoTab extends ConsumerWidget {
@@ -17,12 +21,12 @@ class InfoTab extends ConsumerWidget {
     final infoAsync = ref.watch(matchInfoProvider(match.id));
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
       children: [
         // Championship Card
         _buildSectionCard(
           title: 'البطولة والمعلومات العامة',
-          icon: Icons.emoji_events,
+          icon: Icons.emoji_events_rounded,
           children: [
             if (match.leagueLogo != null && match.leagueLogo!.isNotEmpty)
               Row(
@@ -31,17 +35,16 @@ class InfoTab extends ConsumerWidget {
                     imageUrl: match.leagueLogo!,
                     width: 32,
                     height: 32,
-                    errorWidget: (_, _, _) => const Icon(Icons.emoji_events, color: AppColors.liveIndicator),
+                    errorWidget: (_, _, _) => const Icon(
+                      Icons.emoji_events_rounded,
+                      color: AppColors.gold,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       match.leagueName,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
                     ),
                   ),
                 ],
@@ -49,16 +52,12 @@ class InfoTab extends ConsumerWidget {
             else
               Text(
                 match.leagueName,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
               ),
             infoAsync.when(
               data: (info) => info?.round != null
                   ? Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
                       child: _buildInfoRow('المرحلة / الجولة', info!.round!),
                     )
                   : const SizedBox.shrink(),
@@ -67,28 +66,28 @@ class InfoTab extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
 
         // Match Time Card
         _buildSectionCard(
           title: 'توقيت المباراة والتاريخ',
-          icon: Icons.access_time,
+          icon: Icons.access_time_rounded,
           children: [
             _buildInfoRow('التاريخ المحلّي', DateFormatter.toArabicNumerals(match.displayDate)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _buildInfoRow('وقت الانطلاق', match.formattedLocalTime),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _buildInfoRow('حالة المباراة', match.statusName),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
 
         // Venue & Officials Card
         infoAsync.when(
           data: (info) {
             return _buildSectionCard(
               title: 'الملعب والتحكيم',
-              icon: Icons.stadium,
+              icon: Icons.stadium_rounded,
               children: [
                 _buildInfoRow(
                   'الملعب',
@@ -96,7 +95,7 @@ class InfoTab extends ConsumerWidget {
                       ? info.stadium!
                       : 'غير محدد',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 _buildInfoRow(
                   'حكم المباراة',
                   info?.refereeName != null && info!.refereeName!.isNotEmpty
@@ -108,16 +107,19 @@ class InfoTab extends ConsumerWidget {
           },
           loading: () => _buildSectionCard(
             title: 'الملعب والتحكيم',
-            icon: Icons.stadium,
+            icon: Icons.stadium_rounded,
             children: const [
-              Center(child: CircularProgressIndicator(color: AppColors.liveIndicator)),
+              Center(child: CircularProgressIndicator(color: AppColors.primary)),
             ],
           ),
           error: (err, _) => _buildSectionCard(
             title: 'الملعب والتحكيم',
-            icon: Icons.stadium,
+            icon: Icons.stadium_rounded,
             children: [
-              Text('خطأ: $err', style: const TextStyle(color: AppColors.livePulse)),
+              Text(
+                'خطأ: $err',
+                style: AppTypography.caption(color: AppColors.live),
+              ),
             ],
           ),
         ),
@@ -130,31 +132,33 @@ class InfoTab extends ConsumerWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(AppRadii.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.liveIndicator, size: 20),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadii.xs),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: AppSpacing.xs),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
               ),
             ],
           ),
-          const Divider(color: AppColors.cardBorder, height: 24),
+          const SizedBox(height: AppSpacing.sm),
+          const Divider(color: AppColors.darkDivider, height: 1),
+          const SizedBox(height: AppSpacing.sm),
           ...children,
         ],
       ),
@@ -167,15 +171,11 @@ class InfoTab extends ConsumerWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: AppTypography.bodySmall(color: AppColors.darkTextSecondary),
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.bodySmall(color: AppColors.darkTextPrimary),
         ),
       ],
     );

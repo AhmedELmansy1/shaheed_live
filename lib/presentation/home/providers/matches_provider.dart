@@ -149,21 +149,52 @@ final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
         return matches.where((m) => !m.isLive && !m.isFinished).toList();
       case MatchFilterType.favorites:
         if (selectedTeamIds.isEmpty) {
-          return matches;
+          return [];
         }
+        final selectedTeams = onboardingState.filteredTeams
+            .where((t) => selectedTeamIds.contains(t.id))
+            .toList();
+        final selectedNames = selectedTeams.map((t) => t.name.trim().toLowerCase()).toList();
+        final selectedNamesEn = selectedTeams.map((t) => t.nameEn.trim().toLowerCase()).toList();
+
         return matches.where((m) {
           final homeId = m.homeTeam.rowId?.toString() ?? '';
           final awayId = m.awayTeam.rowId?.toString() ?? '';
-          final homeTitle = m.homeTeam.title.toLowerCase();
-          final awayTitle = m.awayTeam.title.toLowerCase();
+          final homeTitle = m.homeTeam.title.trim().toLowerCase();
+          final awayTitle = m.awayTeam.title.trim().toLowerCase();
 
-          return selectedTeamIds.any((id) {
+          // 1. Direct ID match
+          if (selectedTeamIds.contains(homeId) || selectedTeamIds.contains(awayId)) {
+            return true;
+          }
+
+          // 2. Arabic & English name match
+          for (final name in selectedNames) {
+            if (name.isNotEmpty &&
+                (homeTitle.contains(name) ||
+                    name.contains(homeTitle) ||
+                    awayTitle.contains(name) ||
+                    name.contains(awayTitle))) {
+              return true;
+            }
+          }
+
+          for (final nameEn in selectedNamesEn) {
+            if (nameEn.isNotEmpty &&
+                (homeTitle.contains(nameEn) || awayTitle.contains(nameEn))) {
+              return true;
+            }
+          }
+
+          // 3. Fallback check on raw selectedTeamIds (e.g. 'ahly', 'liverpool')
+          for (final id in selectedTeamIds) {
             final idLower = id.toLowerCase();
-            return id == homeId ||
-                id == awayId ||
-                homeTitle.contains(idLower) ||
-                awayTitle.contains(idLower);
-          });
+            if (homeTitle.contains(idLower) || awayTitle.contains(idLower)) {
+              return true;
+            }
+          }
+
+          return false;
         }).toList();
     }
   });

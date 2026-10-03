@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../data/models/team_model.dart';
+import '../widgets/app_button.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/match_card.dart';
 import 'providers/search_provider.dart';
 
@@ -21,66 +25,48 @@ class TeamFixturesScreen extends ConsumerWidget {
     final fixturesState = ref.watch(teamFixturesProvider(displayName));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: Text(
-          displayName,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-        ),
+        title: Text(displayName),
+        centerTitle: true,
       ),
       body: fixturesState.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.liveIndicator),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
         error: (error, stackTrace) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'حدث خطأ أثناء تحميل المباريات',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+              AppEmptyState(
+                type: EmptyStateType.error,
+                title: 'حدث خطأ أثناء تحميل المباريات',
+                subtitle: '$error',
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.liveIndicator,
-                  foregroundColor: Colors.black,
-                ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'إعادة المحاولة',
+                icon: Icons.refresh_rounded,
                 onPressed: () {
                   ref.invalidate(teamFixturesProvider(displayName));
                 },
-                child: const Text('إعادة المحاولة'),
               ),
             ],
           ),
         ),
         data: (matches) {
           if (matches.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.sports_soccer, size: 64, color: AppColors.textMuted),
-                  SizedBox(height: 16),
-                  Text(
-                    'لا توجد مباريات قادمة لهذا الفريق',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'لا توجد مباريات مسجلة خلال الأيام الثلاثة القادمة',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                  ),
-                ],
+            return const Center(
+              child: AppEmptyState(
+                type: EmptyStateType.calendar,
+                title: 'لا توجد مباريات قادمة لهذا الفريق',
+                subtitle: 'لا توجد مباريات مسجلة خلال الأيام الثلاثة القادمة',
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 120),
             itemCount: matches.length,
             itemBuilder: (context, index) {
               final match = matches[index];

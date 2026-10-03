@@ -69,6 +69,45 @@ class DateFormatter {
     }
   }
 
+  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in `Africa/Cairo` timezone using IANA data,
+  /// and returns the resolved local device [DateTime].
+  static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime) {
+    if (rawDate == null || rawDate.isEmpty || rawTime == null || rawTime.isEmpty) {
+      return null;
+    }
+
+    try {
+      final dateParts = rawDate.trim().split('-');
+      final timeParts = rawTime.trim().split(':');
+
+      final year = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final day = int.parse(dateParts[2]);
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
+
+      final cairoLocation = tz.getLocation('Africa/Cairo');
+      final cairoTZDateTime = tz.TZDateTime(
+        cairoLocation,
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+      );
+
+      return cairoTZDateTime.toLocal();
+    } catch (_) {
+      try {
+        return DateTime.parse('${rawDate.trim()} ${rawTime.trim()}');
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+
   /// Formats a [DateTime] into API date string format (`YYYY-MM-DD`).
   static String toApiDateString(DateTime dateTime) {
     return DateFormat('yyyy-MM-dd', 'en').format(dateTime);

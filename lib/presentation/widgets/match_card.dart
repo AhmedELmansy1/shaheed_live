@@ -1,14 +1,22 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/ad_service.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
+import 'app_card.dart';
+import 'live_badge.dart';
+import 'match_countdown_widget.dart';
+import 'score_text.dart';
+import 'team_logo.dart';
 
-/// Polished match card displaying teams, logos, scores, live status pulse, kick-off times, and reminder toggle.
+/// Premium interactive match card with 40px circular crests, bold high-contrast score/status, and reminder toggle.
 class MatchCard extends ConsumerWidget {
   final MatchModel match;
 
@@ -17,55 +25,46 @@ class MatchCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLive = match.isLive;
-    final isReminderSetAsync = ref.watch(isReminderSetProvider(match.matchId));
-    final isReminderSet = isReminderSetAsync.value ?? false;
+    final isReminderSet = ref.watch(isReminderSetProvider(match.matchId));
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isLive ? AppColors.liveIndicator : AppColors.cardBorder,
-          width: isLive ? 1.5 : 1,
-        ),
-        boxShadow: isLive
-            ? [
-                BoxShadow(
-                  color: AppColors.liveIndicator.withValues(alpha: 0.15),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
-      ),
-      child: InkWell(
-        onTap: () {
-          // Trigger interstitial evaluation based on frequency cap
-          ref.read(adServiceProvider).handleMatchOpenInterstitial(isLiveMatch: match.isLive);
-          context.push('/match/${match.matchId}', extra: match);
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14.0),
-          child: Row(
+    return AppCard(
+      isLive: isLive,
+      isFeatured: false,
+      onTap: () {
+        ref.read(adServiceProvider).handleMatchOpenInterstitial(isLiveMatch: match.isLive);
+        context.push('/match/${match.matchId}', extra: match);
+      },
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             children: [
               // Home Team (Right side in RTL)
               Expanded(
                 flex: 4,
                 child: Row(
                   children: [
-                    _buildTeamLogo(match.homeTeam.image),
-                    const SizedBox(width: 10),
+                    TeamLogo(
+                      logoUrl: match.homeTeam.image,
+                      teamName: match.homeTeam.title,
+                      size: 40,
+                      heroTag: 'match_home_${match.matchId}',
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         match.homeTeam.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: match.isFinished
+                              ? AppColors.darkTextSecondary
+                              : AppColors.darkTextPrimary,
+                          letterSpacing: 0.0,
+                          height: 1.2,
                         ),
                       ),
                     ),
@@ -73,36 +72,10 @@ class MatchCard extends ConsumerWidget {
                 ),
               ),
 
-              // Match Center Status / Score Block + Bell Icon
+              // Match Center: Status / Live Badge / Score
               Expanded(
                 flex: 3,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildCenterStatus(context),
-                    if (!isLive && !match.isFinished) ...[
-                      const SizedBox(height: 4),
-                      InkWell(
-                        onTap: () {
-                          ref.read(matchReminderServiceProvider).toggleReminder(match);
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          child: Icon(
-                            isReminderSet
-                                ? Icons.notifications_active_rounded
-                                : Icons.notifications_none_rounded,
-                            size: 16,
-                            color: isReminderSet
-                                ? AppColors.liveIndicator
-                                : AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                child: _buildCenterStatus(context),
               ),
 
               // Away Team (Left side in RTL)
@@ -117,106 +90,132 @@ class MatchCard extends ConsumerWidget {
                         textAlign: TextAlign.end,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: match.isFinished
+                              ? AppColors.darkTextSecondary
+                              : AppColors.darkTextPrimary,
+                          letterSpacing: 0.0,
+                          height: 1.2,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    _buildTeamLogo(match.awayTeam.image),
+                    const SizedBox(width: AppSpacing.sm),
+                    TeamLogo(
+                      logoUrl: match.awayTeam.image,
+                      teamName: match.awayTeam.title,
+                      size: 40,
+                      heroTag: 'match_away_${match.matchId}',
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildTeamLogo(String? url) {
-    if (url == null || url.isEmpty) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.shield_outlined, size: 18, color: AppColors.textMuted),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: url,
-      width: 32,
-      height: 32,
-      fit: BoxFit.contain,
-      placeholder: (context, url) => Container(
-        width: 32,
-        height: 32,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-      ),
-      errorWidget: (context, url, error) => Container(
-        width: 32,
-        height: 32,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.shield_outlined, size: 18, color: AppColors.textMuted),
+          // Bell Reminder Toggle Pill (For upcoming matches)
+          if (!isLive && !match.isFinished) ...[
+            const SizedBox(height: AppSpacing.xs + 2),
+            Center(
+              child: InkWell(
+                borderRadius: AppRadii.fullRadius,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  debugPrint('[MatchCard] Tapping bell reminder for match #${match.matchId}');
+                  ref.read(matchReminderServiceProvider).toggleReminder(match);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isReminderSet
+                        ? AppColors.primary.withValues(alpha: 0.14)
+                        : Colors.transparent,
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(
+                      color: isReminderSet
+                          ? AppColors.primary.withValues(alpha: 0.5)
+                          : AppColors.darkBorder,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isReminderSet
+                            ? Icons.notifications_active_rounded
+                            : Icons.notifications_none_rounded,
+                        size: 13,
+                        color: isReminderSet ? AppColors.primary : AppColors.darkTextMuted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isReminderSet ? 'تم تفعيل التذكير' : 'تذكير قبل الماتش',
+                        style: GoogleFonts.cairo(
+                          color: isReminderSet ? AppColors.primary : AppColors.darkTextMuted,
+                          fontSize: 10.5,
+                          fontWeight: isReminderSet ? FontWeight.bold : FontWeight.w600,
+                          letterSpacing: 0.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
   Widget _buildCenterStatus(BuildContext context) {
     if (match.isLive) {
+      final minute = match.currentMinute;
+      final showMinutePill = minute != null && minute.isNotEmpty && minute != 'مباشر';
+
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.livePulse.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.livePulse, width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const LiveBadge(),
+              if (showMinutePill) ...[
+                const SizedBox(width: AppSpacing.xs),
                 Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.livePulse,
-                    shape: BoxShape.circle,
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: AppColors.live.withValues(alpha: 0.15),
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(
+                      color: AppColors.live.withValues(alpha: 0.6),
+                      width: 0.9,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  match.adminTitle ?? 'مباشر',
-                  style: const TextStyle(
-                    color: AppColors.livePulse,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                  child: Text(
+                    minute,
+                    style: GoogleFonts.cairo(
+                      color: AppColors.live,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.0,
+                      height: 1.15,
+                    ),
                   ),
                 ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${match.homeScore ?? '٠'} - ${match.awayScore ?? '٠'}',
-            style: const TextStyle(
-              color: AppColors.liveIndicator,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          const SizedBox(height: 2),
+          ScoreText(
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            isLive: true,
+            fontSize: 24,
           ),
         ],
       );
@@ -226,62 +225,86 @@ class MatchCard extends ConsumerWidget {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '${match.homeScore ?? '٠'} - ${match.awayScore ?? '٠'}',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
+          ScoreText(
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            isLive: false,
+            fontSize: 22,
           ),
           const SizedBox(height: 2),
-          Text(
-            match.adminTitle ?? 'انتهت',
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 10,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+            decoration: BoxDecoration(
+              color: AppColors.darkSurfaceHigh,
+              borderRadius: AppRadii.fullRadius,
+              border: Border.all(color: AppColors.darkBorder, width: 0.8),
+            ),
+            child: Text(
+              match.adminTitle ?? 'انتهت',
+              style: GoogleFonts.cairo(
+                color: AppColors.darkTextMuted,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.0,
+              ),
             ),
           ),
         ],
       );
     }
 
-    if (match.status == MatchStatus.postponed ||
-        match.status == MatchStatus.cancelled) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            match.adminTitle ??
-                (match.status == MatchStatus.postponed ? 'تأجلت' : 'ملغاة'),
-            style: const TextStyle(
-              color: AppColors.livePulse,
-              fontSize: 12,
+    if (match.status == MatchStatus.postponed || match.status == MatchStatus.cancelled) {
+      final isPostponed = match.status == MatchStatus.postponed;
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurfaceHigh,
+            borderRadius: AppRadii.smRadius,
+            border: Border.all(color: AppColors.darkBorder),
+          ),
+          child: Text(
+            match.adminTitle ?? (isPostponed ? 'تأجلت' : 'ملغاة'),
+            style: GoogleFonts.cairo(
+              color: isPostponed ? AppColors.gold : AppColors.live,
+              fontSize: 10.5,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.0,
             ),
           ),
-        ],
+        ),
       );
     }
 
-    // Upcoming Match
-    final timeFormatted =
-        DateFormatter.formatMatchTime(match.matchDate, match.matchTime);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        timeFormatted,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
+    // Upcoming Match: Kickoff Time + Live Countdown Timer
+    final timeFormatted = DateFormatter.formatMatchTime(match.matchDate, match.matchTime);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurfaceHigh,
+            borderRadius: AppRadii.smRadius,
+            border: Border.all(color: AppColors.darkBorder),
+          ),
+          child: Text(
+            timeFormatted,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cairo(
+              color: AppColors.darkTextPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.0,
+            ),
+          ),
         ),
-      ),
+        const SizedBox(height: 3),
+        MatchCountdownWidget(
+          targetDateTime: match.kickoffDateTime,
+          fallbackFormattedTime: timeFormatted,
+        ),
+      ],
     );
   }
 }

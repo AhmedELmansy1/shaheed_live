@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
+import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../widgets/app_empty_state.dart';
 import '../providers/match_details_providers.dart';
 
 class StatisticsTab extends ConsumerWidget {
@@ -18,13 +23,10 @@ class StatisticsTab extends ConsumerWidget {
       data: (stats) {
         if (stats == null) {
           return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                'لا تتوفر إحصائيات لهذه المباراة حالياً',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
+            child: AppEmptyState(
+              type: EmptyStateType.soccer,
+              title: 'لا تتوفر إحصائيات',
+              subtitle: 'لم يتم رصد إحصائيات رقمية لهذه المباراة حالياً',
             ),
           );
         }
@@ -33,7 +35,12 @@ class StatisticsTab extends ConsumerWidget {
         final a = stats.awayStats;
 
         return ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
+            120,
+          ),
           children: [
             _buildStatBarRow('الاستحواذ', '${h.possession}%', '${a.possession}%', h.possession, a.possession),
             _buildStatBarRow('إجمالي التسديدات', '${h.totalShots}', '${a.totalShots}', h.totalShots, a.totalShots),
@@ -49,12 +56,13 @@ class StatisticsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.liveIndicator),
+        child: CircularProgressIndicator(color: AppColors.primary),
       ),
       error: (err, stack) => Center(
-        child: Text(
-          'خطأ في تحميل الإحصائيات: $err',
-          style: const TextStyle(color: AppColors.livePulse),
+        child: AppEmptyState(
+          type: EmptyStateType.error,
+          title: 'تعذر تحميل الإحصائيات',
+          subtitle: '$err',
         ),
       ),
     );
@@ -68,8 +76,8 @@ class StatisticsTab extends ConsumerWidget {
     int awayVal,
   ) {
     final total = homeVal + awayVal;
-    final homeRatio = total > 0 ? homeVal / total : 0.5;
-    final awayRatio = total > 0 ? awayVal / total : 0.5;
+    final homeTargetRatio = total > 0 ? homeVal / total : 0.5;
+    final awayTargetRatio = total > 0 ? awayVal / total : 0.5;
 
     final homeArabic = DateFormatter.toArabicNumerals(homeDisplay);
     final awayArabic = DateFormatter.toArabicNumerals(awayDisplay);
@@ -78,7 +86,7 @@ class StatisticsTab extends ConsumerWidget {
     final awayHigher = awayVal > homeVal;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
         children: [
           Row(
@@ -86,53 +94,80 @@ class StatisticsTab extends ConsumerWidget {
             children: [
               Text(
                 homeArabic,
-                style: TextStyle(
-                  color: homeHigher ? AppColors.liveIndicator : AppColors.textPrimary,
-                  fontWeight: homeHigher ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
+                style: AppTypography.displayScore(
+                  color: homeHigher ? AppColors.primary : AppColors.darkTextPrimary,
+                  size: 15,
                 ),
               ),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                style: AppTypography.bodySmall(
+                  color: AppColors.darkTextSecondary,
                 ),
               ),
               Text(
                 awayArabic,
-                style: TextStyle(
-                  color: awayHigher ? AppColors.liveIndicator : AppColors.textPrimary,
-                  fontWeight: awayHigher ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
+                style: AppTypography.displayScore(
+                  color: awayHigher ? AppColors.primary : AppColors.darkTextPrimary,
+                  size: 15,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 6,
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: (homeRatio * 100).round(),
-                    child: Container(
-                      color: homeHigher ? AppColors.liveIndicator : AppColors.cardBorder,
-                    ),
+          const SizedBox(height: AppSpacing.xs),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: AppMotion.standard,
+            curve: AppMotion.decelerateCurve,
+            builder: (context, factor, child) {
+              final animatedHomeFlex = ((homeTargetRatio * factor) * 1000).round().clamp(1, 1000);
+              final animatedAwayFlex = ((awayTargetRatio * factor) * 1000).round().clamp(1, 1000);
+
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                child: Container(
+                  height: 7,
+                  color: AppColors.darkSurfaceHigh,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: animatedHomeFlex,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: homeHigher ? AppColors.primary : AppColors.darkBorder,
+                            boxShadow: homeHigher
+                                ? [
+                                    const BoxShadow(
+                                      color: AppColors.primaryGlow,
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        flex: animatedAwayFlex,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: awayHigher ? AppColors.primary : AppColors.darkBorder,
+                            boxShadow: awayHigher
+                                ? [
+                                    const BoxShadow(
+                                      color: AppColors.primaryGlow,
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 2),
-                  Expanded(
-                    flex: (awayRatio * 100).round(),
-                    child: Container(
-                      color: awayHigher ? AppColors.liveIndicator : AppColors.cardBorder,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),

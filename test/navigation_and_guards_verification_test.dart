@@ -1,3 +1,4 @@
+// ignore_for_file: subtype_of_sealed_class, unused_import
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:shoot_live/data/models/match_model.dart';
 import 'package:shoot_live/data/models/match_statistics_model.dart';
 import 'package:shoot_live/data/repositories/matches_repository.dart';
 import 'package:shoot_live/presentation/home/providers/matches_provider.dart';
+import 'package:shoot_live/presentation/shell/main_shell.dart';
 import 'package:shoot_live/main.dart';
 
 class FakeDocumentSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
@@ -135,28 +137,29 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       container.read(appRouterProvider).go('/home');
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // 1. Verify Home tab is active and visible
-      expect(find.byType(BottomNavigationBar), findsOneWidget);
+      expect(find.byType(MainShell), findsOneWidget);
       expect(find.text('الرئيسية'), findsOneWidget);
       expect(find.text('الدوريات'), findsOneWidget);
       expect(find.text('الإعدادات'), findsOneWidget);
 
       // 2. Tap Leagues tab (Index 1)
       await tester.tap(find.text('الدوريات'));
-      await tester.pumpAndSettle();
-      expect(find.text('سيتم إضافة قسم الدوريات قريباً'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('قسم الدوريات قريباً'), findsOneWidget);
 
       // 3. Tap Settings tab (Index 2)
       await tester.tap(find.text('الإعدادات'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('إعدادات التطبيق'), findsOneWidget);
-      expect(find.text('إعادة ضبط التهيئة والتهيئة الأولية'), findsOneWidget);
+      expect(find.text('المظهر العام'), findsOneWidget);
+      expect(find.text('إدارة الأندية المفضلة'), findsOneWidget);
 
       // 4. Tap Home tab (Index 0)
       await tester.tap(find.text('الرئيسية'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('شوت لايف'), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 300));
@@ -202,7 +205,7 @@ void main() {
 
       // Attempt to go to /home without completed onboarding
       container.read(appRouterProvider).go('/home');
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Guard intercepts and redirects to /onboarding/leagues
       expect(find.text('اختيار الدوريات'), findsOneWidget);
@@ -244,11 +247,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       container.read(appRouterProvider).go('/home');
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Simulate notification tap
       NotificationService.onMatchNotificationTap!('9999');
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Confirmed arrived at MatchDetailsScreen for match 9999
       expect(find.text('تفاصيل المباراة'), findsOneWidget);
