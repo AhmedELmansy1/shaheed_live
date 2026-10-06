@@ -1,9 +1,11 @@
 import 'dart:convert';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
+
 import '../../data/models/match_model.dart';
 import '../utils/date_formatter.dart';
 import 'notification_service.dart';
@@ -31,7 +33,9 @@ class RemindedMatchesNotifier extends Notifier<Set<int>> {
         } catch (_) {}
       }
       state = ids;
-      debugPrint('[MatchReminder] Loaded ${ids.length} active match reminders into memory.');
+      debugPrint(
+        '[MatchReminder] Loaded ${ids.length} active match reminders into memory.',
+      );
     } catch (e) {
       debugPrint('[MatchReminder] Error loading initial reminders: $e');
     }
@@ -46,9 +50,10 @@ class RemindedMatchesNotifier extends Notifier<Set<int>> {
   }
 }
 
-final remindedMatchIdsProvider = NotifierProvider<RemindedMatchesNotifier, Set<int>>(() {
-  return RemindedMatchesNotifier();
-});
+final remindedMatchIdsProvider =
+    NotifierProvider<RemindedMatchesNotifier, Set<int>>(() {
+      return RemindedMatchesNotifier();
+    });
 
 final isReminderSetProvider = Provider.family<bool, int>((ref, matchId) {
   final remindedIds = ref.watch(remindedMatchIdsProvider);
@@ -84,7 +89,9 @@ class MatchReminderService {
     final compName = match.championship.title;
 
     debugPrint('[MatchReminder] ========================================');
-    debugPrint('[MatchReminder] 🔔 Bell tapped for Match #$matchId: "$homeName × $awayName" ($compName)');
+    debugPrint(
+      '[MatchReminder] 🔔 Bell tapped for Match #$matchId: "$homeName × $awayName" ($compName)',
+    );
 
     final prefs = await SharedPreferences.getInstance();
     final storedReminders = prefs.getStringList(_storageKey) ?? [];
@@ -100,14 +107,19 @@ class MatchReminderService {
 
     if (existingIndex != -1) {
       // 1. UNTOGGLE / CANCEL BOTH TIERS
-      debugPrint('[MatchReminder] -> State is currently ON. Canceling reminders for Match #$matchId...');
+      debugPrint(
+        '[MatchReminder] -> State is currently ON. Canceling reminders for Match #$matchId...',
+      );
       storedReminders.removeAt(existingIndex);
       await prefs.setStringList(_storageKey, storedReminders);
 
       _ref.read(remindedMatchIdsProvider.notifier).remove(matchId);
 
-      final pendingBefore = await _notificationService.getPendingNotificationRequests();
-      debugPrint('[MatchReminder] Pending notifications count before cancellation: ${pendingBefore.length}');
+      final pendingBefore = await _notificationService
+          .getPendingNotificationRequests();
+      debugPrint(
+        '[MatchReminder] Pending notifications count before cancellation: ${pendingBefore.length}',
+      );
 
       // Cancel 1-hour tier, 15-min tier, confirmation, and legacy matchId
       final id1Hr = getReminder1HrId(matchId);
@@ -119,21 +131,34 @@ class MatchReminderService {
       await _notificationService.cancelNotification(idConfirm);
       await _notificationService.cancelNotification(matchId);
 
-      final pendingAfter = await _notificationService.getPendingNotificationRequests();
-      debugPrint('[MatchReminder] Cancelled notification IDs: 1hr (#$id1Hr), 15min (#$id15Min), legacy (#$matchId)');
-      debugPrint('[MatchReminder] Pending notifications count after cancellation: ${pendingAfter.length}');
+      final pendingAfter = await _notificationService
+          .getPendingNotificationRequests();
+      debugPrint(
+        '[MatchReminder] Cancelled notification IDs: 1hr (#$id1Hr), 15min (#$id15Min), legacy (#$matchId)',
+      );
+      debugPrint(
+        '[MatchReminder] Pending notifications count after cancellation: ${pendingAfter.length}',
+      );
 
       try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic('match_${matchId}_events');
-        debugPrint('[MatchReminder] FCM unsubscribed from topic: match_${matchId}_events');
+        await FirebaseMessaging.instance.unsubscribeFromTopic(
+          'match_${matchId}_events',
+        );
+        debugPrint(
+          '[MatchReminder] FCM unsubscribed from topic: match_${matchId}_events',
+        );
       } catch (e) {
         debugPrint('[MatchReminder] FCM unsubscribe error: $e');
       }
 
-      debugPrint('[MatchReminder] Toggle OFF complete. Active reminders: ${storedReminders.length}');
+      debugPrint(
+        '[MatchReminder] Toggle OFF complete. Active reminders: ${storedReminders.length}',
+      );
     } else {
       // 2. TOGGLE / SCHEDULE BOTH TIERS (1-Hour & 15-Minutes) + IMMEDIATE CONFIRMATION
-      debugPrint('[MatchReminder] -> State is currently OFF. Enabling reminders for Match #$matchId...');
+      debugPrint(
+        '[MatchReminder] -> State is currently OFF. Enabling reminders for Match #$matchId...',
+      );
 
       // Optimistically update memory state immediately for instant UI feedback
       _ref.read(remindedMatchIdsProvider.notifier).add(matchId);
@@ -149,13 +174,20 @@ class MatchReminderService {
 
       storedReminders.add(jsonEncode(reminderData));
       await prefs.setStringList(_storageKey, storedReminders);
-      debugPrint('[MatchReminder] Stored reminder in SharedPreferences for Match #$matchId.');
+      debugPrint(
+        '[MatchReminder] Stored reminder in SharedPreferences for Match #$matchId.',
+      );
 
       // FEATURE 1: Immediate confirmation system notification in tray
       final confirmId = getConfirmationNotificationId(matchId);
       final confirmTitle = '🔔 تم تفعيل التنبيه';
-      final confirmBody = DateFormatter.toArabicNumerals('سيتم تذكيرك بمباراة $homeName × $awayName');
-      final reminderPayload = jsonEncode({'type': 'match_reminder', 'matchId': matchId.toString()});
+      final confirmBody = DateFormatter.toArabicNumerals(
+        'سيتم تذكيرك بمباراة $homeName × $awayName',
+      );
+      final reminderPayload = jsonEncode({
+        'type': 'match_reminder',
+        'matchId': matchId.toString(),
+      });
 
       try {
         await _notificationService.showNotification(
@@ -165,83 +197,35 @@ class MatchReminderService {
           payload: reminderPayload,
           channelId: NotificationService.channelMatches,
         );
-        debugPrint('[MatchReminder] [FEATURE 1] Fired immediate confirmation notification #$confirmId: "$confirmTitle" - "$confirmBody"');
+        debugPrint(
+          '[MatchReminder] [FEATURE 1] Fired immediate confirmation notification #$confirmId: "$confirmTitle" - "$confirmBody"',
+        );
       } catch (e) {
-        debugPrint('[MatchReminder] Error showing immediate confirmation notification: $e');
+        debugPrint(
+          '[MatchReminder] Error showing immediate confirmation notification: $e',
+        );
       }
 
-      // FEATURE 2: Two-Tier Scheduling (1 Hour before & 15 Minutes before)
-      final kickoff = _computeKickoffTime(match.matchDate, match.matchTime);
-      final now = tz.TZDateTime.now(tz.local);
-
-      debugPrint('[MatchReminder] [TIME PIPELINE] matchDate: "${match.matchDate}", matchTime: "${match.matchTime}"');
-      debugPrint('[MatchReminder] [TIME PIPELINE] Computed Kickoff (tz.local): $kickoff (UTC: ${kickoff?.toUtc()})');
-      debugPrint('[MatchReminder] [TIME PIPELINE] Current Device Time (tz.local): $now (UTC: ${now.toUtc()})');
-
-      if (kickoff != null) {
-        final time1Hr = kickoff.subtract(const Duration(hours: 1));
-        final time15Min = kickoff.subtract(const Duration(minutes: 15));
-        final id1Hr = getReminder1HrId(matchId);
-        final id15Min = getReminder15MinId(matchId);
-
-        debugPrint('[MatchReminder] [TIME PIPELINE] 1-Hour Target: $time1Hr (isAfter: ${time1Hr.isAfter(now)})');
-        debugPrint('[MatchReminder] [TIME PIPELINE] 15-Min Target: $time15Min (isAfter: ${time15Min.isAfter(now)})');
-
-        // Tier 1: 1 Hour Before Kickoff
-        if (time1Hr.isAfter(now)) {
-          final title1Hr = '⏳ باقي ساعة على الماتش';
-          final body1Hr = DateFormatter.toArabicNumerals('$homeName × $awayName تبدأ بعد ساعة');
-          await _notificationService.scheduleNotification(
-            id1Hr,
-            title1Hr,
-            body1Hr,
-            time1Hr,
-            payload: reminderPayload,
-          );
-          debugPrint('[MatchReminder] [FEATURE 2 - Tier 1] Scheduled 1-hour reminder #$id1Hr for $time1Hr');
-        } else {
-          debugPrint('[MatchReminder] [FEATURE 2 - Tier 1] Skipped 1-hour tier (kickoff is in less than 60 mins or past)');
-        }
-
-        // Tier 2: 15 Minutes Before Kickoff
-        if (time15Min.isAfter(now)) {
-          final title15Min = '⏰ الماتش بعد ١٥ دقيقة';
-          final body15Min = DateFormatter.toArabicNumerals('$homeName × $awayName - $compName');
-          await _notificationService.scheduleNotification(
-            id15Min,
-            title15Min,
-            body15Min,
-            time15Min,
-            payload: reminderPayload,
-          );
-          debugPrint('[MatchReminder] [FEATURE 2 - Tier 2] Scheduled 15-min reminder #$id15Min for $time15Min');
-        } else if (kickoff.isAfter(now)) {
-          // Less than 15 minutes to kickoff: schedule imminent reminder
-          debugPrint('[MatchReminder] [FEATURE 2 - Tier 2] Imminent kickoff (< 15 mins). Scheduling near-instant reminder alert.');
-          final instantTime = now.add(const Duration(seconds: 5));
-          await _notificationService.scheduleNotification(
-            id15Min,
-            '⏰ تذكير بالمباراة',
-            DateFormatter.toArabicNumerals('$homeName × $awayName - $compName'),
-            instantTime,
-            payload: reminderPayload,
-          );
-        } else {
-          debugPrint('[MatchReminder] [FEATURE 2 - Tier 2] Skipped 15-min tier (kickoff has already passed)');
-        }
-      }
-
-      final pendingAfterSchedule = await _notificationService.getPendingNotificationRequests();
-      debugPrint('[MatchReminder] Total pending notifications in system: ${pendingAfterSchedule.length}');
-
+      // SERVER-SIDE DISPATCH: 1-hour and 15-minute reminders, kickoff, and live events
+      // are dispatched server-side via shoot_live_watcher over FCM topic `match_{matchId}_events`.
+      // This bypasses aggressive OEM background kill policies (e.g., MIUI OP_AUTO_START).
       try {
-        await FirebaseMessaging.instance.subscribeToTopic('match_${matchId}_events');
-        debugPrint('[MatchReminder] FCM subscribed to topic: match_${matchId}_events');
-      } catch (e) {
-        debugPrint('[MatchReminder] FCM subscribe error: $e');
+        final topic = 'match_${matchId}_events';
+        debugPrint(
+          '[MatchReminder] 📡 Attempting FCM subscribe to topic: $topic...',
+        );
+        await FirebaseMessaging.instance.subscribeToTopic(topic);
+        debugPrint(
+          '[MatchReminder] ✅ FCM subscribe SUCCESS for topic: $topic at ${DateTime.now().toIso8601String()}',
+        );
+      } catch (e, st) {
+        debugPrint('[MatchReminder] ❌ FCM subscribe FAILED for Match #$matchId: $e');
+        debugPrint('[MatchReminder] StackTrace: $st');
       }
 
-      debugPrint('[MatchReminder] Toggle ON complete. Active reminders: ${storedReminders.length}');
+      debugPrint(
+        '[MatchReminder] Toggle ON complete. Active reminders: ${storedReminders.length}',
+      );
     }
     debugPrint('[MatchReminder] ========================================');
   }
@@ -260,12 +244,37 @@ class MatchReminderService {
     });
   }
 
+  /// Re-applies all active topic subscriptions (called on token refresh or startup)
+  Future<void> reapplyAllTopicSubscriptions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedReminders = prefs.getStringList(_storageKey) ?? [];
+    debugPrint(
+      '[MatchReminder] 🔄 Re-applying FCM topic subscriptions for ${storedReminders.length} stored reminders...',
+    );
+
+    for (var jsonStr in storedReminders) {
+      try {
+        final data = jsonDecode(jsonStr);
+        final matchId = data['matchId'] as int?;
+        if (matchId != null && matchId > 0) {
+          final topic = 'match_${matchId}_events';
+          await FirebaseMessaging.instance.subscribeToTopic(topic);
+          debugPrint('[MatchReminder] ✅ Restored FCM topic: $topic');
+        }
+      } catch (e) {
+        debugPrint('[MatchReminder] ❌ Error restoring topic subscription: $e');
+      }
+    }
+  }
+
   Future<void> rescheduleAllReminders() async {
     final prefs = await SharedPreferences.getInstance();
     final storedReminders = prefs.getStringList(_storageKey) ?? [];
     final updatedReminders = <String>[];
 
-    debugPrint('[MatchReminder] Rescheduling all ${storedReminders.length} reminders on startup...');
+    debugPrint(
+      '[MatchReminder] Syncing ${storedReminders.length} active reminders on startup...',
+    );
 
     final now = tz.TZDateTime.now(tz.local);
 
@@ -275,53 +284,30 @@ class MatchReminderService {
         final matchId = data['matchId'] as int?;
         final date = data['matchDate'] as String?;
         final time = data['matchTime'] as String?;
-        final homeName = data['homeName'] as String? ?? '';
-        final awayName = data['awayName'] as String? ?? '';
-        final compName = data['competition'] as String? ?? '';
 
         if (matchId == null) continue;
 
         final kickoff = _computeKickoffTime(date, time);
 
-        if (kickoff != null && kickoff.isAfter(now)) {
+        // Keep reminder active until match is concluded (~3 hours after kickoff)
+        if (kickoff == null ||
+            kickoff.add(const Duration(hours: 3)).isAfter(now)) {
           updatedReminders.add(jsonStr);
-
-          final reminderPayload = jsonEncode({'type': 'match_reminder', 'matchId': matchId.toString()});
-          final time1Hr = kickoff.subtract(const Duration(hours: 1));
-          final time15Min = kickoff.subtract(const Duration(minutes: 15));
-          final id1Hr = getReminder1HrId(matchId);
-          final id15Min = getReminder15MinId(matchId);
-
-          // Tier 1: Reschedule 1-hour tier if still in future
-          if (time1Hr.isAfter(now)) {
-            final title1Hr = '⏳ باقي ساعة على الماتش';
-            final body1Hr = DateFormatter.toArabicNumerals('$homeName × $awayName تبدأ بعد ساعة');
-            await _notificationService.scheduleNotification(
-              id1Hr,
-              title1Hr,
-              body1Hr,
-              time1Hr,
-              payload: reminderPayload,
+          // Ensure FCM topic subscription is maintained and awaited
+          try {
+            final topic = 'match_${matchId}_events';
+            await FirebaseMessaging.instance.subscribeToTopic(topic);
+            debugPrint(
+              '[MatchReminder] ✅ Verified active topic subscription: $topic',
             );
-            debugPrint('[MatchReminder] Startup Rescheduled 1-hour tier #$id1Hr for Match #$matchId at $time1Hr');
-          }
-
-          // Tier 2: Reschedule 15-min tier if still in future
-          if (time15Min.isAfter(now)) {
-            final title15Min = '⏰ الماتش بعد ١٥ دقيقة';
-            final body15Min = DateFormatter.toArabicNumerals('$homeName × $awayName - $compName');
-            await _notificationService.scheduleNotification(
-              id15Min,
-              title15Min,
-              body15Min,
-              time15Min,
-              payload: reminderPayload,
+          } catch (topicErr) {
+            debugPrint(
+              '[MatchReminder] ⚠️ Could not verify topic for Match #$matchId: $topicErr',
             );
-            debugPrint('[MatchReminder] Startup Rescheduled 15-min tier #$id15Min for Match #$matchId at $time15Min');
           }
         }
       } catch (e) {
-        debugPrint('[MatchReminder] Error rescheduling reminder item: $e');
+        debugPrint('[MatchReminder] Error syncing reminder item: $e');
       }
     }
 
@@ -330,7 +316,10 @@ class MatchReminderService {
   }
 
   tz.TZDateTime? _computeKickoffTime(String? matchDate, String? matchTime) {
-    if (matchDate == null || matchTime == null || matchDate.isEmpty || matchTime.isEmpty) {
+    if (matchDate == null ||
+        matchTime == null ||
+        matchDate.isEmpty ||
+        matchTime.isEmpty) {
       return null;
     }
     try {

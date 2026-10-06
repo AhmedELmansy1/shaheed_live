@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/theme/app_colors.dart';
 import 'providers/onboarding_provider.dart';
 
@@ -13,7 +14,9 @@ class LeagueSelectionScreen extends ConsumerWidget {
     final notifier = ref.read(onboardingProvider.notifier);
 
     // ignore: avoid_print
-    print('[LeagueSelectionScreen] build() - isLoading: ${state.isLoading}, leagues.length: ${state.leagues.length}, selectedLeagueIds.length: ${state.selectedLeagueIds.length}');
+    print(
+      '[LeagueSelectionScreen] build() - isLoading: ${state.isLoading}, leagues.length: ${state.leagues.length}, selectedLeagueIds.length: ${state.selectedLeagueIds.length}',
+    );
 
     final canContinue = state.selectedLeagueIds.isNotEmpty;
 
@@ -26,7 +29,9 @@ class LeagueSelectionScreen extends ConsumerWidget {
       body: SafeArea(
         child: state.isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: AppColors.liveIndicator),
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                ),
               )
             : Column(
                 children: [
@@ -60,19 +65,21 @@ class LeagueSelectionScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.35,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
+                            crossAxisCount: 2,
+                            childAspectRatio: 1.35,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
                       itemCount: state.leagues.length,
                       itemBuilder: (context, index) {
                         final league = state.leagues[index];
-                        final isSelected =
-                            state.selectedLeagueIds.contains(league.id);
+                        final isSelected = state.selectedLeagueIds.contains(
+                          league.id,
+                        );
 
                         return GestureDetector(
-                          onTap: () => notifier.toggleLeagueSelection(league.id),
+                          onTap: () =>
+                              notifier.toggleLeagueSelection(league.id),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             decoration: BoxDecoration(
@@ -82,18 +89,18 @@ class LeagueSelectionScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.liveIndicator
+                                    ? AppColors.primary
                                     : AppColors.cardBorder,
                                 width: isSelected ? 2 : 1,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: AppColors.liveIndicator
+                                        color: AppColors.primary
                                             .withValues(alpha: 0.15),
                                         blurRadius: 8,
                                         spreadRadius: 1,
-                                      )
+                                      ),
                                     ]
                                   : null,
                             ),
@@ -102,8 +109,7 @@ class LeagueSelectionScreen extends ConsumerWidget {
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Container(
                                         width: 44,
@@ -112,11 +118,12 @@ class LeagueSelectionScreen extends ConsumerWidget {
                                           color: AppColors.background,
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                              color: AppColors.divider),
+                                            color: AppColors.divider,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.sports_soccer,
-                                          color: AppColors.liveIndicator,
+                                          color: AppColors.primary,
                                           size: 24,
                                         ),
                                       ),
@@ -152,7 +159,7 @@ class LeagueSelectionScreen extends ConsumerWidget {
                                     child: Container(
                                       padding: const EdgeInsets.all(3),
                                       decoration: const BoxDecoration(
-                                        color: AppColors.liveIndicator,
+                                        color: AppColors.primary,
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -190,9 +197,9 @@ class LeagueSelectionScreen extends ConsumerWidget {
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.liveIndicator,
-                          disabledBackgroundColor:
-                              AppColors.surfaceLight.withValues(alpha: 0.5),
+                          backgroundColor: AppColors.primary,
+                          disabledBackgroundColor: AppColors.surfaceLight
+                              .withValues(alpha: 0.5),
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),

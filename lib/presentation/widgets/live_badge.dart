@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
@@ -10,17 +11,14 @@ class LiveBadge extends StatefulWidget {
   final String? minuteText;
   final bool isLarge;
 
-  const LiveBadge({
-    super.key,
-    this.minuteText,
-    this.isLarge = false,
-  });
+  const LiveBadge({super.key, this.minuteText, this.isLarge = false});
 
   @override
   State<LiveBadge> createState() => _LiveBadgeState();
 }
 
-class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMixin {
+class _LiveBadgeState extends State<LiveBadge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
   late final Animation<double> _scaleAnimation;
   late final Animation<double> _alphaAnimation;
@@ -30,21 +28,73 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: AppMotion.pulse,
+      duration: const Duration(
+        milliseconds: 1600,
+      ), // Slightly longer for the heartbeat rhythm
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.35).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    // Double-beat heartbeat scale sequence
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.9,
+          end: 1.15,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.15,
+          end: 0.9,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.9,
+          end: 1.5,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: ConstantTween<double>(0.9),
+        weight: 51,
+      ), // Rest period
+    ]).animate(_pulseController);
 
-    _alphaAnimation = Tween<double>(begin: 0.8, end: 0.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    // Alpha sequence perfectly timed with scale
+    _alphaAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.6,
+          end: 0.2,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.2,
+          end: 0.6,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.6,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 25,
+      ),
+      TweenSequenceItem(
+        tween: ConstantTween<double>(0.0),
+        weight: 51,
+      ), // Stay transparent during rest
+    ]).animate(_pulseController);
 
     // Only start repeating if not in reduced motion
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !AppMotion.isReducedMotion(context)) {
-        _pulseController.repeat(reverse: true);
+        _pulseController.repeat(); // Loop forward continuously
       }
     });
   }
@@ -101,7 +151,9 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
                         height: dotSize + 6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.live.withValues(alpha: _alphaAnimation.value),
+                          color: AppColors.live.withValues(
+                            alpha: _alphaAnimation.value,
+                          ),
                         ),
                       ),
                     ),

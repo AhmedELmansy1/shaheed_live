@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -11,6 +12,7 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? logoUrl;
   final int? count;
+  final bool isFollowed;
   final VoidCallback? onTap;
 
   const SectionHeader({
@@ -18,13 +20,29 @@ class SectionHeader extends StatelessWidget {
     required this.title,
     this.logoUrl,
     this.count,
+    this.isFollowed = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isLight = AppColors.isLight(context);
+    final surfaceHigh = isLight
+        ? AppColors.lightSurfaceHigh
+        : AppColors.darkSurfaceHigh;
+    final border = isLight ? AppColors.lightBorder : AppColors.darkBorder;
+    final textPrimary = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.darkTextPrimary;
+    final textSecondary = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.darkTextSecondary;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.smRadius,
@@ -35,9 +53,9 @@ class SectionHeader extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceHigh,
+                color: surfaceHigh,
                 borderRadius: AppRadii.xsRadius,
-                border: Border.all(color: AppColors.darkBorder, width: 1),
+                border: Border.all(color: border, width: 1),
               ),
               padding: const EdgeInsets.all(3),
               child: logoUrl != null && logoUrl!.isNotEmpty
@@ -58,28 +76,54 @@ class SectionHeader extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
 
-            // League Title
+            // League Title with optional Followed Star
             Expanded(
-              child: Text(
-                title,
-                style: AppTypography.titleMedium(color: AppColors.darkTextPrimary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: AppTypography.titleMedium(color: textPrimary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isFollowed) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: AppColors.gold,
+                    ),
+                  ],
+                ],
               ),
             ),
 
             // Match count badge
             if (count != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 2,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurfaceHigh,
+                  color: isFollowed
+                      ? AppColors.gold.withValues(alpha: 0.12)
+                      : surfaceHigh,
                   borderRadius: AppRadii.fullRadius,
-                  border: Border.all(color: AppColors.darkBorder),
+                  border: Border.all(
+                    color: isFollowed
+                        ? AppColors.gold.withValues(alpha: 0.4)
+                        : border,
+                  ),
                 ),
                 child: Text(
                   '${DateFormatter.toArabicNumerals('$count')} مباريات',
-                  style: AppTypography.caption(color: AppColors.darkTextSecondary),
+                  style: AppTypography.caption(
+                    color: isFollowed ? AppColors.gold : textSecondary,
+                  ),
                 ),
               ),
           ],

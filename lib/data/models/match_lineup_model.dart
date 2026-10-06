@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Data model for single lineup player node or substitute.
 class LineupPlayer {
   final dynamic id;
@@ -29,7 +31,10 @@ class LineupPlayer {
     return '$number';
   }
 
-  factory LineupPlayer.fromMap(Map<String, dynamic> map, {bool isSubstitute = false}) {
+  factory LineupPlayer.fromMap(
+    Map<String, dynamic> map, {
+    bool isSubstitute = false,
+  }) {
     int parseNum(dynamic val) {
       if (val == null) return 0;
       if (val is num) return val.toInt();
@@ -68,7 +73,37 @@ class LineupPlayer {
     }
 
     String? extractImage() {
-      dynamic img = map['image'] ?? (map['player'] is Map ? map['player']['image'] : null);
+      dynamic img =
+          map['image'] ??
+          map['photo'] ??
+          map['photo_url'] ??
+          map['player_photo'] ??
+          map['player_image'] ??
+          map['img'] ??
+          map['avatar'] ??
+          map['player_avatar'] ??
+          map['pic'] ??
+          map['picture'] ??
+          map['logo'] ??
+          map['person_image'] ??
+          (map['player'] is Map
+              ? (map['player']['image'] ??
+                  map['player']['photo'] ??
+                  map['player']['photo_url'] ??
+                  map['player']['player_photo'] ??
+                  map['player']['player_image'] ??
+                  map['player']['avatar'] ??
+                  map['player']['player_avatar'] ??
+                  map['player']['img'] ??
+                  map['player']['pic'])
+              : null) ??
+          (map['person'] is Map
+              ? (map['person']['image'] ??
+                  map['person']['photo'] ??
+                  map['person']['photo_url'] ??
+                  map['person']['avatar'] ??
+                  map['person']['img'])
+              : null);
       if (img != null) {
         final str = img.toString().trim();
         if (str.isNotEmpty && str != 'null') {
@@ -81,20 +116,38 @@ class LineupPlayer {
       return null;
     }
 
+    final parsedPhoto = extractImage();
+    final playerName = extractName();
+    final playerNum = parseNum(
+      map['shirt_number'] ??
+          map['number'] ??
+          map['shirt_no'] ??
+          map['jersey_number'] ??
+          map['num'] ??
+          (map['player'] is Map ? map['player']['player_number'] : null),
+    );
+
+    if (isSubstitute) {
+      debugPrint(
+        '[LineupPlayer] Substitute: "$playerName" (#$playerNum) photo: $parsedPhoto',
+      );
+    }
+
     return LineupPlayer(
       id: map['player_id'] ?? map['id'] ?? map['person_id'] ?? 0,
-      name: extractName(),
-      number: parseNum(
-        map['shirt_number'] ??
-            map['number'] ??
-            map['shirt_no'] ??
-            map['jersey_number'] ??
-            map['num'] ??
-            (map['player'] is Map ? map['player']['player_number'] : null),
-      ),
-      position: (map['pos'] ?? map['position'] ?? map['pos_short'] ?? map['position_short'] ?? (map['player'] is Map ? map['player']['position'] : null))?.toString(),
-      positionTitle: (map['pos_title'] ?? map['position_name'] ?? map['pos_name'])?.toString(),
-      photoUrl: extractImage(),
+      name: playerName,
+      number: playerNum,
+      position:
+          (map['pos'] ??
+                  map['position'] ??
+                  map['pos_short'] ??
+                  map['position_short'] ??
+                  (map['player'] is Map ? map['player']['position'] : null))
+              ?.toString(),
+      positionTitle:
+          (map['pos_title'] ?? map['position_name'] ?? map['pos_name'])
+              ?.toString(),
+      photoUrl: parsedPhoto,
       isSubstitute: isSubstitute,
     );
   }
@@ -120,13 +173,16 @@ class MatchLineupModel {
   final TeamLineupData homeLineup;
   final TeamLineupData awayLineup;
 
-  const MatchLineupModel({
-    required this.homeLineup,
-    required this.awayLineup,
-  });
+  const MatchLineupModel({required this.homeLineup, required this.awayLineup});
 
-  static MatchLineupModel? fromResponse(dynamic data, dynamic homeTeamId, dynamic awayTeamId) {
-    if (data == null || data is! Map<String, dynamic> || data.isEmpty) return null;
+  static MatchLineupModel? fromResponse(
+    dynamic data,
+    dynamic homeTeamId,
+    dynamic awayTeamId,
+  ) {
+    if (data == null || data is! Map<String, dynamic> || data.isEmpty) {
+      return null;
+    }
 
     // Extract metadata from "0" object if available
     final meta = data['0'] as Map<String, dynamic>?;
@@ -152,8 +208,10 @@ class MatchLineupModel {
     final homeKey = homeTeamId.toString();
     final awayKey = awayTeamId.toString();
 
-    Map<String, dynamic>? homeTeamObj = lineupMap[homeKey] as Map<String, dynamic>?;
-    Map<String, dynamic>? awayTeamObj = lineupMap[awayKey] as Map<String, dynamic>?;
+    Map<String, dynamic>? homeTeamObj =
+        lineupMap[homeKey] as Map<String, dynamic>?;
+    Map<String, dynamic>? awayTeamObj =
+        lineupMap[awayKey] as Map<String, dynamic>?;
 
     // Fallback if keys don't match exactly
     if (homeTeamObj == null && lineupMap.values.isNotEmpty) {
@@ -172,10 +230,22 @@ class MatchLineupModel {
     }
 
     final homeXI = parseList(homeTeamObj?['lineup']);
-    final homeSubs = parseList(homeTeamObj?['substitutions'], isSubstitute: true);
+    final homeSubs = parseList(
+      homeTeamObj?['substitutions'] ??
+          homeTeamObj?['substitutes'] ??
+          homeTeamObj?['subs'] ??
+          homeTeamObj?['bench'],
+      isSubstitute: true,
+    );
 
     final awayXI = parseList(awayTeamObj?['lineup']);
-    final awaySubs = parseList(awayTeamObj?['substitutions'], isSubstitute: true);
+    final awaySubs = parseList(
+      awayTeamObj?['substitutions'] ??
+          awayTeamObj?['substitutes'] ??
+          awayTeamObj?['subs'] ??
+          awayTeamObj?['bench'],
+      isSubstitute: true,
+    );
 
     return MatchLineupModel(
       homeLineup: TeamLineupData(

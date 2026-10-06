@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'remote_config_service.dart';
 
 /// Central Ad Service managing Google Mobile Ads lifecycle, frequency capping,
@@ -30,7 +31,9 @@ class AdService {
           ],
         ),
       );
-      debugPrint('[AdService] AdMob RequestConfiguration initialized with test devices.');
+      debugPrint(
+        '[AdService] AdMob RequestConfiguration initialized with test devices.',
+      );
     } catch (e) {
       debugPrint('[AdService] Failed to set test device configuration: $e');
     }
@@ -55,10 +58,14 @@ class AdService {
       final currentCount = (prefs.getInt('match_detail_open_count') ?? 0) + 1;
       await prefs.setInt('match_detail_open_count', currentCount);
 
-      debugPrint('[AdService] Match open count: $currentCount, Frequency Cap: ${config.frequencyCap}');
+      debugPrint(
+        '[AdService] Match open count: $currentCount, Frequency Cap: ${config.frequencyCap}',
+      );
 
       if (currentCount % config.frequencyCap != 0) {
-        debugPrint('[AdService] Interstitial skipped (frequency cap not reached).');
+        debugPrint(
+          '[AdService] Interstitial skipped (frequency cap not reached).',
+        );
         return;
       }
 
@@ -80,12 +87,16 @@ class AdService {
             ad.show();
           },
           onAdFailedToLoad: (LoadAdError error) {
-            debugPrint('[AdService] Interstitial failed to load (non-fatal): $error');
+            debugPrint(
+              '[AdService] Interstitial failed to load (non-fatal): $error',
+            );
           },
         ),
       );
     } catch (e) {
-      debugPrint('[AdService] Non-fatal error handling match open interstitial: $e');
+      debugPrint(
+        '[AdService] Non-fatal error handling match open interstitial: $e',
+      );
     }
   }
 
@@ -181,9 +192,11 @@ class AdService {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          ad.show(onUserEarnedReward: (_, reward) {
-            onUserEarnedReward(reward);
-          });
+          ad.show(
+            onUserEarnedReward: (_, reward) {
+              onUserEarnedReward(reward);
+            },
+          );
         },
         onAdFailedToLoad: (error) {
           debugPrint('[AdService] Rewarded ad failed to load: $error');

@@ -1,14 +1,7 @@
 import '../../core/utils/date_formatter.dart';
 
 /// Enum representing the normalized lifecycle status of a football match.
-enum MatchStatus {
-  notStarted,
-  live,
-  paused,
-  finished,
-  postponed,
-  cancelled,
-}
+enum MatchStatus { notStarted, live, paused, finished, postponed, cancelled }
 
 /// Championship / League metadata attached to a match.
 class ChampionshipInfo {
@@ -16,11 +9,7 @@ class ChampionshipInfo {
   final String title;
   final String? image;
 
-  const ChampionshipInfo({
-    required this.id,
-    required this.title,
-    this.image,
-  });
+  const ChampionshipInfo({required this.id, required this.title, this.image});
 
   factory ChampionshipInfo.fromMap(Map<String, dynamic> map) {
     return ChampionshipInfo(
@@ -37,11 +26,7 @@ class TeamInfo {
   final String title;
   final String? image;
 
-  const TeamInfo({
-    required this.rowId,
-    required this.title,
-    this.image,
-  });
+  const TeamInfo({required this.rowId, required this.title, this.image});
 
   factory TeamInfo.fromMap(Map<String, dynamic> map) {
     return TeamInfo(
@@ -96,15 +81,20 @@ class MatchModel {
   String? get leagueLogo => championship.image;
   bool get isFinished => status == MatchStatus.finished;
   String get displayDate => matchDate ?? '';
-  String get formattedLocalTime => DateFormatter.formatMatchTime(matchDate, matchTime);
-  DateTime? get kickoffDateTime => DateFormatter.parseCairoMatchDateTime(matchDate, matchTime);
+  String get formattedLocalTime =>
+      DateFormatter.formatMatchTime(matchDate, matchTime);
+  DateTime? get kickoffDateTime =>
+      DateFormatter.parseCairoMatchDateTime(matchDate, matchTime);
 
   /// Returns the formatted live minute or status (e.g. "٤٥'", "٩٠+٤'", "استراحة"), or null if not live.
   String? get currentMinute {
     if (!isLive) return null;
     if (adminTitle == null || adminTitle!.trim().isEmpty) return null;
     final trimmed = adminTitle!.trim();
-    if (trimmed == 'لم تبدأ' || trimmed == 'انتهت' || trimmed == 'تأجلت' || trimmed == 'ملغاة') {
+    if (trimmed == 'لم تبدأ' ||
+        trimmed == 'انتهت' ||
+        trimmed == 'تأجلت' ||
+        trimmed == 'ملغاة') {
       return null;
     }
     return DateFormatter.toArabicNumerals(trimmed);
@@ -159,7 +149,8 @@ class MatchModel {
       if (adminBadgeStr == 'soon' ||
           forcedStatusStr == 'soon' ||
           adminTitleStr == 'لم تبدأ' ||
-          eventStatusStr == 'not_ended' && (adminBadgeStr == 'soon' || forcedStatusStr == 'soon')) {
+          eventStatusStr == 'not_ended' &&
+              (adminBadgeStr == 'soon' || forcedStatusStr == 'soon')) {
         return MatchStatus.notStarted;
       }
 
@@ -167,7 +158,10 @@ class MatchModel {
       if (adminBadgeStr == 'live' ||
           eventStatusStr == 'live' ||
           forcedStatusStr == 'live' ||
-          (liveFlag && adminBadgeStr != 'soon' && forcedStatusStr != 'soon' && adminTitleStr != 'لم تبدأ')) {
+          (liveFlag &&
+              adminBadgeStr != 'soon' &&
+              forcedStatusStr != 'soon' &&
+              adminTitleStr != 'لم تبدأ')) {
         return MatchStatus.live;
       }
 
@@ -175,7 +169,9 @@ class MatchModel {
     }
 
     final computedStatus = parseStatus();
-    final isActuallyLive = computedStatus == MatchStatus.live || computedStatus == MatchStatus.paused;
+    final isActuallyLive =
+        computedStatus == MatchStatus.live ||
+        computedStatus == MatchStatus.paused;
 
     String? parseScore(dynamic val) {
       if (val == null) return null;

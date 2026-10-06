@@ -63,7 +63,11 @@ class MatchStatisticsModel {
     required this.awayStats,
   });
 
-  static MatchStatisticsModel? fromResponse(dynamic data, dynamic homeTeamId, dynamic awayTeamId) {
+  static MatchStatisticsModel? fromResponse(
+    dynamic data,
+    dynamic homeTeamId,
+    dynamic awayTeamId,
+  ) {
     if (data == null || data is! Map<String, dynamic>) return null;
 
     final staticsMap = data['statics'];
@@ -72,10 +76,12 @@ class MatchStatisticsModel {
     final homeKey = homeTeamId.toString();
     final awayKey = awayTeamId.toString();
 
-    final homeMap = staticsMap[homeKey] as Map<String, dynamic>? ??
+    final homeMap =
+        staticsMap[homeKey] as Map<String, dynamic>? ??
         staticsMap.values.firstOrNull as Map<String, dynamic>?;
 
-    final awayMap = staticsMap[awayKey] as Map<String, dynamic>? ??
+    final awayMap =
+        staticsMap[awayKey] as Map<String, dynamic>? ??
         staticsMap.values.lastOrNull as Map<String, dynamic>?;
 
     if (homeMap == null || awayMap == null) return null;

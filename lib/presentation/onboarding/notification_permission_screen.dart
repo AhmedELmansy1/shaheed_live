@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import '../../core/services/fcm_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -123,7 +124,7 @@ class _NotificationPermissionScreenState
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.liveIndicator,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.black,
               ),
               child: const Text('تحقق مرة أخرى'),
@@ -153,14 +154,14 @@ class _NotificationPermissionScreenState
                   color: AppColors.surface,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.liveIndicator.withValues(alpha: 0.5),
+                    color: AppColors.primary.withValues(alpha: 0.5),
                     width: 2,
                   ),
                 ),
                 child: const Icon(
                   Icons.notifications_active_rounded,
                   size: 48,
-                  color: AppColors.liveIndicator,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 32),
@@ -188,10 +189,11 @@ class _NotificationPermissionScreenState
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed:
-                      _isProcessing ? null : _requestNotificationPermission,
+                  onPressed: _isProcessing
+                      ? null
+                      : _requestNotificationPermission,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.liveIndicator,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

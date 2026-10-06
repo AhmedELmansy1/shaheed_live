@@ -21,7 +21,9 @@ class ForceUpdateScreen extends ConsumerWidget {
     if (url.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('رابط التحديث غير متوفر حالياً، يرجى مراجعة متجر التطبيقات'),
+          content: Text(
+            'رابط التحديث غير متوفر حالياً، يرجى مراجعة متجر التطبيقات',
+          ),
           backgroundColor: AppColors.live,
         ),
       );
@@ -30,7 +32,10 @@ class ForceUpdateScreen extends ConsumerWidget {
 
     try {
       final uri = Uri.parse(url);
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -54,15 +59,23 @@ class ForceUpdateScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final updateInfo = ref.watch(appUpdateInfoProvider);
+    final bg = AppColors.backgroundOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final divider = AppColors.dividerOf(context);
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {},
       child: Scaffold(
-        backgroundColor: AppColors.darkBackground,
+        backgroundColor: bg,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.xxl,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,7 +124,7 @@ class ForceUpdateScreen extends ConsumerWidget {
                   'تحديث مهم متوفر للتطبيق',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.cairo(
-                    color: AppColors.darkTextPrimary,
+                    color: textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
@@ -122,13 +135,18 @@ class ForceUpdateScreen extends ConsumerWidget {
                 Text(
                   'تم إطلاق إصدار جديد من "شوت لايف" يتضمن تحسينات وميزات مهمة. يرجى التحديث للمتابعة والاستمتاع بجميع خدمات التطبيق.',
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium(color: AppColors.darkTextSecondary),
+                  style: AppTypography.bodyMedium(
+                    color: textSecondary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Version comparison badge
                 AppCard(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
                   margin: EdgeInsets.zero,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -137,11 +155,15 @@ class ForceUpdateScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'الإصدار الحالي',
-                            style: AppTypography.caption(color: AppColors.darkTextMuted),
+                            style: AppTypography.caption(
+                              color: textMuted,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            DateFormatter.toArabicNumerals('v${updateInfo.currentVersion}'),
+                            DateFormatter.toArabicNumerals(
+                              'v${updateInfo.currentVersion}',
+                            ),
                             style: const TextStyle(
                               color: AppColors.live,
                               fontSize: 14,
@@ -151,16 +173,24 @@ class ForceUpdateScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      Container(width: 1, height: 32, color: AppColors.darkDivider),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: divider,
+                      ),
                       Column(
                         children: [
                           Text(
                             'الإصدار المطلوب',
-                            style: AppTypography.caption(color: AppColors.darkTextMuted),
+                            style: AppTypography.caption(
+                              color: textMuted,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            DateFormatter.toArabicNumerals('v${updateInfo.latestVersion}'),
+                            DateFormatter.toArabicNumerals(
+                              'v${updateInfo.latestVersion}',
+                            ),
                             style: const TextStyle(
                               color: AppColors.primary,
                               fontSize: 14,
@@ -180,7 +210,8 @@ class ForceUpdateScreen extends ConsumerWidget {
                 AppButton(
                   label: 'تحديث الآن',
                   icon: Icons.download_rounded,
-                  onPressed: () => _launchUpdateUrl(context, updateInfo.updateDownloadUrl),
+                  onPressed: () =>
+                      _launchUpdateUrl(context, updateInfo.updateDownloadUrl),
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],

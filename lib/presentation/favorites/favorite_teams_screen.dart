@@ -16,7 +16,8 @@ class FavoriteTeamsScreen extends ConsumerStatefulWidget {
   const FavoriteTeamsScreen({super.key});
 
   @override
-  ConsumerState<FavoriteTeamsScreen> createState() => _FavoriteTeamsScreenState();
+  ConsumerState<FavoriteTeamsScreen> createState() =>
+      _FavoriteTeamsScreenState();
 }
 
 class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
@@ -36,10 +37,24 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
     final allTeamsAsync = ref.watch(allTeamsProvider);
     final selectedIds = onboardingState.selectedTeamIds.toSet();
 
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final surfaceHigh = AppColors.surfaceHighOf(context);
+    final border = AppColors.borderOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('إدارة الفرق المفضلة'),
+        backgroundColor: surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'إدارة الفرق المفضلة',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -54,14 +69,20 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                   _searchQuery = val.trim().toLowerCase();
                 });
               },
-              style: AppTypography.bodyMedium(color: AppColors.darkTextPrimary),
+              style: AppTypography.bodyMedium(color: textPrimary),
               decoration: InputDecoration(
                 hintText: 'ابحث عن فريقك المفضل...',
-                hintStyle: AppTypography.bodyMedium(color: AppColors.darkTextMuted),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.darkTextSecondary),
+                hintStyle: AppTypography.bodyMedium(color: textMuted),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: textSecondary,
+                ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: AppColors.darkTextSecondary),
+                        icon: Icon(
+                          Icons.clear_rounded,
+                          color: textSecondary,
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
@@ -71,22 +92,25 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.darkSurface,
+                fillColor: surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.sm,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: BorderSide(color: border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: BorderSide(color: border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -94,13 +118,16 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
 
           // Selected Count Badge
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 4.0,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'الفرق المختارة (${DateFormatter.toArabicNumerals('${selectedIds.length}')})',
-                  style: AppTypography.bodySmall(color: AppColors.darkTextSecondary),
+                  style: AppTypography.bodySmall(color: textSecondary),
                 ),
                 if (selectedIds.isNotEmpty)
                   Text(
@@ -151,7 +178,8 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                     120,
                   ),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.xs),
                   itemBuilder: (context, index) {
                     final team = filtered[index];
                     final isSelected = selectedIds.contains(team.id);
@@ -179,7 +207,7 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.gold.withValues(alpha: 0.18)
-                                  : AppColors.darkSurfaceHigh,
+                                  : surfaceHigh,
                               shape: BoxShape.circle,
                               boxShadow: isSelected
                                   ? [
@@ -197,7 +225,7 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                                   : Icons.star_border_rounded,
                               color: isSelected
                                   ? AppColors.gold
-                                  : AppColors.darkTextMuted,
+                                  : textMuted,
                               size: 22,
                             ),
                           ),
@@ -210,15 +238,15 @@ class _FavoriteTeamsScreenState extends ConsumerState<FavoriteTeamsScreen> {
                                   team.name,
                                   style: AppTypography.titleSmall(
                                     color: isSelected
-                                        ? AppColors.darkTextPrimary
-                                        : AppColors.darkTextSecondary,
+                                        ? textPrimary
+                                        : textSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   team.nameEn,
                                   style: AppTypography.caption(
-                                    color: AppColors.darkTextMuted,
+                                    color: textMuted,
                                   ),
                                 ),
                               ],

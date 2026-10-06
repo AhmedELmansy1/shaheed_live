@@ -35,7 +35,7 @@ class SoftUpdateBanner extends ConsumerWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.liveIndicator.withValues(alpha: 0.4),
+          color: AppColors.primary.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -44,13 +44,13 @@ class SoftUpdateBanner extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.liveIndicator.withValues(alpha: 0.15),
+              color: AppColors.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.new_releases_outlined,
               size: 18,
-              color: AppColors.liveIndicator,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 10),
@@ -81,12 +81,13 @@ class SoftUpdateBanner extends ConsumerWidget {
 
           // Update action button
           InkWell(
-            onTap: () => _launchUpdateUrl(context, updateInfo.updateDownloadUrl),
+            onTap: () =>
+                _launchUpdateUrl(context, updateInfo.updateDownloadUrl),
             borderRadius: BorderRadius.circular(8),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.liveIndicator,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -109,11 +110,7 @@ class SoftUpdateBanner extends ConsumerWidget {
             borderRadius: BorderRadius.circular(12),
             child: const Padding(
               padding: EdgeInsets.all(4.0),
-              child: Icon(
-                Icons.close,
-                size: 16,
-                color: AppColors.textMuted,
-              ),
+              child: Icon(Icons.close, size: 16, color: AppColors.textMuted),
             ),
           ),
         ],

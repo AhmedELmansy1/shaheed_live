@@ -14,8 +14,20 @@ class AppSpacing {
   static const double massive = 64.0;
 
   // Standard EdgeInsets Insets
-  static const EdgeInsets screenPadding = EdgeInsets.symmetric(horizontal: lg, vertical: md);
-  static const EdgeInsets cardPadding = EdgeInsets.symmetric(horizontal: lg, vertical: md);
-  static const EdgeInsets compactPadding = EdgeInsets.symmetric(horizontal: sm, vertical: xs);
-  static const EdgeInsets chipPadding = EdgeInsets.symmetric(horizontal: 14, vertical: 8);
+  static const EdgeInsets screenPadding = EdgeInsets.symmetric(
+    horizontal: lg,
+    vertical: md,
+  );
+  static const EdgeInsets cardPadding = EdgeInsets.symmetric(
+    horizontal: lg,
+    vertical: md,
+  );
+  static const EdgeInsets compactPadding = EdgeInsets.symmetric(
+    horizontal: sm,
+    vertical: xs,
+  );
+  static const EdgeInsets chipPadding = EdgeInsets.symmetric(
+    horizontal: 14,
+    vertical: 8,
+  );
 }

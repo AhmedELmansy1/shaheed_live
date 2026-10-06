@@ -125,7 +125,7 @@ void main() {
     );
   }
 
-  group('Match Reminder Two-Tier & Confirmation Tests', () {
+  group('Match Reminder Service Tests (Server-Driven FCM & Confirmation)', () {
     test('FEATURE 1: Enabling a reminder fires an immediate confirmation notification in system tray', () async {
       final service = container.read(matchReminderServiceProvider);
 
@@ -151,58 +151,7 @@ void main() {
       expect(container.read(isReminderSetProvider(1001)), isTrue);
     });
 
-    test('FEATURE 2: Match far in the future schedules BOTH 1-hour and 15-min tiers with distinct IDs', () async {
-      final service = container.read(matchReminderServiceProvider);
-
-      // Match 5 hours from now
-      final cairoLocation = tz.getLocation('Africa/Cairo');
-      final futureCairoTime = tz.TZDateTime.now(cairoLocation).add(const Duration(hours: 5));
-      final dateStr = '${futureCairoTime.year}-${futureCairoTime.month.toString().padLeft(2, '0')}-${futureCairoTime.day.toString().padLeft(2, '0')}';
-      final timeStr = '${futureCairoTime.hour.toString().padLeft(2, '0')}:${futureCairoTime.minute.toString().padLeft(2, '0')}:00';
-
-      final match = createMatch(matchId: 2002, matchDate: dateStr, matchTime: timeStr);
-
-      await service.toggleReminder(match);
-
-      // Verify 2 scheduled notifications
-      expect(mockNotificationService.scheduledNotifications.length, 2);
-
-      final tier1 = mockNotificationService.scheduledNotifications.firstWhere(
-        (n) => n['id'] == MatchReminderService.getReminder1HrId(2002),
-      );
-      expect(tier1['id'], 20021);
-      expect(tier1['title'], '⏳ باقي ساعة على الماتش');
-      expect(tier1['body'], contains('الأهلي × الزمالك تبدأ بعد ساعة'));
-
-      final tier2 = mockNotificationService.scheduledNotifications.firstWhere(
-        (n) => n['id'] == MatchReminderService.getReminder15MinId(2002),
-      );
-      expect(tier2['id'], 20022);
-      expect(tier2['title'], '⏰ الماتش بعد ١٥ دقيقة');
-      expect(tier2['body'], contains('الدوري المصري الممتاز'));
-    });
-
-    test('FEATURE 2: Match starting in 30 minutes skips 1-hour tier but schedules 15-min tier', () async {
-      final service = container.read(matchReminderServiceProvider);
-
-      // Match 30 minutes from now (Cairo time)
-      final cairoLocation = tz.getLocation('Africa/Cairo');
-      final futureCairoTime = tz.TZDateTime.now(cairoLocation).add(const Duration(minutes: 30));
-      final dateStr = '${futureCairoTime.year}-${futureCairoTime.month.toString().padLeft(2, '0')}-${futureCairoTime.day.toString().padLeft(2, '0')}';
-      final timeStr = '${futureCairoTime.hour.toString().padLeft(2, '0')}:${futureCairoTime.minute.toString().padLeft(2, '0')}:00';
-
-      final match = createMatch(matchId: 3003, matchDate: dateStr, matchTime: timeStr);
-
-      await service.toggleReminder(match);
-
-      // 1-hour is in the past, so only 15-min should be scheduled
-      expect(mockNotificationService.scheduledNotifications.length, 1);
-      final scheduled = mockNotificationService.scheduledNotifications.first;
-      expect(scheduled['id'], MatchReminderService.getReminder15MinId(3003));
-      expect(scheduled['title'], '⏰ الماتش بعد ١٥ دقيقة');
-    });
-
-    test('FEATURE 2: Disabling a reminder cancels all tiers and IDs for that match', () async {
+    test('FEATURE 2: Disabling a reminder cancels confirmation and removes from storage', () async {
       final service = container.read(matchReminderServiceProvider);
 
       final cairoLocation = tz.getLocation('Africa/Cairo');
@@ -215,45 +164,56 @@ void main() {
       // Toggle ON
       await service.toggleReminder(match);
       expect(container.read(isReminderSetProvider(4004)), isTrue);
-      expect(mockNotificationService.scheduledNotifications.length, 2);
 
       // Toggle OFF
       await service.toggleReminder(match);
       expect(container.read(isReminderSetProvider(4004)), isFalse);
 
-      // Verify cancellation of both IDs
+      // Verify cancellation of IDs
+      expect(mockNotificationService.cancelledNotificationIds, contains(MatchReminderService.getConfirmationNotificationId(4004)));
       expect(mockNotificationService.cancelledNotificationIds, contains(MatchReminderService.getReminder1HrId(4004)));
       expect(mockNotificationService.cancelledNotificationIds, contains(MatchReminderService.getReminder15MinId(4004)));
-      expect(mockNotificationService.cancelledNotificationIds, contains(MatchReminderService.getConfirmationNotificationId(4004)));
-      expect(mockNotificationService.scheduledNotifications.isEmpty, isTrue);
     });
 
-    test('Startup Rescheduling: Evaluates both 1-hour and 15-min tiers for active reminders', () async {
+    test('Startup Rescheduling: Cleans up concluded matches and retains upcoming matches', () async {
       final cairoLocation = tz.getLocation('Africa/Cairo');
       final futureCairoTime = tz.TZDateTime.now(cairoLocation).add(const Duration(hours: 2));
-      final dateStr = '${futureCairoTime.year}-${futureCairoTime.month.toString().padLeft(2, '0')}-${futureCairoTime.day.toString().padLeft(2, '0')}';
-      final timeStr = '${futureCairoTime.hour.toString().padLeft(2, '0')}:${futureCairoTime.minute.toString().padLeft(2, '0')}:00';
+      final pastCairoTime = tz.TZDateTime.now(cairoLocation).subtract(const Duration(hours: 5));
+
+      final futureDate = '${futureCairoTime.year}-${futureCairoTime.month.toString().padLeft(2, '0')}-${futureCairoTime.day.toString().padLeft(2, '0')}';
+      final futureTime = '${futureCairoTime.hour.toString().padLeft(2, '0')}:${futureCairoTime.minute.toString().padLeft(2, '0')}:00';
+
+      final pastDate = '${pastCairoTime.year}-${pastCairoTime.month.toString().padLeft(2, '0')}-${pastCairoTime.day.toString().padLeft(2, '0')}';
+      final pastTime = '${pastCairoTime.hour.toString().padLeft(2, '0')}:${pastCairoTime.minute.toString().padLeft(2, '0')}:00';
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList('match_reminders', [
         jsonEncode({
           'matchId': 5005,
-          'matchDate': dateStr,
-          'matchTime': timeStr,
+          'matchDate': futureDate,
+          'matchTime': futureTime,
           'homeName': 'الأهلي',
           'awayName': 'الزمالك',
           'competition': 'الدوري المصري',
+        }),
+        jsonEncode({
+          'matchId': 6006,
+          'matchDate': pastDate,
+          'matchTime': pastTime,
+          'homeName': 'ليفربول',
+          'awayName': 'مانشستر سيتي',
+          'competition': 'الدوري الإنجليزي',
         }),
       ]);
 
       final service = container.read(matchReminderServiceProvider);
       await service.rescheduleAllReminders();
 
-      // Should have rescheduled both tiers
-      expect(mockNotificationService.scheduledNotifications.length, 2);
-      final ids = mockNotificationService.scheduledNotifications.map((n) => n['id']).toList();
-      expect(ids, contains(50051));
-      expect(ids, contains(50052));
+      // Only the upcoming match (5005) should be retained
+      final updated = prefs.getStringList('match_reminders') ?? [];
+      expect(updated.length, 1);
+      final retainedData = jsonDecode(updated.first);
+      expect(retainedData['matchId'], 5005);
     });
   });
 }

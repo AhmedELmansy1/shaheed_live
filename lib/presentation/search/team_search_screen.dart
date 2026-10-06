@@ -44,10 +44,25 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
     final allTeamsState = ref.watch(allTeamsProvider);
     final filteredTeams = ref.watch(filteredTeamsProvider);
 
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final surfaceHigh = AppColors.surfaceHighOf(context);
+    final border = AppColors.borderOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('البحث عن فريق'),
+        backgroundColor: surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'البحث عن فريق',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: IconThemeData(color: textPrimary),
         centerTitle: true,
       ),
       body: Column(
@@ -56,17 +71,17 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: TextField(
               controller: _searchController,
-              style: AppTypography.bodyMedium(color: AppColors.darkTextPrimary),
+              style: AppTypography.bodyMedium(color: textPrimary),
               onChanged: (value) {
                 ref.read(searchQueryProvider.notifier).setQuery(value);
               },
               decoration: InputDecoration(
                 hintText: 'ابحث عن فريقك...',
-                hintStyle: AppTypography.bodyMedium(color: AppColors.darkTextMuted),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.darkTextMuted),
+                hintStyle: AppTypography.bodyMedium(color: textMuted),
+                prefixIcon: Icon(Icons.search_rounded, color: textMuted),
                 suffixIcon: query.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: AppColors.darkTextMuted),
+                        icon: Icon(Icons.clear_rounded, color: textMuted),
                         onPressed: () {
                           _searchController.clear();
                           ref.read(searchQueryProvider.notifier).clear();
@@ -74,22 +89,25 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.darkSurface,
+                fillColor: surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.sm,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: BorderSide(color: border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: BorderSide(color: border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -112,7 +130,8 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                     child: AppEmptyState(
                       type: EmptyStateType.soccer,
                       title: 'اكتب اسم الفريق للبحث',
-                      subtitle: 'ابحث في قائمة أندية الدوريات العربية والعالمية',
+                      subtitle:
+                          'ابحث في قائمة أندية الدوريات العربية والعالمية',
                     ),
                   );
                 }
@@ -135,7 +154,8 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                     120,
                   ),
                   itemCount: filteredTeams.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.xs),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: AppSpacing.xs),
                   itemBuilder: (context, index) {
                     final team = filteredTeams[index];
                     return AppCard(
@@ -174,13 +194,15 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                               children: [
                                 Text(
                                   team.name,
-                                  style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                                  style: AppTypography.titleSmall(
+                                    color: textPrimary,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   team.nameEn,
                                   style: AppTypography.caption(
-                                    color: AppColors.darkTextMuted,
+                                    color: textMuted,
                                   ),
                                 ),
                               ],
@@ -192,16 +214,16 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.darkSurfaceHigh,
-                              borderRadius: BorderRadius.circular(AppRadii.full),
-                              border: Border.all(
-                                color: AppColors.darkBorder,
+                              color: surfaceHigh,
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.full,
                               ),
+                              border: Border.all(color: border),
                             ),
                             child: Text(
                               team.leagueId,
                               style: AppTypography.caption(
-                                color: AppColors.darkTextSecondary,
+                                color: textSecondary,
                               ),
                             ),
                           ),

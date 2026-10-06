@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'app_colors.dart';
 
 /// Design Token Typography scale for Shoot Live.
@@ -7,7 +8,10 @@ import 'app_colors.dart';
 /// Tabular figures for scores and minutes.
 class AppTypography {
   // Display Styles (Scores, Large Hero numbers: 28-32sp/800)
-  static TextStyle displayScore({Color color = AppColors.darkTextPrimary, double size = 30}) {
+  static TextStyle displayScore({
+    Color color = AppColors.darkTextPrimary,
+    double size = 30,
+  }) {
     return GoogleFonts.cairo(
       fontSize: size,
       fontWeight: FontWeight.w800,

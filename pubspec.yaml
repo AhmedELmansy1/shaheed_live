@@ -62,6 +62,7 @@ dependencies:
   hive: ^2.2.3
   home_widget: ^0.8.0
   connectivity_plus: ^6.1.4
+  device_info_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

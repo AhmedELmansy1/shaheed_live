@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../data/models/league_model.dart';
 import 'providers/onboarding_provider.dart';
@@ -86,14 +87,16 @@ class TeamSelectionScreen extends ConsumerWidget {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 12.0, horizontal: 4.0),
+                                vertical: 12.0,
+                                horizontal: 4.0,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 4,
                                     height: 18,
                                     decoration: BoxDecoration(
-                                      color: AppColors.liveIndicator,
+                                      color: AppColors.primary,
                                       borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
@@ -114,16 +117,16 @@ class TeamSelectionScreen extends ConsumerWidget {
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 1.4,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                              ),
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 1.4,
+                                    crossAxisSpacing: 10,
+                                    mainAxisSpacing: 10,
+                                  ),
                               itemCount: teams.length,
                               itemBuilder: (context, teamIdx) {
                                 final team = teams[teamIdx];
-                                final isSelected =
-                                    state.selectedTeamIds.contains(team.id);
+                                final isSelected = state.selectedTeamIds
+                                    .contains(team.id);
 
                                 return GestureDetector(
                                   onTap: () =>
@@ -137,7 +140,7 @@ class TeamSelectionScreen extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(14),
                                       border: Border.all(
                                         color: isSelected
-                                            ? AppColors.liveIndicator
+                                            ? AppColors.primary
                                             : AppColors.cardBorder,
                                         width: isSelected ? 2 : 1,
                                       ),
@@ -157,7 +160,8 @@ class TeamSelectionScreen extends ConsumerWidget {
                                                   color: AppColors.background,
                                                   shape: BoxShape.circle,
                                                   border: Border.all(
-                                                      color: AppColors.divider),
+                                                    color: AppColors.divider,
+                                                  ),
                                                 ),
                                                 child: const Icon(
                                                   Icons.shield,
@@ -189,7 +193,7 @@ class TeamSelectionScreen extends ConsumerWidget {
                                             child: Container(
                                               padding: const EdgeInsets.all(2),
                                               decoration: const BoxDecoration(
-                                                color: AppColors.liveIndicator,
+                                                color: AppColors.primary,
                                                 shape: BoxShape.circle,
                                               ),
                                               child: const Icon(
@@ -232,9 +236,10 @@ class TeamSelectionScreen extends ConsumerWidget {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.liveIndicator,
-                    disabledBackgroundColor:
-                        AppColors.surfaceLight.withValues(alpha: 0.5),
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.surfaceLight.withValues(
+                      alpha: 0.5,
+                    ),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

@@ -7,9 +7,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
-        child: Text('شاشة الترحيب والتهيئة (قيد التطوير)'),
-      ),
+      body: Center(child: Text('شاشة الترحيب والتهيئة (قيد التطوير)')),
     );
   }
 }

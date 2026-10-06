@@ -32,7 +32,10 @@ class DateFormatter {
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in `Africa/Cairo` timezone using IANA data,
   /// converts to the device's local timezone, and formats as Arabic time string (e.g., "٧:٣٠ م").
   static String formatMatchTime(String? rawDate, String? rawTime) {
-    if (rawDate == null || rawDate.isEmpty || rawTime == null || rawTime.isEmpty) {
+    if (rawDate == null ||
+        rawDate.isEmpty ||
+        rawTime == null ||
+        rawTime.isEmpty) {
       return '----';
     }
 
@@ -72,7 +75,10 @@ class DateFormatter {
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in `Africa/Cairo` timezone using IANA data,
   /// and returns the resolved local device [DateTime].
   static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime) {
-    if (rawDate == null || rawDate.isEmpty || rawTime == null || rawTime.isEmpty) {
+    if (rawDate == null ||
+        rawDate.isEmpty ||
+        rawTime == null ||
+        rawTime.isEmpty) {
       return null;
     }
 

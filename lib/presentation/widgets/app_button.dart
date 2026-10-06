@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
@@ -30,14 +31,18 @@ class AppButton extends StatefulWidget {
   State<AppButton> createState() => _AppButtonState();
 }
 
-class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMixin {
+class _AppButtonState extends State<AppButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _pressController;
   late final Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _pressController = AnimationController(vsync: this, duration: AppMotion.fast);
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppMotion.fast,
+    );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _pressController, curve: AppMotion.easeOutCubic),
     );
@@ -112,7 +117,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
-      builder: (context, child) => Transform.scale(scale: _scaleAnimation.value, child: child),
+      builder: (context, child) =>
+          Transform.scale(scale: _scaleAnimation.value, child: child),
       child: Container(
         width: widget.width,
         decoration: BoxDecoration(
@@ -132,7 +138,10 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -151,12 +160,18 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                       Icon(widget.icon, size: 18, color: fg),
                       const SizedBox(width: AppSpacing.sm),
                     ],
-                    Text(
-                      widget.label,
-                      style: TextStyle(
-                        color: fg,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: fg,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],

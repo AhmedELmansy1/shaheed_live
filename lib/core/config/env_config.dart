@@ -10,7 +10,8 @@ class EnvConfig {
 
   static String get baseApiUrl {
     if (dotenv.isInitialized) {
-      return dotenv.env['BASE_API_URL'] ?? 'https://matches-api.edwardmitrovic.workers.dev/';
+      return dotenv.env['BASE_API_URL'] ??
+          'https://matches-api.edwardmitrovic.workers.dev/';
     }
     return 'https://matches-api.edwardmitrovic.workers.dev/';
   }

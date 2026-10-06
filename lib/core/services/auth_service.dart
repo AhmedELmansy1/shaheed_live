@@ -42,11 +42,15 @@ class AuthService {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser != null) {
-        debugPrint('[AuthService] Already authenticated: uid=${currentUser.uid}');
+        debugPrint(
+          '[AuthService] Already authenticated: uid=${currentUser.uid}',
+        );
         return currentUser.uid;
       }
 
-      debugPrint('[AuthService] No existing session — signing in anonymously...');
+      debugPrint(
+        '[AuthService] No existing session — signing in anonymously...',
+      );
       final credential = await _auth.signInAnonymously();
       final uid = credential.user?.uid;
       debugPrint('[AuthService] Anonymous sign-in successful: uid=$uid');

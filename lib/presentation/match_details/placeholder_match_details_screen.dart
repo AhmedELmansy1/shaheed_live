@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/theme/app_colors.dart';
 
 /// Placeholder screen for match details route `/match/:id`.
@@ -26,7 +27,7 @@ class PlaceholderMatchDetailsScreen extends StatelessWidget {
             const Icon(
               Icons.sports_soccer_rounded,
               size: 64,
-              color: AppColors.liveIndicator,
+              color: AppColors.primary,
             ),
             const SizedBox(height: 16),
             Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/theme/app_colors.dart';
 
 /// Reusable application logo for Shoot Live (شوت لايف).
@@ -27,8 +28,9 @@ class AppLogo extends StatelessWidget {
 
     final typography = Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment:
-          isHorizontal ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: isHorizontal
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         Text(
           'شوت لايف',
@@ -48,7 +50,7 @@ class AppLogo extends StatelessWidget {
                 width: 6,
                 height: 6,
                 decoration: const BoxDecoration(
-                  color: AppColors.liveIndicator,
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -59,7 +61,7 @@ class AppLogo extends StatelessWidget {
                   fontSize: size * 0.13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 2.0,
-                  color: AppColors.liveIndicator,
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -96,9 +98,9 @@ class _AppLogoPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // 1. Live signal pulse outer halo
+    // 1. Live signal pulse outer halo in Royal Gold
     final haloPaint = Paint()
-      ..color = AppColors.liveIndicator.withValues(alpha: 0.20)
+      ..color = AppColors.primary.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.035;
     canvas.drawCircle(center, radius * 0.95, haloPaint);
@@ -106,19 +108,16 @@ class _AppLogoPainter extends CustomPainter {
     // 2. Main ball background sphere with subtle gradient
     final ballPaint = Paint()
       ..shader = RadialGradient(
-        colors: [
-          AppColors.surfaceLight,
-          AppColors.surface,
-        ],
+        colors: [AppColors.surfaceLight, AppColors.surface],
         center: const Alignment(-0.2, -0.2),
         radius: 0.8,
       ).createShader(Rect.fromCircle(center: center, radius: radius * 0.82))
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius * 0.82, ballPaint);
 
-    // 3. Football live accent border
+    // 3. Football live accent border in Royal Gold
     final borderPaint = Paint()
-      ..color = AppColors.liveIndicator
+      ..color = AppColors.primary
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.05;
     canvas.drawCircle(center, radius * 0.82, borderPaint);
@@ -132,28 +131,34 @@ class _AppLogoPainter extends CustomPainter {
     // Subtle football curved seams
     final seamRadius = radius * 0.82;
     canvas.drawArc(
-      Rect.fromCircle(center: Offset(center.dx - seamRadius * 0.7, center.dy), radius: seamRadius * 0.7),
+      Rect.fromCircle(
+        center: Offset(center.dx - seamRadius * 0.7, center.dy),
+        radius: seamRadius * 0.7,
+      ),
       -0.8,
       1.6,
       false,
       seamPaint,
     );
     canvas.drawArc(
-      Rect.fromCircle(center: Offset(center.dx + seamRadius * 0.7, center.dy), radius: seamRadius * 0.7),
+      Rect.fromCircle(
+        center: Offset(center.dx + seamRadius * 0.7, center.dy),
+        radius: seamRadius * 0.7,
+      ),
       2.34,
       1.6,
       false,
       seamPaint,
     );
 
-    // 5. Central live indicator core
+    // 5. Central live indicator core in Live Red
     final coreGlowPaint = Paint()
-      ..color = AppColors.liveIndicator.withValues(alpha: 0.35)
+      ..color = AppColors.live.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius * 0.42, coreGlowPaint);
 
     final corePaint = Paint()
-      ..color = AppColors.liveIndicator
+      ..color = AppColors.live
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius * 0.28, corePaint);
 

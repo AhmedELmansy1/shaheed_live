@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/localization/app_strings.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/user_sync_service.dart';
@@ -16,9 +17,13 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/utils/date_formatter.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../widgets/app_card.dart';
+import '../widgets/battery_guidance_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  /// Controls visibility of the About Developer entry card in settings.
+  static const bool _showAboutDeveloper = false;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,15 +31,37 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final onboardingState = ref.watch(onboardingProvider);
     final favoriteCount = onboardingState.selectedTeamIds.length;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+
+    final textPrimary = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.darkTextPrimary;
+    final textSecondary = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.darkTextSecondary;
+    final textMuted = isLight
+        ? AppColors.lightTextMuted
+        : AppColors.darkTextMuted;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('إعدادات التطبيق'),
+        title: Text(
+          'إعدادات التطبيق',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          120,
+        ),
         children: [
           // 1. Theme / Appearance Section
           AppCard(
@@ -61,7 +88,7 @@ class SettingsScreen extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.sm),
                     Text(
                       'المظهر العام',
-                      style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                      style: AppTypography.titleSmall(color: textPrimary),
                     ),
                   ],
                 ),
@@ -75,6 +102,7 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.dark_mode_rounded,
                       mode: ThemeMode.dark,
                       isSelected: themeMode == ThemeMode.dark,
+                      isLight: isLight,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     _buildThemeOption(
@@ -84,6 +112,7 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.light_mode_rounded,
                       mode: ThemeMode.light,
                       isSelected: themeMode == ThemeMode.light,
+                      isLight: isLight,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     _buildThemeOption(
@@ -93,6 +122,7 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.settings_brightness_rounded,
                       mode: ThemeMode.system,
                       isSelected: themeMode == ThemeMode.system,
+                      isLight: isLight,
                     ),
                   ],
                 ),
@@ -131,21 +161,19 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'إدارة الأندية المفضلة',
-                        style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                        style: AppTypography.titleSmall(color: textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'تحديد وتعديل الفرق التي تتابعها (${DateFormatter.toArabicNumerals('$favoriteCount')} محددة)',
-                        style: AppTypography.caption(
-                          color: AppColors.darkTextSecondary,
-                        ),
+                        style: AppTypography.caption(color: textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppColors.darkTextMuted,
+                  color: textMuted,
                   size: 16,
                 ),
               ],
@@ -153,7 +181,136 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 3. Cloud Session (UID) Section
+          // 3. Battery & Notification Optimization Guidance
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              showBatteryOptimizationDialog(context, isManual: true);
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                  ),
+                  child: const Icon(
+                    Icons.battery_charging_full_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'إعدادات الإشعارات والبطارية',
+                        style: AppTypography.titleSmall(color: textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'إرشادات تحسين وصول التنبيهات في الخلفية لهواتف أندرويد',
+                        style: AppTypography.caption(color: textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: textMuted,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // About Developer Section (Premium Featured Card) - Hidden for now
+          if (_showAboutDeveloper) ...[
+            AppCard(
+              isFeatured: true,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              margin: EdgeInsets.zero,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                context.push('/about-developer');
+              },
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xs + 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadii.xs),
+                    ),
+                    child: const Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              AppStrings.aboutDeveloper,
+                              style: AppTypography.titleSmall(color: textPrimary)
+                                  .copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.15),
+                                borderRadius: AppRadii.fullRadius,
+                              ),
+                              child: Text(
+                                'Ahmed Elmansy',
+                                style:
+                                    AppTypography.caption(
+                                      color: AppColors.primary,
+                                    ).copyWith(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          AppStrings.aboutDeveloperSubtitle,
+                          style: AppTypography.caption(color: textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: textMuted,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // 4. Cloud Session (UID) Section
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             margin: EdgeInsets.zero,
@@ -163,15 +320,15 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 Text(
                   'معرف الجلسة السحابية (Firebase UID):',
-                  style: AppTypography.caption(
-                    color: AppColors.darkTextSecondary,
-                  ),
+                  style: AppTypography.caption(color: textSecondary),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   currentUid ?? 'غير متصل (يعمل محلياً)',
                   style: AppTypography.bodyMedium(
-                    color: currentUid != null ? AppColors.primary : AppColors.darkTextSecondary,
+                    color: currentUid != null
+                        ? AppColors.primary
+                        : textSecondary,
                   ),
                 ),
               ],
@@ -179,7 +336,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 4. Cloud Sync Action
+          // 5. Cloud Sync Action
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             margin: EdgeInsets.zero,
@@ -228,21 +385,19 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'مزامنة الآن مع السحابة',
-                        style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                        style: AppTypography.titleSmall(color: textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'رفع التفضيلات والأندية المختارة إلى Firestore',
-                        style: AppTypography.caption(
-                          color: AppColors.darkTextSecondary,
-                        ),
+                        style: AppTypography.caption(color: textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppColors.darkTextMuted,
+                  color: textMuted,
                   size: 16,
                 ),
               ],
@@ -250,7 +405,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 5. Reset Onboarding Action
+          // 6. Reset Onboarding Action
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             margin: EdgeInsets.zero,
@@ -283,21 +438,19 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'إعادة ضبط التهيئة والتهيئة الأولية',
-                        style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                        style: AppTypography.titleSmall(color: textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'تفريغ التفضيلات واختبار شاشات الإشعارات واختيار الدوريات مجدداً',
-                        style: AppTypography.caption(
-                          color: AppColors.darkTextSecondary,
-                        ),
+                        style: AppTypography.caption(color: textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppColors.darkTextMuted,
+                  color: textMuted,
                   size: 16,
                 ),
               ],
@@ -305,18 +458,22 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 6. Fast Test Scheduled Notification Action (Debug Tool)
+          // 7. Fast Test Scheduled Notification Action (Debug Tool)
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             margin: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(AppRadii.md),
             onTap: () async {
               HapticFeedback.lightImpact();
-              await ref.read(notificationServiceProvider).scheduleTestNotification(seconds: 60);
+              await ref
+                  .read(notificationServiceProvider)
+                  .scheduleTestNotification(seconds: 60);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('تمت جدولة إشعار الاختبار بنجاح بعد 60 ثانية'),
+                    content: Text(
+                      'تمت جدولة إشعار الاختبار بنجاح بعد 60 ثانية',
+                    ),
                     backgroundColor: AppColors.primary,
                   ),
                 );
@@ -343,21 +500,19 @@ class SettingsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'اختبار تذكير مجدول (بعد دقيقة واحدة)',
-                        style: AppTypography.titleSmall(color: AppColors.darkTextPrimary),
+                        style: AppTypography.titleSmall(color: textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'جدولة إشعار بعد 60 ثانية باستخدام مسار Alarms لاختبار ظهور التنبيهات المجدولة',
-                        style: AppTypography.caption(
-                          color: AppColors.darkTextSecondary,
-                        ),
+                        style: AppTypography.caption(color: textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppColors.darkTextMuted,
+                  color: textMuted,
                   size: 16,
                 ),
               ],
@@ -365,7 +520,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // 7. App Version Footer
+          // 8. App Version Footer
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -373,9 +528,7 @@ class SettingsScreen extends ConsumerWidget {
                 return Center(
                   child: Text(
                     'الإصدار ${DateFormatter.toArabicNumerals(snapshot.data!.version)} (${DateFormatter.toArabicNumerals(snapshot.data!.buildNumber)})',
-                    style: AppTypography.caption(
-                      color: AppColors.darkTextMuted,
-                    ),
+                    style: AppTypography.caption(color: textMuted),
                   ),
                 );
               }
@@ -394,7 +547,18 @@ class SettingsScreen extends ConsumerWidget {
     required IconData icon,
     required ThemeMode mode,
     required bool isSelected,
+    required bool isLight,
   }) {
+    final unselectedBg = isLight
+        ? AppColors.lightSurfaceHigh
+        : AppColors.darkSurfaceHigh;
+    final unselectedBorder = isLight
+        ? AppColors.lightBorder
+        : AppColors.darkBorder;
+    final unselectedColor = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.darkTextSecondary;
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -407,10 +571,10 @@ class SettingsScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.15)
-                : AppColors.darkSurfaceHigh,
+                : unselectedBg,
             borderRadius: BorderRadius.circular(AppRadii.sm),
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.darkBorder,
+              color: isSelected ? AppColors.primary : unselectedBorder,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -420,13 +584,13 @@ class SettingsScreen extends ConsumerWidget {
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? AppColors.primary : AppColors.darkTextSecondary,
+                color: isSelected ? AppColors.primary : unselectedColor,
               ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: AppTypography.caption(
-                  color: isSelected ? AppColors.primary : AppColors.darkTextSecondary,
+                  color: isSelected ? AppColors.primary : unselectedColor,
                 ),
               ),
             ],

@@ -9,16 +9,23 @@ class LeaguesPlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        title: const Text('الدوريات'),
+        backgroundColor: AppColors.surfaceOf(context),
+        title: Text(
+          'الدوريات',
+          style: TextStyle(
+            color: AppColors.textPrimaryOf(context),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: const Center(
         child: AppEmptyState(
           type: EmptyStateType.leagues,
           title: 'قسم الدوريات قريباً',
-          subtitle: 'نعمل على إضافة جداول الترتيب والهدافين لأقوى الدوريات العربية والعالمية',
+          subtitle: 'نعمل على إضافة قسم الدوريات وإحصائيات الفرق والبطولات العربية والعالمية',
         ),
       ),
     );

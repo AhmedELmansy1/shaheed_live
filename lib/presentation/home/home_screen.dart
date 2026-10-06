@@ -1,21 +1,26 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../core/services/battery_optimization_service.dart';
 import '../../core/services/remote_config_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_formatter.dart';
-import '../../data/models/match_model.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../update/widgets/soft_update_banner.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_chip.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../widgets/battery_guidance_dialog.dart';
 import '../widgets/hero_match_card.dart';
 import '../widgets/live_badge.dart';
 import '../widgets/match_card.dart';
@@ -24,20 +29,47 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBatteryGuidance();
+    });
+  }
+
+  Future<void> _checkBatteryGuidance() async {
+    final service = ref.read(batteryOptimizationServiceProvider);
+    final shouldShow = await service.shouldShowGuidance();
+    if (shouldShow && mounted) {
+      showBatteryOptimizationDialog(context, isManual: false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final activeTab = ref.watch(activeTabProvider);
     final customDate = ref.watch(selectedCustomDateProvider);
     final activeFilter = ref.watch(matchFilterProvider);
-    final matchesAsync = ref.watch(filteredMatchesProvider);
+    final sectionDataAsync = ref.watch(homeSectionDataProvider);
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final surfaceHigh = AppColors.surfaceHighOf(context);
+    final border = AppColors.borderOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         toolbarHeight: 70,
@@ -52,7 +84,7 @@ class HomeScreen extends ConsumerWidget {
               style: GoogleFonts.cairo(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
-                color: AppColors.darkTextPrimary,
+                color: textPrimary,
                 letterSpacing: 0.0,
                 height: 1.15,
               ),
@@ -74,7 +106,7 @@ class HomeScreen extends ConsumerWidget {
                   style: GoogleFonts.cairo(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.darkTextSecondary,
+                    color: textSecondary,
                     letterSpacing: 0.0,
                     height: 1.15,
                   ),
@@ -86,14 +118,14 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: false,
         actions: [
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 16),
+            margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.darkSurfaceHigh,
+              color: surfaceHigh,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: border),
             ),
             child: IconButton(
-              icon: const Icon(Icons.search_rounded, color: AppColors.darkTextPrimary, size: 20),
+              icon: Icon(Icons.search_rounded, color: textPrimary, size: 20),
               tooltip: 'البحث عن فريق',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
@@ -105,14 +137,18 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 16),
+            margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.darkSurfaceHigh,
+              color: surfaceHigh,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: border),
             ),
             child: IconButton(
-              icon: const Icon(Icons.person_outline_rounded, color: AppColors.darkTextSecondary, size: 20),
+              icon: Icon(
+                Icons.person_outline_rounded,
+                color: textSecondary,
+                size: 20,
+              ),
               tooltip: 'الإعدادات',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
@@ -129,10 +165,10 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           children: [
             // Top Sticky Date Selector Bar with Animated Pill
-            _buildDateHeader(context, ref, activeTab, customDate),
+            _buildDateHeader(context, activeTab, customDate),
 
             // Modern Horizontal Filter Chips Row
-            _buildFilterChipsRow(context, ref, activeFilter),
+            _buildFilterChipsRow(context, activeFilter),
 
             // In-session Soft Update Notification Banner
             const SoftUpdateBanner(),
@@ -141,19 +177,19 @@ class HomeScreen extends ConsumerWidget {
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primary,
-                backgroundColor: AppColors.darkSurface,
+                backgroundColor: surface,
                 onRefresh: () async {
                   HapticFeedback.lightImpact();
                   await ref.read(matchesProvider.notifier).refresh();
                 },
-                child: matchesAsync.when(
+                child: sectionDataAsync.when(
                   loading: () => const MatchesSkeleton(),
-                  error: (error, stack) => _buildErrorView(context, ref, error),
-                  data: (matches) {
-                    if (matches.isEmpty) {
-                      return _buildEmptyView(context, ref, activeFilter);
+                  error: (error, stack) => _buildErrorView(context, error),
+                  data: (sectionData) {
+                    if (sectionData.isEmpty) {
+                      return _buildEmptyView(context, activeFilter);
                     }
-                    return _buildHomeContent(context, ref, matches);
+                    return _buildHomeContent(context, sectionData, activeFilter);
                   },
                 ),
               ),
@@ -169,15 +205,22 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildDateHeader(
     BuildContext context,
-    WidgetRef ref,
     HomeTab activeTab,
     DateTime? customDate,
   ) {
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final surfaceHigh = AppColors.surfaceHighOf(context);
+    final border = AppColors.borderOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
       ),
+      decoration: BoxDecoration(color: surface),
       child: Column(
         children: [
           Row(
@@ -187,29 +230,26 @@ class HomeScreen extends ConsumerWidget {
                   height: 42,
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: AppColors.darkBackground,
+                    color: bg,
                     borderRadius: AppRadii.mdRadius,
-                    border: Border.all(color: AppColors.darkBorder),
+                    border: Border.all(color: border),
                   ),
                   child: Row(
                     children: [
                       _buildTabItem(
                         context,
-                        ref,
                         label: 'أمس',
                         tab: HomeTab.yesterday,
                         isActive: activeTab == HomeTab.yesterday,
                       ),
                       _buildTabItem(
                         context,
-                        ref,
                         label: 'اليوم',
                         tab: HomeTab.today,
                         isActive: activeTab == HomeTab.today,
                       ),
                       _buildTabItem(
                         context,
-                        ref,
                         label: 'غداً',
                         tab: HomeTab.tomorrow,
                         isActive: activeTab == HomeTab.tomorrow,
@@ -220,19 +260,19 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(width: AppSpacing.sm + 2),
               GestureDetector(
-                onTap: () => _pickCustomDate(context, ref),
+                onTap: () => _pickCustomDate(context),
                 child: Container(
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
                     color: activeTab == HomeTab.customDate
                         ? AppColors.primary
-                        : AppColors.darkBackground,
+                        : bg,
                     borderRadius: AppRadii.mdRadius,
                     border: Border.all(
                       color: activeTab == HomeTab.customDate
                           ? AppColors.primary
-                          : AppColors.darkBorder,
+                          : border,
                     ),
                     boxShadow: activeTab == HomeTab.customDate
                         ? [
@@ -258,21 +298,30 @@ class HomeScreen extends ConsumerWidget {
           if (activeTab == HomeTab.customDate && customDate != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceHigh,
+                color: surfaceHigh,
                 borderRadius: AppRadii.fullRadius,
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.event_note_rounded, size: 15, color: AppColors.primary),
+                  const Icon(
+                    Icons.event_note_rounded,
+                    size: 15,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: AppSpacing.xs + 2),
                   Text(
                     DateFormatter.formatDisplayDate(customDate),
-                    style: const TextStyle(
-                      color: AppColors.darkTextPrimary,
+                    style: TextStyle(
+                      color: textPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -282,11 +331,19 @@ class HomeScreen extends ConsumerWidget {
                     borderRadius: AppRadii.fullRadius,
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      ref.read(selectedCustomDateProvider.notifier).setDate(null);
-                      ref.read(activeTabProvider.notifier).setTab(HomeTab.today);
+                      ref
+                          .read(selectedCustomDateProvider.notifier)
+                          .setDate(null);
+                      ref
+                          .read(activeTabProvider.notifier)
+                          .setTab(HomeTab.today);
                       ref.read(matchesProvider.notifier).refresh();
                     },
-                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.darkTextMuted),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -299,17 +356,20 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildFilterChipsRow(
     BuildContext context,
-    WidgetRef ref,
     MatchFilterType activeFilter,
   ) {
+    final surface = AppColors.surfaceOf(context);
+    final border = AppColors.borderOf(context);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
-        border: Border(
-          bottom: BorderSide(color: AppColors.darkDivider, width: 1),
-        ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: surface,
+        border: Border(bottom: BorderSide(color: border, width: 1)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -320,7 +380,9 @@ class HomeScreen extends ConsumerWidget {
               isSelected: activeFilter == MatchFilterType.all,
               onTap: () {
                 HapticFeedback.selectionClick();
-                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.all);
+                ref
+                    .read(matchFilterProvider.notifier)
+                    .setFilter(MatchFilterType.all);
               },
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -331,7 +393,9 @@ class HomeScreen extends ConsumerWidget {
               isSelected: activeFilter == MatchFilterType.live,
               onTap: () {
                 HapticFeedback.selectionClick();
-                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.live);
+                ref
+                    .read(matchFilterProvider.notifier)
+                    .setFilter(MatchFilterType.live);
               },
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -340,7 +404,9 @@ class HomeScreen extends ConsumerWidget {
               isSelected: activeFilter == MatchFilterType.upcoming,
               onTap: () {
                 HapticFeedback.selectionClick();
-                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.upcoming);
+                ref
+                    .read(matchFilterProvider.notifier)
+                    .setFilter(MatchFilterType.upcoming);
               },
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -351,7 +417,9 @@ class HomeScreen extends ConsumerWidget {
               isSelected: activeFilter == MatchFilterType.favorites,
               onTap: () {
                 HapticFeedback.selectionClick();
-                ref.read(matchFilterProvider.notifier).setFilter(MatchFilterType.favorites);
+                ref
+                    .read(matchFilterProvider.notifier)
+                    .setFilter(MatchFilterType.favorites);
               },
             ),
           ],
@@ -361,12 +429,13 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildTabItem(
-    BuildContext context,
-    WidgetRef ref, {
+    BuildContext context, {
     required String label,
     required HomeTab tab,
     required bool isActive,
   }) {
+    final textSecondary = AppColors.textSecondaryOf(context);
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -395,7 +464,7 @@ class HomeScreen extends ConsumerWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: isActive ? Colors.black : AppColors.darkTextSecondary,
+              color: isActive ? Colors.black : textSecondary,
               fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
               fontSize: 13,
             ),
@@ -405,8 +474,9 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickCustomDate(BuildContext context, WidgetRef ref) async {
+  Future<void> _pickCustomDate(BuildContext context) async {
     final now = DateTime.now();
+    final isLight = AppColors.isLight(context);
     final picked = await showDatePicker(
       context: context,
       initialDate: ref.read(selectedCustomDateProvider) ?? now,
@@ -414,14 +484,23 @@ class HomeScreen extends ConsumerWidget {
       lastDate: DateTime(now.year + 1),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primary,
-              onPrimary: Colors.black,
-              surface: AppColors.darkSurface,
-              onSurface: AppColors.darkTextPrimary,
-            ),
-          ),
+          data: isLight
+              ? ThemeData.light().copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.black,
+                    surface: AppColors.lightSurface,
+                    onSurface: AppColors.lightTextPrimary,
+                  ),
+                )
+              : ThemeData.dark().copyWith(
+                  colorScheme: const ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.black,
+                    surface: AppColors.darkSurface,
+                    onSurface: AppColors.darkTextPrimary,
+                  ),
+                ),
           child: child!,
         );
       },
@@ -436,34 +515,31 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildHomeContent(
     BuildContext context,
-    WidgetRef ref,
-    List<MatchModel> matches,
+    HomeSectionData sectionData,
+    MatchFilterType activeFilter,
   ) {
-    final liveMatches = matches.where((m) => m.isLive).toList();
-    final featuredMatch = liveMatches.isNotEmpty
-        ? liveMatches.first
-        : (matches.isNotEmpty ? matches.first : null);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final featuredMatch = sectionData.heroMatch;
+    final favoriteMatches = sectionData.favoriteMatches;
+    final liveMatches = sectionData.liveMatches;
+    final leagueGroups = sectionData.leagueGroups;
 
     final adConfig = ref.watch(currentAdConfigProvider);
     final nativeConfig = adConfig.nativeMatchList;
     final insertEvery = nativeConfig.insertEveryNItems;
-
-    // Group matches by championship title
-    final Map<String, List<MatchModel>> grouped = {};
-    for (final match in matches) {
-      final title = match.championship.title;
-      grouped.putIfAbsent(title, () => []).add(match);
-    }
 
     int matchCounter = 0;
 
     return ListView(
       padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 120),
       children: [
-        // 1. Featured / Hero Match Card
+        // 1. Featured / Hero Match Card with smooth entrance
         if (featuredMatch != null) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xs,
+            ),
             child: Row(
               children: [
                 const Icon(Icons.star_rounded, size: 18, color: AppColors.gold),
@@ -471,7 +547,7 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   'المباراة المميزة',
                   style: GoogleFonts.cairo(
-                    color: AppColors.darkTextPrimary,
+                    color: textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.0,
@@ -480,27 +556,124 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
-          HeroMatchCard(match: featuredMatch),
+          HeroMatchCard(match: featuredMatch)
+              .animate()
+              .fadeIn(duration: 280.ms)
+              .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
           const SizedBox(height: AppSpacing.sm),
         ],
 
-        // 2. Live Now Horizontal Section (if there are live matches)
-        if (liveMatches.isNotEmpty) ...[
+        // 2. FAVORITES SECTION ("مبارياتك") — Surfaced FIRST if user has favorite team matches
+        if (favoriteMatches.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    size: 15,
+                    color: AppColors.gold,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'مبارياتك',
+                  style: GoogleFonts.cairo(
+                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.0,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.12),
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Text(
+                    '${DateFormatter.toArabicNumerals(favoriteMatches.length.toString())} مباريات',
+                    style: const TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...favoriteMatches.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final m = entry.value;
+            final card = MatchCard(match: m)
+                .animate()
+                .fadeIn(
+                  duration: 240.ms,
+                  delay: (math.min(idx, 8) * 35).ms,
+                )
+                .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
+
+            matchCounter++;
+            if (nativeConfig.enabled &&
+                insertEvery > 0 &&
+                matchCounter % insertEvery == 0) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [card, const NativeAdCard()],
+              );
+            }
+            return card;
+          }),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
+        // 3. Live Now Horizontal Section (if there are live matches and not filtered by live)
+        if (liveMatches.isNotEmpty && activeFilter != MatchFilterType.live) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
             child: Row(
               children: [
                 const LiveBadge(minuteText: 'مباشر الآن', isLarge: true),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.live.withValues(alpha: 0.15),
                     borderRadius: AppRadii.fullRadius,
-                    border: Border.all(color: AppColors.live.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: AppColors.live.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Text(
-                    DateFormatter.toArabicNumerals(liveMatches.length.toString()),
+                    DateFormatter.toArabicNumerals(
+                      liveMatches.length.toString(),
+                    ),
                     style: const TextStyle(
                       color: AppColors.live,
                       fontSize: 11,
@@ -511,30 +684,48 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
-          ...liveMatches.map((m) => MatchCard(match: m)),
+          ...liveMatches.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final m = entry.value;
+            return MatchCard(match: m)
+                .animate()
+                .fadeIn(duration: 240.ms, delay: (math.min(idx, 10) * 40).ms)
+                .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
+          }),
           const SizedBox(height: AppSpacing.lg),
         ],
 
-        // 3. All Grouped Matches with SectionHeader
-        ...grouped.entries.map((entry) {
-          final title = entry.key;
-          final champMatches = entry.value;
-          final champLogo = champMatches.first.championship.image;
+        // 4. League Sections (Pre-sorted: Followed Leagues FIRST!)
+        ...leagueGroups.map((group) {
+          final title = group.leagueTitle;
+          final champMatches = group.matches;
+          final champLogo = group.leagueLogo;
+          final isFollowed = group.isFollowed;
 
           final List<Widget> items = [];
 
-          // Competition Header with SectionHeader
+          // Competition Header with SectionHeader (includes isFollowed indicator)
           items.add(
             SectionHeader(
               title: title,
               logoUrl: champLogo,
               count: champMatches.length,
+              isFollowed: isFollowed,
             ),
           );
 
-          // Match Cards & Native Ad insertion
+          // Match Cards with Staggered Entrance & Native Ad insertion
           for (final m in champMatches) {
-            items.add(MatchCard(match: m));
+            final itemIndex = matchCounter;
+            items.add(
+              MatchCard(match: m)
+                  .animate()
+                  .fadeIn(
+                    duration: 240.ms,
+                    delay: (math.min(itemIndex, 12) * 40).ms,
+                  )
+                  .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
+            );
             matchCounter++;
 
             if (nativeConfig.enabled &&
@@ -553,7 +744,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyView(BuildContext context, WidgetRef ref, MatchFilterType activeFilter) {
+  Widget _buildEmptyView(BuildContext context, MatchFilterType activeFilter) {
     if (activeFilter == MatchFilterType.favorites) {
       final onboardingState = ref.watch(onboardingProvider);
       final hasFavorites = onboardingState.selectedTeamIds.isNotEmpty;
@@ -581,7 +772,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorView(BuildContext context, WidgetRef ref, Object error) {
+  Widget _buildErrorView(BuildContext context, Object error) {
     return AppEmptyState(
       type: EmptyStateType.error,
       title: 'عذراً، حدث خطأ أثناء جلب البيانات',

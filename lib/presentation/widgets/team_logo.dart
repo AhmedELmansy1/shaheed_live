@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/theme/app_colors.dart';
 
 /// Reusable Team Logo widget with circular soft ring, Hero animation tag support, and graceful initials fallback.
@@ -28,12 +29,12 @@ class TeamLogo extends StatelessWidget {
     return trimmed.length > 2 ? trimmed.substring(0, 2) : trimmed;
   }
 
-  Widget _buildFallback() {
+  Widget _buildFallback(BuildContext context) {
     return Center(
       child: Text(
         _fallbackInitials,
         style: GoogleFonts.cairo(
-          color: AppColors.darkTextSecondary,
+          color: AppColors.textSecondaryOf(context),
           fontSize: (size * 0.35).clamp(9.0, 16.0),
           fontWeight: FontWeight.bold,
           letterSpacing: 0.0,
@@ -44,6 +45,7 @@ class TeamLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     Widget imageContent;
 
     if (logoUrl != null && logoUrl!.isNotEmpty) {
@@ -52,21 +54,21 @@ class TeamLogo extends StatelessWidget {
         width: size * 0.72,
         height: size * 0.72,
         fit: BoxFit.contain,
-        placeholder: (context, url) => _buildFallback(),
-        errorWidget: (context, url, error) => _buildFallback(),
+        placeholder: (context, url) => _buildFallback(context),
+        errorWidget: (context, url, error) => _buildFallback(context),
       );
     } else {
-      imageContent = _buildFallback();
+      imageContent = _buildFallback(context);
     }
 
     final container = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceHigh,
+        color: isLight ? AppColors.lightSurfaceHigh : AppColors.darkSurfaceHigh,
         shape: BoxShape.circle,
         border: Border.all(
-          color: AppColors.darkBorder,
+          color: isLight ? AppColors.lightBorder : AppColors.darkBorder,
           width: 1.0,
         ),
       ),
@@ -74,10 +76,7 @@ class TeamLogo extends StatelessWidget {
     );
 
     if (heroTag != null && heroTag!.isNotEmpty) {
-      return Hero(
-        tag: heroTag!,
-        child: container,
-      );
+      return Hero(tag: heroTag!, child: container);
     }
 
     return container;

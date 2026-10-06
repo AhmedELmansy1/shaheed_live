@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/services/ad_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
@@ -11,7 +12,8 @@ import '../../core/theme/app_spacing.dart';
 import '../widgets/app_logo.dart';
 import 'splash_controller.dart';
 
-/// Animated "Midnight Pitch" stadium-light splash screen with glowing pulse rings and staggered wordmark.
+/// Animated "Royal Stadium" Splash Screen with deep navy atmosphere,
+/// subtle golden light sweep, expanding gold pulse rings, and staggered wordmark.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -19,11 +21,24 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _sweepController;
+
   @override
   void initState() {
     super.initState();
+    _sweepController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    )..repeat();
     _runSplashSequence();
+  }
+
+  @override
+  void dispose() {
+    _sweepController.dispose();
+    super.dispose();
   }
 
   Future<void> _runSplashSequence() async {
@@ -35,9 +50,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     } catch (_) {}
 
     // Perform background initialization checks
-    final targetRoute = await ref.read(splashControllerProvider).initializeApp();
+    final targetRoute = await ref
+        .read(splashControllerProvider)
+        .initializeApp();
 
-    // Ensure minimum splash duration of 2.0s for smooth visual transition
+    // Ensure minimum splash duration of 2.0s for smooth visual handoff
     final elapsed = DateTime.now().difference(startTime).inMilliseconds;
     const minDuration = 2000;
     if (elapsed < minDuration) {
@@ -58,20 +75,47 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0.0, -0.2),
-            radius: 1.2,
+            center: Alignment(0.0, -0.15),
+            radius: 1.3,
             colors: [
-              Color(0xFF0F1E19), // Stadium emerald night mist
-              Color(0xFF0C141D), // Deep midnight pitch glow
-              AppColors.darkBackground, // #070B10 base
+              Color(0xFF162038), // Royal Stadium Deep Navy Core
+              Color(0xFF10172A), // Midnight Navy
+              AppColors.darkBackground, // #0A0E1A Outer Depth
             ],
-            stops: [0.0, 0.55, 1.0],
+            stops: [0.0, 0.45, 1.0],
           ),
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Outer Pulsing Stadium Ring
+            // 1. Subtle Golden Spotlight Sweep
+            AnimatedBuilder(
+              animation: _sweepController,
+              builder: (context, child) {
+                final progress = _sweepController.value;
+                return Transform.translate(
+                  offset: Offset((progress - 0.5) * 400, (progress - 0.5) * 200),
+                  child: Transform.rotate(
+                    angle: -0.45,
+                    child: Container(
+                      width: 140,
+                      height: 800,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            AppColors.primary.withValues(alpha: 0.05),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // 2. Outer Expanding Gold Pulse Ring
             RepaintBoundary(
               child: Container(
                 width: 320,
@@ -84,20 +128,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                 ),
               )
-                  .animate(onPlay: (controller) {
-                    if (!AppMotion.isReducedMotion(context)) {
-                      controller.repeat(reverse: true);
-                    }
-                  })
+                  .animate(
+                    onPlay: (controller) {
+                      if (!AppMotion.isReducedMotion(context)) {
+                        controller.repeat(reverse: true);
+                      }
+                    },
+                  )
                   .scale(
-                    begin: const Offset(0.9, 0.9),
+                    begin: const Offset(0.92, 0.92),
                     end: const Offset(1.15, 1.15),
-                    duration: AppMotion.pulse * 1.5,
+                    duration: 2400.ms,
                     curve: Curves.easeInOut,
                   ),
             ),
 
-            // Inner Atmospheric Glow Halo
+            // 3. Inner Atmospheric Gold Halo
             RepaintBoundary(
               child: Container(
                 width: 220,
@@ -112,28 +158,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                 ),
               )
-                  .animate(onPlay: (controller) {
-                    if (!AppMotion.isReducedMotion(context)) {
-                      controller.repeat(reverse: true);
-                    }
-                  })
+                  .animate(
+                    onPlay: (controller) {
+                      if (!AppMotion.isReducedMotion(context)) {
+                        controller.repeat(reverse: true);
+                      }
+                    },
+                  )
                   .scale(
-                    begin: const Offset(0.85, 0.85),
-                    end: const Offset(1.2, 1.2),
-                    duration: AppMotion.pulse,
+                    begin: const Offset(0.88, 0.88),
+                    end: const Offset(1.22, 1.22),
+                    duration: 1800.ms,
                     curve: Curves.easeInOut,
                   ),
             ),
 
-            // Centered Brand Content
+            // 4. Centered Brand Content
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo with Hero / 0-500ms entrance
-                const Hero(
-                  tag: 'app_brand_logo',
-                  child: AppLogo(size: 110),
-                )
+                const Hero(tag: 'app_brand_logo', child: AppLogo(size: 114))
                     .animate()
                     .fadeIn(duration: 500.ms, curve: Curves.easeOutCubic)
                     .scale(
@@ -144,19 +189,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     ),
                 const SizedBox(height: AppSpacing.xl),
 
-                // App Arabic Name Wordmark (200-700ms with 10px upward slide)
+                // App Arabic Name Wordmark (200-700ms with subtle upward slide)
                 Text(
                   'شوت لايف',
                   style: GoogleFonts.cairo(
-                    fontSize: 32,
+                    fontSize: 34,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.darkTextPrimary, // #F5F0E8 warm off-white
                     letterSpacing: 0.0,
                   ),
                 )
                     .animate()
-                    .fadeIn(delay: 200.ms, duration: 500.ms, curve: Curves.easeOutCubic)
-                    .moveY(begin: 10, end: 0, delay: 200.ms, duration: 500.ms, curve: Curves.easeOutCubic),
+                    .fadeIn(
+                      delay: 200.ms,
+                      duration: 500.ms,
+                      curve: Curves.easeOutCubic,
+                    )
+                    .moveY(
+                      begin: 12,
+                      end: 0,
+                      delay: 200.ms,
+                      duration: 500.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+
+                const SizedBox(height: AppSpacing.xxs),
+
+                // Subtitle: SHOOT LIVE
+                Text(
+                  'SHOOT LIVE',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 3.5,
+                    color: AppColors.primaryLight.withValues(alpha: 0.75),
+                  ),
+                ).animate().fadeIn(
+                  delay: 300.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOutCubic,
+                ),
 
                 const SizedBox(height: AppSpacing.xs),
 
@@ -169,26 +241,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     color: AppColors.primary,
                     letterSpacing: 0.0,
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 350.ms, duration: 500.ms, curve: Curves.easeOutCubic),
+                ).animate().fadeIn(
+                  delay: 400.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOutCubic,
+                ),
 
                 const SizedBox(height: AppSpacing.xxxl + AppSpacing.md),
 
-                // Slim Progress Line in Electric Pitch Green
+                // Refined Slim Gold Progress Line
                 SizedBox(
                   width: 140,
                   child: ClipRRect(
                     borderRadius: AppRadii.fullRadius,
                     child: const LinearProgressIndicator(
                       minHeight: 2.5,
-                      backgroundColor: AppColors.darkSurfaceHigh,
+                      backgroundColor: Color(0x2BD4AF37),
                       color: AppColors.primary,
                     ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 450.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                ).animate().fadeIn(
+                  delay: 450.ms,
+                  duration: 400.ms,
+                  curve: Curves.easeOutCubic,
+                ),
               ],
             ),
           ],

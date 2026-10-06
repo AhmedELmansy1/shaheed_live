@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import '../../core/services/remote_config_service.dart';
 
-enum BannerPlacement {
-  home,
-  matchDetails,
-}
+enum BannerPlacement { home, matchDetails }
 
 /// A persistent Banner Ad widget that dynamically reacts to real-time Firestore AdConfig.
 ///
@@ -14,10 +12,7 @@ enum BannerPlacement {
 class BannerAdWidget extends ConsumerStatefulWidget {
   final BannerPlacement placement;
 
-  const BannerAdWidget({
-    super.key,
-    required this.placement,
-  });
+  const BannerAdWidget({super.key, required this.placement});
 
   @override
   ConsumerState<BannerAdWidget> createState() => _BannerAdWidgetState();

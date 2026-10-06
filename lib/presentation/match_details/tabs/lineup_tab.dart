@@ -3,13 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radii.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/match_lineup_model.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/app_empty_state.dart';
 import '../providers/match_details_providers.dart';
 
 class LineupTab extends ConsumerWidget {
@@ -24,72 +19,103 @@ class LineupTab extends ConsumerWidget {
     return lineupAsync.when(
       data: (lineup) {
         if (lineup == null ||
-            (lineup.homeLineup.startingXI.isEmpty && lineup.awayLineup.startingXI.isEmpty)) {
+            (lineup.homeLineup.startingXI.isEmpty &&
+                lineup.awayLineup.startingXI.isEmpty)) {
           return const Center(
-            child: AppEmptyState(
-              type: EmptyStateType.soccer,
-              title: 'لم يتم الإعلان عن التشكيلة الرسمية بعد',
-              subtitle: 'سيتم عرض خطة اللعب والتشكيلة الأساسية فور صدورها',
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text(
+                'لم يتم الإعلان عن التشكيلة الرسمية بعد',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
             ),
           );
         }
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 120),
+          padding: const EdgeInsets.all(16),
           children: [
             // Pitch Header with Formation Badges
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildFormationBadge('صاحب الأرض', lineup.homeLineup.formation),
-                _buildFormationBadge('الفريق الضيف', lineup.awayLineup.formation),
+                _buildFormationBadge(context, 'الأرض', lineup.homeLineup.formation),
+                _buildFormationBadge(context, 'الضيف', lineup.awayLineup.formation),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 12),
 
-            // Tactical Pitch Canvas
+            // Tactical Pitch Canvas (Royal Stadium Sizing)
             SizedBox(
-              height: 520,
+              height: (MediaQuery.sizeOf(context).width * 1.58).clamp(600.0, 680.0),
               child: PitchView(
                 homeData: lineup.homeLineup,
                 awayData: lineup.awayLineup,
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 24),
 
             // Coaches Section
-            if (lineup.homeLineup.coach != null || lineup.awayLineup.coach != null) ...[
+            if (lineup.homeLineup.coach != null ||
+                lineup.awayLineup.coach != null) ...[
               Text(
                 'المدير الفني',
-                style: AppTypography.titleMedium(),
+                style: TextStyle(
+                  color: AppColors.textPrimaryOf(context),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: _buildCoachCard(lineup.homeLineup.coach ?? 'غير محدد'),
+                    child: _buildCoachCard(
+                      context,
+                      lineup.homeLineup.coach ?? 'غير محدد',
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: _buildCoachCard(lineup.awayLineup.coach ?? 'غير محدد'),
+                    child: _buildCoachCard(
+                      context,
+                      lineup.awayLineup.coach ?? 'غير محدد',
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 24),
             ],
 
             // Substitutes Bench Section
             Text(
               'قائمة البدلاء',
-              style: AppTypography.titleMedium(),
+              style: TextStyle(
+                color: AppColors.textPrimaryOf(context),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _buildSubstitutesList(lineup.homeLineup.substitutes, isHome: true)),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _buildSubstitutesList(lineup.awayLineup.substitutes, isHome: false)),
+                Expanded(
+                  child: _buildSubstitutesList(
+                    context,
+                    lineup.homeLineup.substitutes,
+                    isHome: true,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSubstitutesList(
+                    context,
+                    lineup.awayLineup.substitutes,
+                    isHome: false,
+                  ),
+                ),
               ],
             ),
           ],
@@ -99,48 +125,53 @@ class LineupTab extends ConsumerWidget {
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
       error: (err, stack) => Center(
-        child: AppEmptyState(
-          type: EmptyStateType.error,
-          title: 'تعذر تحميل التشكيلة',
-          subtitle: '$err',
+        child: Text(
+          'خطأ في تحميل التشكيلة: $err',
+          style: const TextStyle(color: AppColors.livePulse),
         ),
       ),
     );
   }
 
-  Widget _buildFormationBadge(String label, String? formation) {
+  Widget _buildFormationBadge(BuildContext context, String label, String? formation) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadii.full),
-        border: Border.all(color: AppColors.darkBorder),
+        color: AppColors.surfaceOf(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorderOf(context)),
       ),
       child: Text(
         '$label: ${formation != null ? DateFormatter.toArabicNumerals(formation) : "غير محدد"}',
-        style: AppTypography.caption(
-          color: AppColors.darkTextPrimary,
+        style: TextStyle(
+          color: AppColors.textPrimaryOf(context),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildCoachCard(String coachName) {
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      margin: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(AppRadii.sm),
+  Widget _buildCoachCard(BuildContext context, String coachName) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorderOf(context)),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-          const SizedBox(width: AppSpacing.xs),
+          const Icon(Icons.person, color: AppColors.primary, size: 20),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               coachName,
-              style: AppTypography.bodySmall(),
+              style: TextStyle(
+                color: AppColors.textPrimaryOf(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -150,63 +181,86 @@ class LineupTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildSubstitutesList(List<LineupPlayer> subs, {required bool isHome}) {
+  Widget _buildSubstitutesList(
+    BuildContext context,
+    List<LineupPlayer> subs, {
+    bool isHome = true,
+  }) {
     if (subs.isEmpty) {
       return Text(
         'لا يوجد بدلاء مسجلين',
-        style: AppTypography.caption(color: AppColors.darkTextSecondary),
+        style: TextStyle(
+          color: AppColors.textSecondaryOf(context),
+          fontSize: 12,
+        ),
       );
     }
+
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    // Sub avatar diameter: ~38px on typical 390px screens (+35.7% vs old 28px)
+    final subAvatarSize = (screenWidth * 0.098).clamp(36.0, 42.0);
+
     return Column(
       children: subs.map((player) {
         return Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.xs,
-            horizontal: AppSpacing.xs,
-          ),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
           decoration: BoxDecoration(
-            color: AppColors.darkSurface,
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-            border: Border.all(color: AppColors.darkBorder),
+            color: AppColors.surfaceOf(context),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.cardBorderOf(context).withValues(alpha: 0.6),
+            ),
           ),
           child: Row(
             children: [
-              _buildPlayerAvatar(player, isHome: isHome, size: 28),
-              const SizedBox(width: AppSpacing.xs),
+              _buildPlayerAvatar(player, isHome: isHome, size: subAvatarSize),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       player.name,
-                      style: AppTypography.caption(
-                        color: AppColors.darkTextPrimary,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryOf(context),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (player.positionTitle != null || player.position != null)
-                      Text(
-                        player.positionTitle ?? player.position!,
-                        style: AppTypography.caption(
-                          color: AppColors.darkTextMuted,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          player.positionTitle ?? player.position!,
+                          style: TextStyle(
+                            color: AppColors.textSecondaryOf(context),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurfaceHigh,
-                  borderRadius: BorderRadius.circular(AppRadii.xs),
+                  color: AppColors.cardBorderOf(context).withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   DateFormatter.toArabicNumerals('${player.number}'),
-                  style: AppTypography.badge(
-                    color: AppColors.darkTextSecondary,
-                    size: 11,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryOf(context),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -217,17 +271,29 @@ class LineupTab extends ConsumerWidget {
     );
   }
 
-  static Widget _buildPlayerAvatar(LineupPlayer player, {required bool isHome, double size = 32}) {
-    final teamColor = isHome ? AppColors.primary : AppColors.gold;
+  @visibleForTesting
+  static Widget buildPlayerAvatarForTesting(
+    LineupPlayer player, {
+    required bool isHome,
+    double size = 42,
+  }) =>
+      _buildPlayerAvatar(player, isHome: isHome, size: size);
+
+  static Widget _buildPlayerAvatar(
+    LineupPlayer player, {
+    required bool isHome,
+    double size = 42,
+  }) {
+    final teamColor = isHome ? AppColors.primary : AppColors.secondary;
 
     Widget fallbackAvatar() {
       return Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: teamColor.withValues(alpha: 0.2),
+          color: teamColor.withValues(alpha: 0.22),
           shape: BoxShape.circle,
-          border: Border.all(color: teamColor, width: 1.5),
+          border: Border.all(color: teamColor, width: 2.0),
         ),
         child: Center(
           child: Text(
@@ -236,8 +302,8 @@ class LineupTab extends ConsumerWidget {
                 : player.initials,
             style: TextStyle(
               color: teamColor,
-              fontWeight: FontWeight.bold,
-              fontSize: size * 0.42,
+              fontWeight: FontWeight.w900,
+              fontSize: (size * 0.44).clamp(18.0, 24.0),
             ),
           ),
         ),
@@ -252,7 +318,14 @@ class LineupTab extends ConsumerWidget {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: teamColor, width: 1.5),
+            border: Border.all(color: teamColor, width: 2.0),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black45,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
             image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
           ),
         ),
@@ -270,57 +343,77 @@ class PitchView extends StatelessWidget {
   final TeamLineupData homeData;
   final TeamLineupData awayData;
 
-  const PitchView({
-    super.key,
-    required this.homeData,
-    required this.awayData,
-  });
+  const PitchView({super.key, required this.homeData, required this.awayData});
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.md),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0A1F17),
-              Color(0xFF133627),
-              Color(0xFF0A1F17),
-            ],
-          ),
-        ),
-        child: CustomPaint(
-          painter: FootballPitchPainter(),
-          child: Stack(
-            children: [
-              // Home Team Pitch Nodes (Top Half)
-              Positioned.fill(
-                child: FractionallySizedBox(
-                  alignment: Alignment.topCenter,
-                  heightFactor: 0.5,
-                  child: _buildTeamNodes(homeData, isHome: true),
-                ),
-              ),
+        color: const Color(0xFF0C1929), // Royal Stadium Deep Navy Pitch
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final pitchWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 360.0;
+            // Avatar diameter scaled relative to available pitch width:
+            // ~49-51px on 390px screens (+20% to +25% further increase, clamp 46 to 54)
+            final avatarSize = (pitchWidth * 0.138).clamp(46.0, 54.0);
+            // Proportional name font size (+15% vs old, sharp and legible)
+            final nameFontSize = (avatarSize * 0.23).clamp(11.0, 12.5);
+            // Dynamic max width: ensures 5 players in a row fit with positive clearance
+            final nameMaxWidth = (pitchWidth / 5.3).clamp(62.0, 72.0);
 
-              // Away Team Pitch Nodes (Bottom Half)
-              Positioned.fill(
-                child: FractionallySizedBox(
-                  alignment: Alignment.bottomCenter,
-                  heightFactor: 0.5,
-                  child: _buildTeamNodes(awayData, isHome: false),
-                ),
+            return CustomPaint(
+              painter: FootballPitchPainter(),
+              child: Stack(
+                children: [
+                  // Home Team Pitch Nodes (Top Half)
+                  Positioned.fill(
+                    child: FractionallySizedBox(
+                      alignment: Alignment.topCenter,
+                      heightFactor: 0.5,
+                      child: _buildTeamNodes(
+                        homeData,
+                        isHome: true,
+                        pitchWidth: pitchWidth,
+                        avatarSize: avatarSize,
+                        nameFontSize: nameFontSize,
+                        nameMaxWidth: nameMaxWidth,
+                      ),
+                    ),
+                  ),
+
+                  // Away Team Pitch Nodes (Bottom Half)
+                  Positioned.fill(
+                    child: FractionallySizedBox(
+                      alignment: Alignment.bottomCenter,
+                      heightFactor: 0.5,
+                      child: _buildTeamNodes(
+                        awayData,
+                        isHome: false,
+                        pitchWidth: pitchWidth,
+                        avatarSize: avatarSize,
+                        nameFontSize: nameFontSize,
+                        nameMaxWidth: nameMaxWidth,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildTeamNodes(TeamLineupData teamData, {required bool isHome}) {
+  Widget _buildTeamNodes(
+    TeamLineupData teamData, {
+    required bool isHome,
+    required double pitchWidth,
+    required double avatarSize,
+    required double nameFontSize,
+    required double nameMaxWidth,
+  }) {
     final players = teamData.startingXI;
     if (players.isEmpty) return const SizedBox.shrink();
 
@@ -338,7 +431,13 @@ class PitchView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: rowPlayers
-              .map((p) => _buildPlayerNode(p, isHome: isHome))
+              .map((p) => _buildPlayerNode(
+                    p,
+                    isHome: isHome,
+                    avatarSize: avatarSize,
+                    nameFontSize: nameFontSize,
+                    nameMaxWidth: nameMaxWidth,
+                  ))
               .toList(),
         ),
       );
@@ -348,9 +447,25 @@ class PitchView extends StatelessWidget {
       rowWidgets = rowWidgets.reversed.toList();
     }
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: rowWidgets,
+    return Padding(
+      padding: EdgeInsets.only(
+        top: isHome ? 8.0 : 6.0,
+        bottom: isHome ? 6.0 : 8.0,
+        left: 4.0,
+        right: 4.0,
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: isHome ? Alignment.topCenter : Alignment.bottomCenter,
+        child: SizedBox(
+          width: pitchWidth,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisSize: MainAxisSize.max,
+            children: rowWidgets,
+          ),
+        ),
+      ),
     );
   }
 
@@ -369,29 +484,42 @@ class PitchView extends StatelessWidget {
     return [1, 4, 4, 2];
   }
 
-  Widget _buildPlayerNode(LineupPlayer player, {required bool isHome}) {
+  Widget _buildPlayerNode(
+    LineupPlayer player, {
+    required bool isHome,
+    required double avatarSize,
+    required double nameFontSize,
+    required double nameMaxWidth,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        LineupTab._buildPlayerAvatar(player, isHome: isHome, size: 32),
+        LineupTab._buildPlayerAvatar(player, isHome: isHome, size: avatarSize),
         const SizedBox(height: 3),
         Container(
-          constraints: const BoxConstraints(maxWidth: 72),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          constraints: BoxConstraints(maxWidth: nameMaxWidth),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(AppRadii.xs),
+            color: Colors.black.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(5),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.15),
               width: 0.5,
             ),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black38,
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
           child: Text(
             player.name,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontSize: nameFontSize,
+              fontWeight: FontWeight.w700,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -408,34 +536,37 @@ class FootballPitchPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
     // Outer Boundary Line
-    final rect = Rect.fromLTWH(10, 10, size.width - 20, size.height - 20);
+    final rect = Rect.fromLTWH(8, 8, size.width - 16, size.height - 16);
     canvas.drawRect(rect, paint);
 
     // Center Line
     final centerY = size.height / 2;
-    canvas.drawLine(Offset(10, centerY), Offset(size.width - 10, centerY), paint);
+    canvas.drawLine(Offset(8, centerY), Offset(size.width - 8, centerY), paint);
 
     // Center Circle
-    canvas.drawCircle(Offset(size.width / 2, centerY), 48, paint);
+    canvas.drawCircle(Offset(size.width / 2, centerY), 45, paint);
     final fillPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(size.width / 2, centerY), 4, fillPaint);
 
     // Penalty Areas
-    final boxWidth = size.width * 0.56;
-    final boxHeight = 72.0;
+    final boxWidth = size.width * 0.55;
+    final boxHeight = 70.0;
     final boxLeft = (size.width - boxWidth) / 2;
 
     // Top Penalty Area
-    canvas.drawRect(Rect.fromLTWH(boxLeft, 10, boxWidth, boxHeight), paint);
+    canvas.drawRect(Rect.fromLTWH(boxLeft, 8, boxWidth, boxHeight), paint);
     // Bottom Penalty Area
-    canvas.drawRect(Rect.fromLTWH(boxLeft, size.height - 10 - boxHeight, boxWidth, boxHeight), paint);
+    canvas.drawRect(
+      Rect.fromLTWH(boxLeft, size.height - 8 - boxHeight, boxWidth, boxHeight),
+      paint,
+    );
   }
 
   @override

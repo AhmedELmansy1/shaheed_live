@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../config/env_config.dart';
 import 'app_exception.dart';
 
@@ -76,7 +78,10 @@ class DioClient {
       throw _handleDioError(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw ParseException(message: 'حدث خطأ غير متوقع أثناء معالجة البيانات', originalError: e);
+      throw ParseException(
+        message: 'حدث خطأ غير متوقع أثناء معالجة البيانات',
+        originalError: e,
+      );
     }
   }
 
@@ -97,7 +102,10 @@ class DioClient {
         if (error.error is SocketException) {
           return NetworkException(originalError: error);
         }
-        return NetworkException(message: 'فشل في الاتصال بالشبكة', originalError: error);
+        return NetworkException(
+          message: 'فشل في الاتصال بالشبكة',
+          originalError: error,
+        );
       case DioExceptionType.cancel:
         return AppException(message: 'تم إلغاء الطلب', originalError: error);
       default:

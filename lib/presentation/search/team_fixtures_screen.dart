@@ -13,21 +13,27 @@ class TeamFixturesScreen extends ConsumerWidget {
   final String teamName;
   final TeamModel? teamModel;
 
-  const TeamFixturesScreen({
-    super.key,
-    required this.teamName,
-    this.teamModel,
-  });
+  const TeamFixturesScreen({super.key, required this.teamName, this.teamModel});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final displayName = teamModel?.name ?? teamName;
     final fixturesState = ref.watch(teamFixturesProvider(displayName));
 
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: bg,
       appBar: AppBar(
-        title: Text(displayName),
+        backgroundColor: surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          displayName,
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: fixturesState.when(
@@ -35,23 +41,26 @@ class TeamFixturesScreen extends ConsumerWidget {
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
         error: (error, stackTrace) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AppEmptyState(
-                type: EmptyStateType.error,
-                title: 'حدث خطأ أثناء تحميل المباريات',
-                subtitle: '$error',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppButton(
-                label: 'إعادة المحاولة',
-                icon: Icons.refresh_rounded,
-                onPressed: () {
-                  ref.invalidate(teamFixturesProvider(displayName));
-                },
-              ),
-            ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppEmptyState(
+                  type: EmptyStateType.error,
+                  title: 'حدث خطأ أثناء تحميل المباريات',
+                  subtitle: '$error',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'إعادة المحاولة',
+                  icon: Icons.refresh_rounded,
+                  onPressed: () {
+                    ref.invalidate(teamFixturesProvider(displayName));
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         data: (matches) {

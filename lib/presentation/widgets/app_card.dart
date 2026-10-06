@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
@@ -82,14 +84,17 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     final content = AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
       },
       child: Container(
-        margin: widget.margin ?? const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
+        margin:
+            widget.margin ??
+            const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xs + 2,
+            ),
         decoration: AppDecorations.glassCard(
+          context: context,
           isLive: widget.isLive,
           isFeatured: widget.isFeatured,
           customBorderColor: widget.borderColor,
@@ -105,7 +110,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             splashColor: widget.isLive
-                ? Colors.greenAccent.withValues(alpha: 0.08)
+                ? AppColors.liveGlowColor
                 : Colors.white.withValues(alpha: 0.04),
             highlightColor: Colors.transparent,
             child: Padding(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -24,7 +25,10 @@ class AppEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxxl, vertical: AppSpacing.huge),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxxl,
+          vertical: AppSpacing.huge,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -79,22 +83,30 @@ class _EmptyStateIllustrationPainter extends CustomPainter {
 
     // Glowing atmospheric background circle
     final bgGlowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          (type == EmptyStateType.error
-                  ? AppColors.livePulse
-                  : (type == EmptyStateType.star ? AppColors.gold : AppColors.liveIndicator))
-              .withValues(alpha: 0.18),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.45));
+      ..shader =
+          RadialGradient(
+            colors: [
+              (type == EmptyStateType.error
+                      ? AppColors.livePulse
+                      : (type == EmptyStateType.star
+                            ? AppColors.gold
+                            : AppColors.primary))
+                  .withValues(alpha: 0.18),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(center: center, radius: size.width * 0.45),
+          );
     canvas.drawCircle(center, size.width * 0.45, bgGlowPaint);
 
     final strokePaint = Paint()
-      ..color = (type == EmptyStateType.error
-              ? AppColors.livePulse
-              : (type == EmptyStateType.star ? AppColors.gold : AppColors.liveIndicator))
-          .withValues(alpha: 0.8)
+      ..color =
+          (type == EmptyStateType.error
+                  ? AppColors.livePulse
+                  : (type == EmptyStateType.star
+                        ? AppColors.gold
+                        : AppColors.primary))
+              .withValues(alpha: 0.8)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
@@ -128,7 +140,9 @@ class _EmptyStateIllustrationPainter extends CustomPainter {
         for (int i = 0; i < points * 2; i++) {
           final r = (i.isEven) ? outerRadius : innerRadius;
           final angle = (i * 3.14159 / points) - 1.57079;
-          final x = center.dx + r * (angle.isNegative ? -1 : 1) * (1 - (angle * angle) / 10);
+          final x =
+              center.dx +
+              r * (angle.isNegative ? -1 : 1) * (1 - (angle * angle) / 10);
           final y = center.dy + r * (angle);
           if (i == 0) {
             starPath.moveTo(center.dx, center.dy - outerRadius);

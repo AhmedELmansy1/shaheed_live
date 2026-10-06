@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
@@ -28,6 +29,20 @@ class AppChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = AppColors.isLight(context);
+    final unselectedBg = isLight
+        ? AppColors.lightSurfaceHigh
+        : AppColors.darkSurfaceHigh;
+    final unselectedBorder = isLight
+        ? AppColors.lightBorder
+        : AppColors.darkBorder;
+    final unselectedText = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.darkTextPrimary;
+    final unselectedIcon = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.darkTextSecondary;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -35,12 +50,10 @@ class AppChip extends StatelessWidget {
         curve: AppMotion.standardCurve,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.darkSurfaceHigh,
+          color: isSelected ? AppColors.primary : unselectedBg,
           borderRadius: AppRadii.fullRadius,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.darkBorder,
+            color: isSelected ? AppColors.primary : unselectedBorder,
             width: 1.0,
           ),
           boxShadow: isSelected
@@ -63,14 +76,16 @@ class AppChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 12,
-                color: isSelected ? Colors.black : (iconColor ?? AppColors.darkTextSecondary),
+                color: isSelected
+                    ? Colors.black
+                    : (iconColor ?? unselectedIcon),
               ),
               const SizedBox(width: AppSpacing.xs),
             ],
             Text(
               label,
               style: GoogleFonts.cairo(
-                color: isSelected ? Colors.black : AppColors.darkTextPrimary,
+                color: isSelected ? Colors.black : unselectedText,
                 fontSize: 11.5,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 letterSpacing: 0.0,

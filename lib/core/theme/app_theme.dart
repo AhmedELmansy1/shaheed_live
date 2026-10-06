@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'app_colors.dart';
 import 'app_radii.dart';
 
@@ -11,10 +12,10 @@ class AppTheme {
 
     return ThemeData.dark().copyWith(
       scaffoldBackgroundColor: AppColors.darkBackground,
-      primaryColor: AppColors.liveIndicator,
+      primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.liveIndicator,
-        secondary: AppColors.liveIndicator,
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
         surface: AppColors.darkSurface,
         error: AppColors.livePulse,
       ),
@@ -44,7 +45,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
-        selectedItemColor: AppColors.liveIndicator,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.darkTextMuted,
         elevation: 0,
       ),
@@ -62,10 +63,10 @@ class AppTheme {
 
     return ThemeData.light().copyWith(
       scaffoldBackgroundColor: AppColors.lightBackground,
-      primaryColor: AppColors.liveIndicator,
+      primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.liveIndicator,
-        secondary: AppColors.liveIndicator,
+        primary: AppColors.primary,
+        secondary: AppColors.secondaryDeep,
         surface: AppColors.lightSurface,
         error: AppColors.livePulse,
       ),
@@ -95,7 +96,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.lightSurface,
-        selectedItemColor: AppColors.liveIndicator,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.lightTextMuted,
         elevation: 0,
       ),
@@ -107,4 +108,3 @@ class AppTheme {
     );
   }
 }
-

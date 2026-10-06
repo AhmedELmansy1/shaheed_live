@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,10 +9,16 @@ import 'package:timezone/timezone.dart' as tz;
 /// When an alarm or background notification fires or is tapped in background/killed state, this is called.
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
-  debugPrint('[NotificationService] [BACKGROUND WAKEUP] Notification received/tapped in background.');
+  debugPrint(
+    '[NotificationService] [BACKGROUND WAKEUP] Notification received/tapped in background.',
+  );
   debugPrint('[NotificationService]   - ID: #${notificationResponse.id}');
-  debugPrint('[NotificationService]   - ActionId: ${notificationResponse.actionId}');
-  debugPrint('[NotificationService]   - Payload: ${notificationResponse.payload}');
+  debugPrint(
+    '[NotificationService]   - ActionId: ${notificationResponse.actionId}',
+  );
+  debugPrint(
+    '[NotificationService]   - Payload: ${notificationResponse.payload}',
+  );
 }
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
@@ -27,8 +34,9 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 /// 3. Lock Screen / Floating Notifications: MIUI separates "Lock screen notifications" and "Floating notifications" permissions per channel.
 ///    Channel migration (e.g. to _v2) forces MIUI to re-evaluate notification settings with Importance.max.
 class NotificationService {
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
-  
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   static void Function(String matchId)? onMatchNotificationTap;
   static String? pendingColdStartMatchId;
 
@@ -38,15 +46,20 @@ class NotificationService {
   static const String channelLiveEvents = 'live_events_v2';
 
   Future<void> init() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
-    const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
-    
+
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
     await _notificationsPlugin.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
@@ -55,31 +68,50 @@ class NotificationService {
 
     // Platform-specific setup on Android
     final androidPlatformChannelSpecifics = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlatformChannelSpecifics != null) {
       // 1. Log existing notification channels on device
       try {
-        final existingChannels = await androidPlatformChannelSpecifics.getNotificationChannels();
-        debugPrint('[NotificationService] ========================================');
+        final existingChannels = await androidPlatformChannelSpecifics
+            .getNotificationChannels();
+        debugPrint(
+          '[NotificationService] ========================================',
+        );
         debugPrint('[NotificationService] [INSPECT OS NOTIFICATION CHANNELS]');
         if (existingChannels == null || existingChannels.isEmpty) {
-          debugPrint('[NotificationService]   No channels currently registered on device.');
+          debugPrint(
+            '[NotificationService]   No channels currently registered on device.',
+          );
         } else {
           for (var ch in existingChannels) {
-            debugPrint('[NotificationService]   - Channel: id="${ch.id}", name="${ch.name}", importance=${ch.importance}, sound=${ch.playSound}, enableVibration=${ch.enableVibration}');
+            debugPrint(
+              '[NotificationService]   - Channel: id="${ch.id}", name="${ch.name}", importance=${ch.importance}, sound=${ch.playSound}, enableVibration=${ch.enableVibration}',
+            );
           }
         }
       } catch (e) {
-        debugPrint('[NotificationService] Error querying existing channels: $e');
+        debugPrint(
+          '[NotificationService] Error querying existing channels: $e',
+        );
       }
 
       // 2. Delete legacy v1 channels that might have been muted or cached with lower importance by MIUI
       try {
-        await androidPlatformChannelSpecifics.deleteNotificationChannel(channelId: 'matches_channel');
-        await androidPlatformChannelSpecifics.deleteNotificationChannel(channelId: 'match_reminders');
-        await androidPlatformChannelSpecifics.deleteNotificationChannel(channelId: 'live_events');
-        debugPrint('[NotificationService] [CHANNEL CLEANUP] Deleted legacy v1 notification channels.');
+        await androidPlatformChannelSpecifics.deleteNotificationChannel(
+          channelId: 'matches_channel',
+        );
+        await androidPlatformChannelSpecifics.deleteNotificationChannel(
+          channelId: 'match_reminders',
+        );
+        await androidPlatformChannelSpecifics.deleteNotificationChannel(
+          channelId: 'live_events',
+        );
+        debugPrint(
+          '[NotificationService] [CHANNEL CLEANUP] Deleted legacy v1 notification channels.',
+        );
       } catch (e) {
         debugPrint('[NotificationService] Notice deleting legacy channels: $e');
       }
@@ -118,42 +150,44 @@ class NotificationService {
 
       // 4. Log channels after migration
       try {
-        final updatedChannels = await androidPlatformChannelSpecifics.getNotificationChannels();
-        debugPrint('[NotificationService] [REGISTERED CHANNELS AFTER MIGRATION: ${updatedChannels?.length ?? 0}]');
+        final updatedChannels = await androidPlatformChannelSpecifics
+            .getNotificationChannels();
+        debugPrint(
+          '[NotificationService] [REGISTERED CHANNELS AFTER MIGRATION: ${updatedChannels?.length ?? 0}]',
+        );
         if (updatedChannels != null) {
           for (var ch in updatedChannels) {
-            debugPrint('[NotificationService]   ✓ Channel: id="${ch.id}", name="${ch.name}", importance=${ch.importance}');
+            debugPrint(
+              '[NotificationService]   ✓ Channel: id="${ch.id}", name="${ch.name}", importance=${ch.importance}',
+            );
           }
         }
-        debugPrint('[NotificationService] ========================================');
+        debugPrint(
+          '[NotificationService] ========================================',
+        );
       } catch (e) {
-        debugPrint('[NotificationService] Error inspecting post-migration channels: $e');
-      }
-
-      // Request exact alarms permission on Android 12+ (API 31+)
-      try {
-        final canSchedule = await androidPlatformChannelSpecifics.canScheduleExactNotifications();
-        debugPrint('[NotificationService] canScheduleExactNotifications check: $canSchedule');
-        if (canSchedule == false) {
-          debugPrint('[NotificationService] Requesting exact alarm permission...');
-          await androidPlatformChannelSpecifics.requestExactAlarmsPermission();
-        }
-      } catch (e) {
-        debugPrint('[NotificationService] Exact alarm permission check/request notice: $e');
+        debugPrint(
+          '[NotificationService] Error inspecting post-migration channels: $e',
+        );
       }
 
       // Request notification posting permission on Android 13+ (API 33+)
       try {
         await androidPlatformChannelSpecifics.requestNotificationsPermission();
       } catch (e) {
-        debugPrint('[NotificationService] Notification permission request notice: $e');
+        debugPrint(
+          '[NotificationService] Notification permission request notice: $e',
+        );
       }
     }
 
     // Check if app was launched via local notification (Cold Start)
     try {
-      final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
-      if (details != null && details.didNotificationLaunchApp && details.notificationResponse?.payload != null) {
+      final details = await _notificationsPlugin
+          .getNotificationAppLaunchDetails();
+      if (details != null &&
+          details.didNotificationLaunchApp &&
+          details.notificationResponse?.payload != null) {
         final payload = jsonDecode(details.notificationResponse!.payload!);
         if (payload['matchId'] != null) {
           final matchId = payload['matchId'].toString();
@@ -173,7 +207,9 @@ class NotificationService {
     if (response.payload != null) {
       try {
         final payload = jsonDecode(response.payload!);
-        if ((payload['type'] == 'match_reminder' || payload['type'] == 'live_event') && payload['matchId'] != null) {
+        if ((payload['type'] == 'match_reminder' ||
+                payload['type'] == 'live_event') &&
+            payload['matchId'] != null) {
           final matchId = payload['matchId'].toString();
           if (onMatchNotificationTap != null) {
             onMatchNotificationTap!(matchId);
@@ -204,7 +240,10 @@ class NotificationService {
       enableVibration: true,
     );
     const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     await _notificationsPlugin.show(
       id: id,
@@ -233,16 +272,25 @@ class NotificationService {
       enableVibration: true,
     );
     const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     final now = tz.TZDateTime.now(tz.local);
-    debugPrint('[NotificationService] ========================================');
+    debugPrint(
+      '[NotificationService] ========================================',
+    );
     debugPrint('[NotificationService] [SCHEDULE ATTEMPT] -> ID: #$id');
     debugPrint('[NotificationService]   Title: "$title"');
     debugPrint('[NotificationService]   Channel: "$channelId"');
-    debugPrint('[NotificationService]   Target Time (tz.local): $scheduledTime (UTC: ${scheduledTime.toUtc()})');
+    debugPrint(
+      '[NotificationService]   Target Time (tz.local): $scheduledTime (UTC: ${scheduledTime.toUtc()})',
+    );
     debugPrint('[NotificationService]   Local Now: $now (UTC: ${now.toUtc()})');
-    debugPrint('[NotificationService]   Time Difference: ${scheduledTime.difference(now)}');
+    debugPrint(
+      '[NotificationService]   Time Difference: ${scheduledTime.difference(now)}',
+    );
 
     try {
       await _notificationsPlugin.zonedSchedule(
@@ -254,9 +302,13 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
       );
-      debugPrint('[NotificationService] [SCHEDULE SUCCESS] Registered with AndroidScheduleMode.exactAllowWhileIdle');
+      debugPrint(
+        '[NotificationService] [SCHEDULE SUCCESS] Registered with AndroidScheduleMode.exactAllowWhileIdle',
+      );
     } catch (e) {
-      debugPrint('[NotificationService] [SCHEDULE WARNING] exactAllowWhileIdle failed: $e. Falling back to inexact mode...');
+      debugPrint(
+        '[NotificationService] [SCHEDULE WARNING] exactAllowWhileIdle failed: $e. Falling back to inexact mode...',
+      );
       try {
         await _notificationsPlugin.zonedSchedule(
           id: id,
@@ -267,25 +319,37 @@ class NotificationService {
           androidScheduleMode: AndroidScheduleMode.inexact,
           payload: payload,
         );
-        debugPrint('[NotificationService] [SCHEDULE SUCCESS] Registered with AndroidScheduleMode.inexact');
+        debugPrint(
+          '[NotificationService] [SCHEDULE SUCCESS] Registered with AndroidScheduleMode.inexact',
+        );
       } catch (e2) {
-        debugPrint('[NotificationService] [SCHEDULE ERROR] Inexact fallback also failed: $e2');
+        debugPrint(
+          '[NotificationService] [SCHEDULE ERROR] Inexact fallback also failed: $e2',
+        );
       }
     }
 
     final pending = await getPendingNotificationRequests();
-    debugPrint('[NotificationService] [OS REGISTERED PENDING NOTIFICATIONS COUNT: ${pending.length}]');
+    debugPrint(
+      '[NotificationService] [OS REGISTERED PENDING NOTIFICATIONS COUNT: ${pending.length}]',
+    );
     for (var p in pending) {
-      debugPrint('[NotificationService]   - Pending ID: #${p.id} | Title: "${p.title}" | Body: "${p.body}"');
+      debugPrint(
+        '[NotificationService]   - Pending ID: #${p.id} | Title: "${p.title}" | Body: "${p.body}"',
+      );
     }
-    debugPrint('[NotificationService] ========================================');
+    debugPrint(
+      '[NotificationService] ========================================',
+    );
   }
 
   /// Fast test helper to schedule a notification 1 minute (or custom seconds) from now
   Future<void> scheduleTestNotification({int seconds = 60}) async {
     final now = tz.TZDateTime.now(tz.local);
     final targetTime = now.add(Duration(seconds: seconds));
-    debugPrint('[NotificationService] [FAST TEST] Triggering test reminder in $seconds seconds ($targetTime)...');
+    debugPrint(
+      '[NotificationService] [FAST TEST] Triggering test reminder in $seconds seconds ($targetTime)...',
+    );
     await scheduleNotification(
       99999,
       '⏰ إشعار اختبار مجدول ($seconds ثوانٍ)',
@@ -305,7 +369,8 @@ class NotificationService {
     debugPrint('[NotificationService] Cancelled all notifications.');
   }
 
-  Future<List<PendingNotificationRequest>> getPendingNotificationRequests() async {
+  Future<List<PendingNotificationRequest>>
+  getPendingNotificationRequests() async {
     return await _notificationsPlugin.pendingNotificationRequests();
   }
 

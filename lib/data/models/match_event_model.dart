@@ -43,10 +43,18 @@ class MatchEventModel {
     final statusNameStr = (map['status_name'] as String?) ?? '';
 
     MatchEventType parseType() {
-      if (typeInt == 1 || statusNameStr.contains('هدف')) return MatchEventType.goal;
-      if (typeInt == 2 || statusNameStr.contains('صفراء')) return MatchEventType.yellowCard;
-      if (typeInt == 3 || statusNameStr.contains('حمراء')) return MatchEventType.redCard;
-      if (typeInt == 4 || statusNameStr.contains('تبديل')) return MatchEventType.substitution;
+      if (typeInt == 1 || statusNameStr.contains('هدف')) {
+        return MatchEventType.goal;
+      }
+      if (typeInt == 2 || statusNameStr.contains('صفراء')) {
+        return MatchEventType.yellowCard;
+      }
+      if (typeInt == 3 || statusNameStr.contains('حمراء')) {
+        return MatchEventType.redCard;
+      }
+      if (typeInt == 4 || statusNameStr.contains('تبديل')) {
+        return MatchEventType.substitution;
+      }
       if (typeInt == 100) return MatchEventType.periodMarker;
       return MatchEventType.unknown;
     }

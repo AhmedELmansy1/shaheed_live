@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/models/ad_config_model.dart';
 import '../network/dio_client.dart';
 
@@ -45,10 +47,8 @@ class RemoteConfigService {
   final FirebaseFirestore? _explicitFirestore;
   final DioClient dioClient;
 
-  RemoteConfigService({
-    FirebaseFirestore? firestore,
-    required this.dioClient,
-  }) : _explicitFirestore = firestore;
+  RemoteConfigService({FirebaseFirestore? firestore, required this.dioClient})
+    : _explicitFirestore = firestore;
 
   FirebaseFirestore? get _firestore {
     if (_explicitFirestore != null) return _explicitFirestore;
@@ -60,20 +60,22 @@ class RemoteConfigService {
   }
 
   /// Stream of the single unified `config/app_settings` document snapshots.
-  Stream<DocumentSnapshot<Map<String, dynamic>>> _getAppSettingsSnapshotStream() {
+  Stream<DocumentSnapshot<Map<String, dynamic>>>
+  _getAppSettingsSnapshotStream() {
     try {
       final fs = _firestore;
       if (fs == null) {
-        debugPrint('[RemoteConfigService] Firestore instance is null when requesting snapshot stream.');
+        debugPrint(
+          '[RemoteConfigService] Firestore instance is null when requesting snapshot stream.',
+        );
         return const Stream.empty();
       }
 
-      return fs
-          .collection('config')
-          .doc('app_settings')
-          .snapshots();
+      return fs.collection('config').doc('app_settings').snapshots();
     } catch (e) {
-      debugPrint('[RemoteConfigService] Non-fatal: Firestore stream unavailable: $e');
+      debugPrint(
+        '[RemoteConfigService] Non-fatal: Firestore stream unavailable: $e',
+      );
       return const Stream.empty();
     }
   }
@@ -82,23 +84,33 @@ class RemoteConfigService {
   /// If offline, missing, or errored, emits [AdConfig()] where ALL placements are disabled (`enabled: false`).
   Stream<AdConfig> listenToAdConfig() {
     try {
-      return _getAppSettingsSnapshotStream().map((snapshot) {
-        if (snapshot.exists && snapshot.data() != null) {
-          final data = snapshot.data()!;
-          final adConfigMap = data['ad_config'] as Map<String, dynamic>?;
-          if (adConfigMap != null && adConfigMap.isNotEmpty) {
-            debugPrint('[RemoteConfigService] Real-time ad_config updated from config/app_settings.');
-            return AdConfig.fromMap(adConfigMap);
-          }
-        }
-        debugPrint('[RemoteConfigService] No ad_config in config/app_settings — defaulting to ads DISABLED.');
-        return const AdConfig(); // Safe offline/missing fallback: all enabled: false
-      }).handleError((error) {
-        debugPrint('[RemoteConfigService] Error listening to app_settings ad_config: $error. Defaulting to ads DISABLED.');
-        return const AdConfig(); // Safe fallback: all enabled: false
-      });
+      return _getAppSettingsSnapshotStream()
+          .map((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              final data = snapshot.data()!;
+              final adConfigMap = data['ad_config'] as Map<String, dynamic>?;
+              if (adConfigMap != null && adConfigMap.isNotEmpty) {
+                debugPrint(
+                  '[RemoteConfigService] Real-time ad_config updated from config/app_settings.',
+                );
+                return AdConfig.fromMap(adConfigMap);
+              }
+            }
+            debugPrint(
+              '[RemoteConfigService] No ad_config in config/app_settings — defaulting to ads DISABLED.',
+            );
+            return const AdConfig(); // Safe offline/missing fallback: all enabled: false
+          })
+          .handleError((error) {
+            debugPrint(
+              '[RemoteConfigService] Error listening to app_settings ad_config: $error. Defaulting to ads DISABLED.',
+            );
+            return const AdConfig(); // Safe fallback: all enabled: false
+          });
     } catch (e) {
-      debugPrint('[RemoteConfigService] Failed to initialize ad_config listener: $e');
+      debugPrint(
+        '[RemoteConfigService] Failed to initialize ad_config listener: $e',
+      );
       return Stream.value(const AdConfig());
     }
   }
@@ -106,27 +118,36 @@ class RemoteConfigService {
   /// Listens to Firestore document `config/app_settings` for dynamic general remote updates.
   Stream<RemoteConfigModel> listenToRemoteConfig() {
     try {
-      return _getAppSettingsSnapshotStream().map((snapshot) {
-        if (snapshot.exists && snapshot.data() != null) {
-          final data = snapshot.data()!;
-          debugPrint(
-            '[RemoteConfigService] Stream Snapshot -> latest_app_version: "${data['latest_app_version']}", '
-            'force_update: ${data['force_update']}, min_supported_version: "${data['min_supported_version']}"',
-          );
-          final config = RemoteConfigModel.fromMap(data);
-          if (config.apiBaseUrlOverride != null && config.apiBaseUrlOverride!.isNotEmpty) {
-            dioClient.updateBaseUrl(config.apiBaseUrlOverride!);
-          }
-          return config;
-        }
-        debugPrint('[RemoteConfigService] Stream snapshot does not exist or has no data.');
-        return const RemoteConfigModel();
-      }).handleError((err) {
-        debugPrint('[RemoteConfigService] Error listening to remote config stream: $err');
-        return const RemoteConfigModel();
-      });
+      return _getAppSettingsSnapshotStream()
+          .map((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              final data = snapshot.data()!;
+              debugPrint(
+                '[RemoteConfigService] Stream Snapshot -> latest_app_version: "${data['latest_app_version']}", '
+                'force_update: ${data['force_update']}, min_supported_version: "${data['min_supported_version']}"',
+              );
+              final config = RemoteConfigModel.fromMap(data);
+              if (config.apiBaseUrlOverride != null &&
+                  config.apiBaseUrlOverride!.isNotEmpty) {
+                dioClient.updateBaseUrl(config.apiBaseUrlOverride!);
+              }
+              return config;
+            }
+            debugPrint(
+              '[RemoteConfigService] Stream snapshot does not exist or has no data.',
+            );
+            return const RemoteConfigModel();
+          })
+          .handleError((err) {
+            debugPrint(
+              '[RemoteConfigService] Error listening to remote config stream: $err',
+            );
+            return const RemoteConfigModel();
+          });
     } catch (e) {
-      debugPrint('[RemoteConfigService] Failed to initialize remote config listener: $e');
+      debugPrint(
+        '[RemoteConfigService] Failed to initialize remote config listener: $e',
+      );
       return Stream.value(const RemoteConfigModel());
     }
   }
@@ -137,7 +158,9 @@ class RemoteConfigService {
     try {
       final fs = _firestore;
       if (fs == null) {
-        debugPrint('[RemoteConfigService] fetchInitialConfig: Firestore not available, returning default model.');
+        debugPrint(
+          '[RemoteConfigService] fetchInitialConfig: Firestore not available, returning default model.',
+        );
         return const RemoteConfigModel();
       }
 
@@ -153,12 +176,15 @@ class RemoteConfigService {
           'force_update: ${data['force_update']}, min_supported_version: "${data['min_supported_version']}"',
         );
         final config = RemoteConfigModel.fromMap(data);
-        if (config.apiBaseUrlOverride != null && config.apiBaseUrlOverride!.isNotEmpty) {
+        if (config.apiBaseUrlOverride != null &&
+            config.apiBaseUrlOverride!.isNotEmpty) {
           dioClient.updateBaseUrl(config.apiBaseUrlOverride!);
         }
         return config;
       }
-      debugPrint('[RemoteConfigService] fetchInitialConfig: doc does not exist.');
+      debugPrint(
+        '[RemoteConfigService] fetchInitialConfig: doc does not exist.',
+      );
       return const RemoteConfigModel();
     } catch (e) {
       debugPrint('[RemoteConfigService] fetchInitialConfig error: $e');

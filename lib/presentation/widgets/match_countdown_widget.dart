@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -77,7 +79,8 @@ class _MatchCountdownWidgetState extends State<MatchCountdownWidget> {
         return;
       }
 
-      final diff = widget.targetDateTime?.difference(DateTime.now()) ?? Duration.zero;
+      final diff =
+          widget.targetDateTime?.difference(DateTime.now()) ?? Duration.zero;
       if (diff.isNegative || diff == Duration.zero) {
         timer.cancel();
         _timer = null;
@@ -123,7 +126,9 @@ class _MatchCountdownWidgetState extends State<MatchCountdownWidget> {
     if (totalHours >= 24) {
       final days = _remaining.inDays;
       final remainingHours = totalHours.remainder(24);
-      return DateFormatter.toArabicNumerals('تبدأ خلال $days يوم و $remainingHours س');
+      return DateFormatter.toArabicNumerals(
+        'تبدأ خلال $days يوم و $remainingHours س',
+      );
     }
 
     if (totalHours > 0) {
@@ -186,9 +191,7 @@ class _MatchCountdownWidgetState extends State<MatchCountdownWidget> {
         color: AppColors.darkSurfaceHigh,
         borderRadius: AppRadii.smRadius,
         border: Border.all(
-          color: _hasReachedZero
-              ? AppColors.primary
-              : AppColors.darkBorder,
+          color: _hasReachedZero ? AppColors.primary : AppColors.darkBorder,
           width: 0.8,
         ),
       ),
@@ -198,13 +201,17 @@ class _MatchCountdownWidgetState extends State<MatchCountdownWidget> {
           Icon(
             _hasReachedZero ? Icons.play_arrow_rounded : Icons.timer_outlined,
             size: 10.5,
-            color: _hasReachedZero ? AppColors.primary : AppColors.darkTextSecondary,
+            color: _hasReachedZero
+                ? AppColors.primary
+                : AppColors.darkTextSecondary,
           ),
           const SizedBox(width: 3),
           Text(
             text,
             style: GoogleFonts.cairo(
-              color: _hasReachedZero ? AppColors.primary : AppColors.darkTextSecondary,
+              color: _hasReachedZero
+                  ? AppColors.primary
+                  : AppColors.darkTextSecondary,
               fontSize: 9.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.0,

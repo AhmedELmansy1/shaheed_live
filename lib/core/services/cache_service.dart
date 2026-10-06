@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import '../../data/models/match_model.dart';
 
 /// Lightweight Hive-based cache for matches & leagues.
@@ -24,46 +26,60 @@ class CacheService {
     }
   }
 
-  Box<String>? get _matchesBox => _initialized ? Hive.box<String>(_matchesBoxName) : null;
-  Box<String>? get _metaBox => _initialized ? Hive.box<String>(_metaBoxName) : null;
+  Box<String>? get _matchesBox =>
+      _initialized ? Hive.box<String>(_matchesBoxName) : null;
+  Box<String>? get _metaBox =>
+      _initialized ? Hive.box<String>(_metaBoxName) : null;
 
   // --- Matches per date (YYYY-MM-DD) ---
 
-  Future<void> saveMatchesForDate(String dateStr, List<MatchModel> matches) async {
+  Future<void> saveMatchesForDate(
+    String dateStr,
+    List<MatchModel> matches,
+  ) async {
     try {
       final box = _matchesBox;
       if (box == null) return;
       // Serialize via toMap-like minimal representation using MatchModel.fromMap reverse
       // We store the raw API list as JSON strings if available; here we store lightweight maps.
-      final list = matches.map((m) => {
-        'match_id': m.matchId,
-        'match_date': m.matchDate,
-        'match_time': m.matchTime,
-        'live': m.isLive ? 1 : 0,
-        'admin_badge': m.adminBadge,
-        'admin_title': m.adminTitle,
-        'event_status': m.eventStatus,
-        'championship': {
-          'id': m.championship.id,
-          'title': m.championship.title,
-          'image': m.championship.image,
-        },
-        'home_team': {
-          'row_id': m.homeTeam.rowId,
-          'title': m.homeTeam.title,
-          'image': m.homeTeam.image,
-        },
-        'away_team': {
-          'row_id': m.awayTeam.rowId,
-          'title': m.awayTeam.title,
-          'image': m.awayTeam.image,
-        },
-        'home_scores': m.homeScore,
-        'away_scores': m.awayScore,
-      }).toList();
+      final list = matches
+          .map(
+            (m) => {
+              'match_id': m.matchId,
+              'match_date': m.matchDate,
+              'match_time': m.matchTime,
+              'live': m.isLive ? 1 : 0,
+              'admin_badge': m.adminBadge,
+              'admin_title': m.adminTitle,
+              'event_status': m.eventStatus,
+              'championship': {
+                'id': m.championship.id,
+                'title': m.championship.title,
+                'image': m.championship.image,
+              },
+              'home_team': {
+                'row_id': m.homeTeam.rowId,
+                'title': m.homeTeam.title,
+                'image': m.homeTeam.image,
+              },
+              'away_team': {
+                'row_id': m.awayTeam.rowId,
+                'title': m.awayTeam.title,
+                'image': m.awayTeam.image,
+              },
+              'home_scores': m.homeScore,
+              'away_scores': m.awayScore,
+            },
+          )
+          .toList();
       await box.put(dateStr, jsonEncode(list));
-      await _metaBox?.put('last_cache_$dateStr', DateTime.now().toIso8601String());
-      debugPrint('[CacheService] Cached ${matches.length} matches for $dateStr');
+      await _metaBox?.put(
+        'last_cache_$dateStr',
+        DateTime.now().toIso8601String(),
+      );
+      debugPrint(
+        '[CacheService] Cached ${matches.length} matches for $dateStr',
+      );
     } catch (e) {
       debugPrint('[CacheService] saveMatchesForDate error: $e');
     }
@@ -97,7 +113,10 @@ class CacheService {
     }
   }
 
-  bool isCacheFresh(String dateStr, {Duration maxAge = const Duration(minutes: 2)}) {
+  bool isCacheFresh(
+    String dateStr, {
+    Duration maxAge = const Duration(minutes: 2),
+  }) {
     final t = getLastCacheTime(dateStr);
     if (t == null) return false;
     return DateTime.now().difference(t) < maxAge;

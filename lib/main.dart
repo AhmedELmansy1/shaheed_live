@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'core/config/env_config.dart';
 import 'core/localization/app_strings.dart';
 import 'core/routing/app_router.dart';
@@ -18,7 +19,10 @@ import 'firebase_options.dart';
 /// Top-level background message handler for FCM
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling background FCM message: ${message.messageId}');
+  debugPrint('[FCM Background] 📩 Handling background message ID: ${message.messageId}');
+  debugPrint('[FCM Background]   - Topic/From: ${message.from}');
+  debugPrint('[FCM Background]   - Data: ${message.data}');
+  debugPrint('[FCM Background]   - Notification: title="${message.notification?.title}", body="${message.notification?.body}"');
 }
 
 void main() async {
@@ -58,11 +62,7 @@ void main() async {
   await MobileAds.instance.initialize();
   await AdService.initTestDeviceConfig();
 
-  runApp(
-    const ProviderScope(
-      child: ShootLiveApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ShootLiveApp()));
 }
 
 class ShootLiveApp extends ConsumerStatefulWidget {
@@ -72,7 +72,8 @@ class ShootLiveApp extends ConsumerStatefulWidget {
   ConsumerState<ShootLiveApp> createState() => _ShootLiveAppState();
 }
 
-class _ShootLiveAppState extends ConsumerState<ShootLiveApp> with WidgetsBindingObserver {
+class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -117,9 +118,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp> with WidgetsBinding
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       locale: const Locale('ar'),
-      supportedLocales: const [
-        Locale('ar'),
-      ],
+      supportedLocales: const [Locale('ar')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

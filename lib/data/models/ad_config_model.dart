@@ -3,12 +3,12 @@ class BannerAdPlacementConfig {
   final bool enabled;
   final String adUnitId;
 
-  const BannerAdPlacementConfig({
-    this.enabled = false,
-    this.adUnitId = '',
-  });
+  const BannerAdPlacementConfig({this.enabled = false, this.adUnitId = ''});
 
-  factory BannerAdPlacementConfig.fromMap(Map<String, dynamic>? map, {String defaultAdUnitId = ''}) {
+  factory BannerAdPlacementConfig.fromMap(
+    Map<String, dynamic>? map, {
+    String defaultAdUnitId = '',
+  }) {
     if (map == null) {
       return BannerAdPlacementConfig(adUnitId: defaultAdUnitId);
     }
@@ -18,10 +18,7 @@ class BannerAdPlacementConfig {
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'enabled': enabled,
-    'ad_unit_id': adUnitId,
-  };
+  Map<String, dynamic> toMap() => {'enabled': enabled, 'ad_unit_id': adUnitId};
 }
 
 /// Configuration model for interstitial ad placements.
@@ -36,7 +33,10 @@ class InterstitialAdPlacementConfig {
     this.frequencyCap = 3,
   });
 
-  factory InterstitialAdPlacementConfig.fromMap(Map<String, dynamic>? map, {String defaultAdUnitId = ''}) {
+  factory InterstitialAdPlacementConfig.fromMap(
+    Map<String, dynamic>? map, {
+    String defaultAdUnitId = '',
+  }) {
     if (map == null) {
       return InterstitialAdPlacementConfig(adUnitId: defaultAdUnitId);
     }
@@ -66,7 +66,10 @@ class NativeAdPlacementConfig {
     this.insertEveryNItems = 5,
   });
 
-  factory NativeAdPlacementConfig.fromMap(Map<String, dynamic>? map, {String defaultAdUnitId = ''}) {
+  factory NativeAdPlacementConfig.fromMap(
+    Map<String, dynamic>? map, {
+    String defaultAdUnitId = '',
+  }) {
     if (map == null) {
       return NativeAdPlacementConfig(adUnitId: defaultAdUnitId);
     }
@@ -89,12 +92,12 @@ class AppOpenAdPlacementConfig {
   final bool enabled;
   final String adUnitId;
 
-  const AppOpenAdPlacementConfig({
-    this.enabled = false,
-    this.adUnitId = '',
-  });
+  const AppOpenAdPlacementConfig({this.enabled = false, this.adUnitId = ''});
 
-  factory AppOpenAdPlacementConfig.fromMap(Map<String, dynamic>? map, {String defaultAdUnitId = ''}) {
+  factory AppOpenAdPlacementConfig.fromMap(
+    Map<String, dynamic>? map, {
+    String defaultAdUnitId = '',
+  }) {
     if (map == null) {
       return AppOpenAdPlacementConfig(adUnitId: defaultAdUnitId);
     }
@@ -104,10 +107,7 @@ class AppOpenAdPlacementConfig {
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'enabled': enabled,
-    'ad_unit_id': adUnitId,
-  };
+  Map<String, dynamic> toMap() => {'enabled': enabled, 'ad_unit_id': adUnitId};
 }
 
 /// Configuration model for rewarded ad placements.
@@ -115,12 +115,12 @@ class RewardedAdPlacementConfig {
   final bool enabled;
   final String adUnitId;
 
-  const RewardedAdPlacementConfig({
-    this.enabled = false,
-    this.adUnitId = '',
-  });
+  const RewardedAdPlacementConfig({this.enabled = false, this.adUnitId = ''});
 
-  factory RewardedAdPlacementConfig.fromMap(Map<String, dynamic>? map, {String defaultAdUnitId = ''}) {
+  factory RewardedAdPlacementConfig.fromMap(
+    Map<String, dynamic>? map, {
+    String defaultAdUnitId = '',
+  }) {
     if (map == null) {
       return RewardedAdPlacementConfig(adUnitId: defaultAdUnitId);
     }
@@ -130,10 +130,7 @@ class RewardedAdPlacementConfig {
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'enabled': enabled,
-    'ad_unit_id': adUnitId,
-  };
+  Map<String, dynamic> toMap() => {'enabled': enabled, 'ad_unit_id': adUnitId};
 }
 
 /// Master AdConfig model representing `config/ad_config` in Firestore.
@@ -156,7 +153,8 @@ class AdConfig {
 
   /// Official Google AdMob test ad unit IDs for Android.
   static const String testBannerId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
+  static const String testInterstitialId =
+      'ca-app-pub-3940256099942544/1033173712';
   static const String testNativeId = 'ca-app-pub-3940256099942544/2247696110';
   static const String testAppOpenId = 'ca-app-pub-3940256099942544/9257395921';
   static const String testRewardedId = 'ca-app-pub-3940256099942544/5224354917';

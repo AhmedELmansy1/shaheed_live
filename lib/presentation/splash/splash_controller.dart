@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/services/auth_service.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/services/remote_config_service.dart';
@@ -61,7 +62,9 @@ class SplashController {
         final syncService = _ref.read(userSyncServiceProvider);
         await syncService.pullFirestoreToLocal();
       } catch (e) {
-        debugPrint('[SplashController] WARNING: Firestore pull sync failed: $e');
+        debugPrint(
+          '[SplashController] WARNING: Firestore pull sync failed: $e',
+        );
       }
     }
 
@@ -69,18 +72,24 @@ class SplashController {
     try {
       final reminderService = _ref.read(matchReminderServiceProvider);
       await reminderService.rescheduleAllReminders();
-      debugPrint('[SplashController] Match reminders successfully rescheduled.');
+      debugPrint(
+        '[SplashController] Match reminders successfully rescheduled.',
+      );
     } catch (e) {
-      debugPrint('[SplashController] WARNING: Match reminder reschedule error: $e');
+      debugPrint(
+        '[SplashController] WARNING: Match reminder reschedule error: $e',
+      );
     }
 
     // 5. Check remote configuration and evaluate force-update hard block FIRST
     if (firebaseReady) {
       try {
-        final remoteConfig =
-            await _ref.read(remoteConfigServiceProvider).fetchInitialConfig();
-        final currentVersion =
-            await _ref.read(currentAppVersionProvider.future);
+        final remoteConfig = await _ref
+            .read(remoteConfigServiceProvider)
+            .fetchInitialConfig();
+        final currentVersion = await _ref.read(
+          currentAppVersionProvider.future,
+        );
         final updateInfo = UpdateService.evaluate(
           currentVersion: currentVersion,
           config: remoteConfig,
@@ -90,11 +99,15 @@ class SplashController {
           'status=${updateInfo.status}, current="${updateInfo.currentVersion}", latest="${updateInfo.latestVersion}"',
         );
         if (updateInfo.isHardBlocked) {
-          debugPrint('[SplashController] Hard block detected during startup -> routing to /force-update');
+          debugPrint(
+            '[SplashController] Hard block detected during startup -> routing to /force-update',
+          );
           return '/force-update';
         }
       } catch (e) {
-        debugPrint('[SplashController] WARNING: Remote config check in splash failed: $e');
+        debugPrint(
+          '[SplashController] WARNING: Remote config check in splash failed: $e',
+        );
       }
     }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import '../../core/services/remote_config_service.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -64,14 +65,14 @@ class _NativeAdCardState extends ConsumerState<NativeAdCard> {
           size: 11.0,
         ),
         tertiaryTextStyle: NativeTemplateTextStyle(
-          textColor: AppColors.liveIndicator,
+          textColor: AppColors.primary,
           backgroundColor: AppColors.surface,
           style: NativeTemplateFontStyle.bold,
           size: 11.0,
         ),
         callToActionTextStyle: NativeTemplateTextStyle(
           textColor: Colors.black,
-          backgroundColor: AppColors.liveIndicator,
+          backgroundColor: AppColors.primary,
           style: NativeTemplateFontStyle.bold,
           size: 12.0,
         ),
@@ -136,7 +137,10 @@ class _NativeAdCardState extends ConsumerState<NativeAdCard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.cardBorder,
                     borderRadius: BorderRadius.circular(4),
@@ -153,10 +157,7 @@ class _NativeAdCardState extends ConsumerState<NativeAdCard> {
               ],
             ),
           ),
-          SizedBox(
-            height: 90,
-            child: AdWidget(ad: _nativeAd!),
-          ),
+          SizedBox(height: 90, child: AdWidget(ad: _nativeAd!)),
         ],
       ),
     );

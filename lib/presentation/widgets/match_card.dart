@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/services/ad_service.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -10,7 +11,10 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/match_model.dart';
+import 'app_button.dart';
 import 'app_card.dart';
+import 'bottom_sheets/coming_soon_bottom_sheet.dart';
+import 'bottom_sheets/watch_match_bottom_sheet.dart';
 import 'live_badge.dart';
 import 'match_countdown_widget.dart';
 import 'score_text.dart';
@@ -27,14 +31,27 @@ class MatchCard extends ConsumerWidget {
     final isLive = match.isLive;
     final isReminderSet = ref.watch(isReminderSetProvider(match.matchId));
 
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final textPrimary = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.darkTextPrimary;
+    final textSecondary = isLight
+        ? AppColors.lightTextSecondary
+        : AppColors.darkTextSecondary;
+
     return AppCard(
       isLive: isLive,
       isFeatured: false,
       onTap: () {
-        ref.read(adServiceProvider).handleMatchOpenInterstitial(isLiveMatch: match.isLive);
+        ref
+            .read(adServiceProvider)
+            .handleMatchOpenInterstitial(isLiveMatch: match.isLive);
         context.push('/match/${match.matchId}', extra: match);
       },
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -60,9 +77,7 @@ class MatchCard extends ConsumerWidget {
                         style: GoogleFonts.cairo(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: match.isFinished
-                              ? AppColors.darkTextSecondary
-                              : AppColors.darkTextPrimary,
+                          color: match.isFinished ? textSecondary : textPrimary,
                           letterSpacing: 0.0,
                           height: 1.2,
                         ),
@@ -75,7 +90,10 @@ class MatchCard extends ConsumerWidget {
               // Match Center: Status / Live Badge / Score
               Expanded(
                 flex: 3,
-                child: _buildCenterStatus(context),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildCenterStatus(context),
+                ),
               ),
 
               // Away Team (Left side in RTL)
@@ -93,9 +111,7 @@ class MatchCard extends ConsumerWidget {
                         style: GoogleFonts.cairo(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: match.isFinished
-                              ? AppColors.darkTextSecondary
-                              : AppColors.darkTextPrimary,
+                          color: match.isFinished ? textSecondary : textPrimary,
                           letterSpacing: 0.0,
                           height: 1.2,
                         ),
@@ -122,12 +138,17 @@ class MatchCard extends ConsumerWidget {
                 borderRadius: AppRadii.fullRadius,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  debugPrint('[MatchCard] Tapping bell reminder for match #${match.matchId}');
+                  debugPrint(
+                    '[MatchCard] Tapping bell reminder for match #${match.matchId}',
+                  );
                   ref.read(matchReminderServiceProvider).toggleReminder(match);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: isReminderSet
                         ? AppColors.primary.withValues(alpha: 0.14)
@@ -148,15 +169,21 @@ class MatchCard extends ConsumerWidget {
                             ? Icons.notifications_active_rounded
                             : Icons.notifications_none_rounded,
                         size: 13,
-                        color: isReminderSet ? AppColors.primary : AppColors.darkTextMuted,
+                        color: isReminderSet
+                            ? AppColors.primary
+                            : AppColors.darkTextMuted,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isReminderSet ? 'تم تفعيل التذكير' : 'تذكير قبل الماتش',
                         style: GoogleFonts.cairo(
-                          color: isReminderSet ? AppColors.primary : AppColors.darkTextMuted,
+                          color: isReminderSet
+                              ? AppColors.primary
+                              : AppColors.darkTextMuted,
                           fontSize: 10.5,
-                          fontWeight: isReminderSet ? FontWeight.bold : FontWeight.w600,
+                          fontWeight: isReminderSet
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                           letterSpacing: 0.0,
                         ),
                       ),
@@ -166,6 +193,34 @@ class MatchCard extends ConsumerWidget {
               ),
             ),
           ],
+
+          // Action Buttons: Watch Now & Highlights
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'ملخص المباراة 🎬',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    ComingSoonBottomSheet.show(context);
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppButton(
+                  label: 'شاهد المباراة الآن ⚽',
+                  variant: AppButtonVariant.primary,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    WatchMatchBottomSheet.show(context);
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -174,52 +229,74 @@ class MatchCard extends ConsumerWidget {
   Widget _buildCenterStatus(BuildContext context) {
     if (match.isLive) {
       final minute = match.currentMinute;
-      final showMinutePill = minute != null && minute.isNotEmpty && minute != 'مباشر';
+      final showMinutePill =
+          minute != null && minute.isNotEmpty && minute != 'مباشر';
 
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const LiveBadge(),
-              if (showMinutePill) ...[
-                const SizedBox(width: AppSpacing.xs),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: AppColors.live.withValues(alpha: 0.15),
-                    borderRadius: AppRadii.fullRadius,
-                    border: Border.all(
-                      color: AppColors.live.withValues(alpha: 0.6),
-                      width: 0.9,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const LiveBadge(),
+                if (showMinutePill) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.live.withValues(alpha: 0.15),
+                      borderRadius: AppRadii.fullRadius,
+                      border: Border.all(
+                        color: AppColors.live.withValues(alpha: 0.6),
+                        width: 0.9,
+                      ),
+                    ),
+                    child: Text(
+                      minute,
+                      style: GoogleFonts.cairo(
+                        color: AppColors.live,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.0,
+                        height: 1.15,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    minute,
-                    style: GoogleFonts.cairo(
-                      color: AppColors.live,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.0,
-                      height: 1.15,
-                    ),
-                  ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
           const SizedBox(height: 2),
-          ScoreText(
-            homeScore: match.homeScore,
-            awayScore: match.awayScore,
-            isLive: true,
-            fontSize: 24,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: ScoreText(
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              isLive: true,
+              fontSize: 24,
+            ),
           ),
         ],
       );
     }
+
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final surfaceHigh = isLight
+        ? AppColors.lightSurfaceHigh
+        : AppColors.darkSurfaceHigh;
+    final border = isLight ? AppColors.lightBorder : AppColors.darkBorder;
+    final textPrimary = isLight
+        ? AppColors.lightTextPrimary
+        : AppColors.darkTextPrimary;
+    final textMuted = isLight
+        ? AppColors.lightTextMuted
+        : AppColors.darkTextMuted;
 
     if (match.status == MatchStatus.finished) {
       return Column(
@@ -235,14 +312,14 @@ class MatchCard extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
             decoration: BoxDecoration(
-              color: AppColors.darkSurfaceHigh,
+              color: surfaceHigh,
               borderRadius: AppRadii.fullRadius,
-              border: Border.all(color: AppColors.darkBorder, width: 0.8),
+              border: Border.all(color: border, width: 0.8),
             ),
             child: Text(
               match.adminTitle ?? 'انتهت',
               style: GoogleFonts.cairo(
-                color: AppColors.darkTextMuted,
+                color: textMuted,
                 fontSize: 9.5,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.0,
@@ -253,15 +330,16 @@ class MatchCard extends ConsumerWidget {
       );
     }
 
-    if (match.status == MatchStatus.postponed || match.status == MatchStatus.cancelled) {
+    if (match.status == MatchStatus.postponed ||
+        match.status == MatchStatus.cancelled) {
       final isPostponed = match.status == MatchStatus.postponed;
       return Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: AppColors.darkSurfaceHigh,
+            color: surfaceHigh,
             borderRadius: AppRadii.smRadius,
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: border),
           ),
           child: Text(
             match.adminTitle ?? (isPostponed ? 'تأجلت' : 'ملغاة'),
@@ -277,22 +355,25 @@ class MatchCard extends ConsumerWidget {
     }
 
     // Upcoming Match: Kickoff Time + Live Countdown Timer
-    final timeFormatted = DateFormatter.formatMatchTime(match.matchDate, match.matchTime);
+    final timeFormatted = DateFormatter.formatMatchTime(
+      match.matchDate,
+      match.matchTime,
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
           decoration: BoxDecoration(
-            color: AppColors.darkSurfaceHigh,
+            color: surfaceHigh,
             borderRadius: AppRadii.smRadius,
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: border),
           ),
           child: Text(
             timeFormatted,
             textAlign: TextAlign.center,
             style: GoogleFonts.cairo(
-              color: AppColors.darkTextPrimary,
+              color: textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.0,

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../core/services/user_sync_service.dart';
 import '../../../data/models/league_model.dart';
 import '../../../data/models/team_model.dart';
@@ -67,7 +68,8 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     try {
       final repository = ref.read(onboardingRepositoryProvider);
       final prefs = await SharedPreferences.getInstance();
-      final notifSetup = prefs.getBool('hasCompletedNotificationSetup') ?? false;
+      final notifSetup =
+          prefs.getBool('hasCompletedNotificationSetup') ?? false;
       final onboardingDone = prefs.getBool('hasCompletedOnboarding') ?? false;
       final savedLeagues = prefs.getStringList('selected_leagues') ?? [];
       final savedTeams = prefs.getStringList('selected_teams') ?? [];
@@ -92,7 +94,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         selectedTeamIds: savedTeams,
       );
       // ignore: avoid_print
-      print('[OnboardingNotifier] State updated with isLoading: false, leagues: ${state.leagues.length}');
+      print(
+        '[OnboardingNotifier] State updated with isLoading: false, leagues: ${state.leagues.length}',
+      );
     } catch (e, st) {
       // ignore: avoid_print
       print('[OnboardingNotifier] ERROR IN init(): $e\n$st');
@@ -148,13 +152,22 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   void _pushToFirestoreAsync() {
     try {
       final syncService = ref.read(userSyncServiceProvider);
-      syncService.pushLocalToFirestore().then((_) {
-        debugPrint('[OnboardingNotifier] Firestore push completed in background.');
-      }).catchError((e) {
-        debugPrint('[OnboardingNotifier] Firestore push failed in background (non-fatal): $e');
-      });
+      syncService
+          .pushLocalToFirestore()
+          .then((_) {
+            debugPrint(
+              '[OnboardingNotifier] Firestore push completed in background.',
+            );
+          })
+          .catchError((e) {
+            debugPrint(
+              '[OnboardingNotifier] Firestore push failed in background (non-fatal): $e',
+            );
+          });
     } catch (e) {
-      debugPrint('[OnboardingNotifier] Failed to read userSyncServiceProvider (non-fatal): $e');
+      debugPrint(
+        '[OnboardingNotifier] Failed to read userSyncServiceProvider (non-fatal): $e',
+      );
     }
   }
 
@@ -180,5 +193,5 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
 
 final onboardingProvider =
     NotifierProvider<OnboardingNotifier, OnboardingState>(() {
-  return OnboardingNotifier();
-});
+      return OnboardingNotifier();
+    });

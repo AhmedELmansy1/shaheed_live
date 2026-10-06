@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../utils/version_helper.dart';
 import 'remote_config_service.dart';
 
@@ -56,8 +57,11 @@ class UpdateService {
     final isForce = config.forceUpdate;
     final downloadUrl = config.updateDownloadUrl.trim();
 
-    final isBelowMin = minSupported.isNotEmpty && VersionHelper.isLessThan(currentVersion, minSupported);
-    final isBelowLatest = latest.isNotEmpty && VersionHelper.isLessThan(currentVersion, latest);
+    final isBelowMin =
+        minSupported.isNotEmpty &&
+        VersionHelper.isLessThan(currentVersion, minSupported);
+    final isBelowLatest =
+        latest.isNotEmpty && VersionHelper.isLessThan(currentVersion, latest);
 
     debugPrint(
       '[UpdateService] Evaluating version comparison: current="$currentVersion", latest="$latest", '
@@ -66,7 +70,9 @@ class UpdateService {
 
     // 1. Check Hard Block: Current version is below minimum supported version
     if (isBelowMin) {
-      debugPrint('[UpdateService] -> Result: HARD BLOCK (current < minSupported)');
+      debugPrint(
+        '[UpdateService] -> Result: HARD BLOCK (current < minSupported)',
+      );
       return AppUpdateInfo(
         status: UpdateStatus.hardBlock,
         currentVersion: currentVersion,
@@ -79,7 +85,9 @@ class UpdateService {
 
     // 2. Check Hard Block: Current version is below latest version AND force_update is explicitly true
     if (isBelowLatest && isForce) {
-      debugPrint('[UpdateService] -> Result: HARD BLOCK (current < latest with force_update=true)');
+      debugPrint(
+        '[UpdateService] -> Result: HARD BLOCK (current < latest with force_update=true)',
+      );
       return AppUpdateInfo(
         status: UpdateStatus.hardBlock,
         currentVersion: currentVersion,
@@ -135,10 +143,7 @@ final appUpdateInfoProvider = Provider<AppUpdateInfo>((ref) {
   final configAsync = ref.watch(remoteConfigStreamProvider);
   final config = configAsync.value ?? const RemoteConfigModel();
 
-  return UpdateService.evaluate(
-    currentVersion: currentVersion,
-    config: config,
-  );
+  return UpdateService.evaluate(currentVersion: currentVersion, config: config);
 });
 
 /// Notifier tracking whether the user has dismissed the soft update prompt during the current app session.
@@ -154,5 +159,5 @@ class SoftPromptDismissedNotifier extends Notifier<bool> {
 
 final softPromptDismissedProvider =
     NotifierProvider<SoftPromptDismissedNotifier, bool>(() {
-  return SoftPromptDismissedNotifier();
-});
+      return SoftPromptDismissedNotifier();
+    });

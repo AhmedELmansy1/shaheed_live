@@ -49,7 +49,9 @@ class UserSyncService {
     try {
       final docPath = _userDocPath;
       if (docPath == null) {
-        debugPrint('[UserSyncService] pushLocalToFirestore: No authenticated user — skipping.');
+        debugPrint(
+          '[UserSyncService] pushLocalToFirestore: No authenticated user — skipping.',
+        );
         return;
       }
 
@@ -66,7 +68,9 @@ class UserSyncService {
         // PackageInfo can fail in test environments
       }
 
-      final platform = defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+      final platform = defaultTargetPlatform == TargetPlatform.iOS
+          ? 'ios'
+          : 'android';
 
       final docRef = _firestore.doc(docPath);
       final docSnapshot = await docRef.get();
@@ -75,10 +79,7 @@ class UserSyncService {
         'selected_leagues': selectedLeagues,
         'selected_teams': selectedTeams,
         'updated_at': FieldValue.serverTimestamp(),
-        'device_info': {
-          'platform': platform,
-          'app_version': appVersion,
-        },
+        'device_info': {'platform': platform, 'app_version': appVersion},
       };
 
       // Only set notification_preferences and created_at on first write
@@ -102,7 +103,9 @@ class UserSyncService {
 
       debugPrint('[UserSyncService] pushLocalToFirestore: SUCCESS → $docPath');
     } catch (e) {
-      debugPrint('[UserSyncService] pushLocalToFirestore: FAILED (non-fatal): $e');
+      debugPrint(
+        '[UserSyncService] pushLocalToFirestore: FAILED (non-fatal): $e',
+      );
     }
   }
 
@@ -115,7 +118,9 @@ class UserSyncService {
     try {
       final docPath = _userDocPath;
       if (docPath == null) {
-        debugPrint('[UserSyncService] pullFirestoreToLocal: No authenticated user — skipping.');
+        debugPrint(
+          '[UserSyncService] pullFirestoreToLocal: No authenticated user — skipping.',
+        );
         return;
       }
 
@@ -123,7 +128,9 @@ class UserSyncService {
       final docSnapshot = await docRef.get();
 
       if (!docSnapshot.exists) {
-        debugPrint('[UserSyncService] pullFirestoreToLocal: No Firestore doc exists — skipping.');
+        debugPrint(
+          '[UserSyncService] pullFirestoreToLocal: No Firestore doc exists — skipping.',
+        );
         return;
       }
 
@@ -156,11 +163,13 @@ class UserSyncService {
       );
 
       // Overwrite local selections from cloud
-      final cloudLeagues = (cloudData['selected_leagues'] as List<dynamic>?)
+      final cloudLeagues =
+          (cloudData['selected_leagues'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [];
-      final cloudTeams = (cloudData['selected_teams'] as List<dynamic>?)
+      final cloudTeams =
+          (cloudData['selected_teams'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [];
@@ -176,17 +185,18 @@ class UserSyncService {
       // Update local sync timestamp to reflect we've consumed cloud data
       await prefs.setInt('last_sync_timestamp', cloudTimestampMs);
 
-      debugPrint('[UserSyncService] pullFirestoreToLocal: SUCCESS — synced ${cloudLeagues.length} leagues, ${cloudTeams.length} teams.');
+      debugPrint(
+        '[UserSyncService] pullFirestoreToLocal: SUCCESS — synced ${cloudLeagues.length} leagues, ${cloudTeams.length} teams.',
+      );
     } catch (e) {
-      debugPrint('[UserSyncService] pullFirestoreToLocal: FAILED (non-fatal): $e');
+      debugPrint(
+        '[UserSyncService] pullFirestoreToLocal: FAILED (non-fatal): $e',
+      );
     }
   }
 }
 
 /// Riverpod provider for [UserSyncService].
 final userSyncServiceProvider = Provider<UserSyncService>((ref) {
-  return UserSyncService(
-    FirebaseFirestore.instance,
-    FirebaseAuth.instance,
-  );
+  return UserSyncService(FirebaseFirestore.instance, FirebaseAuth.instance);
 });

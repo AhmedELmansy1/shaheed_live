@@ -69,18 +69,14 @@ class ApiMatchesRepository implements MatchesRepository {
 
   @override
   Future<List<MatchModel>> getMatchesByDate(String date) async {
-    return _fetchMatches({
-      'type': 'matches_by_date',
-      'date': date,
-    });
+    return _fetchMatches({'type': 'matches_by_date', 'date': date});
   }
 
   @override
   Future<MatchInfoModel?> getMatchInfo(String matchId) async {
-    final responseData = await dioClient.get(queryParameters: {
-      'type': 'match_info',
-      'id': matchId,
-    });
+    final responseData = await dioClient.get(
+      queryParameters: {'type': 'match_info', 'id': matchId},
+    );
 
     if (responseData is Map<String, dynamic> && responseData.isNotEmpty) {
       return MatchInfoModel.fromMap(responseData);
@@ -94,20 +90,22 @@ class ApiMatchesRepository implements MatchesRepository {
     required dynamic homeTeamId,
     required dynamic awayTeamId,
   }) async {
-    final responseData = await dioClient.get(queryParameters: {
-      'type': 'statics_match',
-      'id': matchId,
-    });
+    final responseData = await dioClient.get(
+      queryParameters: {'type': 'statics_match', 'id': matchId},
+    );
 
-    return MatchStatisticsModel.fromResponse(responseData, homeTeamId, awayTeamId);
+    return MatchStatisticsModel.fromResponse(
+      responseData,
+      homeTeamId,
+      awayTeamId,
+    );
   }
 
   @override
   Future<List<MatchEventModel>> getMatchEvents(String matchId) async {
-    final responseData = await dioClient.get(queryParameters: {
-      'type': 'matches_event',
-      'id': matchId,
-    });
+    final responseData = await dioClient.get(
+      queryParameters: {'type': 'matches_event', 'id': matchId},
+    );
 
     if (responseData is Map<String, dynamic>) {
       final eventsList = responseData['events'];
@@ -132,10 +130,9 @@ class ApiMatchesRepository implements MatchesRepository {
     required dynamic homeTeamId,
     required dynamic awayTeamId,
   }) async {
-    final responseData = await dioClient.get(queryParameters: {
-      'type': 'matches_lineup',
-      'id': matchId,
-    });
+    final responseData = await dioClient.get(
+      queryParameters: {'type': 'matches_lineup', 'id': matchId},
+    );
 
     return MatchLineupModel.fromResponse(responseData, homeTeamId, awayTeamId);
   }

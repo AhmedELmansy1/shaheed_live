@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/models/match_model.dart';
 import '../../../data/models/team_model.dart';
 import '../../home/providers/matches_provider.dart';
@@ -22,9 +23,10 @@ class AllTeamsNotifier extends AsyncNotifier<List<TeamModel>> {
   }
 }
 
-final allTeamsProvider = AsyncNotifierProvider<AllTeamsNotifier, List<TeamModel>>(() {
-  return AllTeamsNotifier();
-});
+final allTeamsProvider =
+    AsyncNotifierProvider<AllTeamsNotifier, List<TeamModel>>(() {
+      return AllTeamsNotifier();
+    });
 
 // 2. Search Query Notifier
 class SearchQueryNotifier extends Notifier<String> {
@@ -52,7 +54,7 @@ final filteredTeamsProvider = Provider<List<TeamModel>>((ref) {
   return allTeamsState.maybeWhen(
     data: (teams) {
       if (query.isEmpty) return teams;
-      
+
       return teams.where((team) {
         final nameAr = team.name.toLowerCase();
         final nameEn = team.nameEn.toLowerCase();
@@ -64,9 +66,12 @@ final filteredTeamsProvider = Provider<List<TeamModel>>((ref) {
 });
 
 // 4. Team Fixtures Provider
-final teamFixturesProvider = FutureProvider.family<List<MatchModel>, String>((ref, teamName) async {
+final teamFixturesProvider = FutureProvider.family<List<MatchModel>, String>((
+  ref,
+  teamName,
+) async {
   final matchesRepo = ref.read(matchesRepositoryProvider);
-  
+
   final now = DateTime.now();
   final dates = [
     now,
@@ -78,7 +83,8 @@ final teamFixturesProvider = FutureProvider.family<List<MatchModel>, String>((re
 
   for (final date in dates) {
     try {
-      final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      final formattedDate =
+          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
       final matches = await matchesRepo.getMatchesByDate(formattedDate);
       allMatches.addAll(matches);
     } catch (e) {
@@ -91,7 +97,8 @@ final teamFixturesProvider = FutureProvider.family<List<MatchModel>, String>((re
   final filteredMatches = allMatches.where((match) {
     final homeTitle = match.homeTeam.title.toLowerCase();
     final awayTitle = match.awayTeam.title.toLowerCase();
-    return homeTitle.contains(teamNameLower) || awayTitle.contains(teamNameLower);
+    return homeTitle.contains(teamNameLower) ||
+        awayTitle.contains(teamNameLower);
   }).toList();
 
   return filteredMatches;

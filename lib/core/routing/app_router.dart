@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
+import '../../presentation/about/about_developer_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/leagues/leagues_placeholder_screen.dart';
@@ -47,10 +48,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refreshNotifier,
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const SplashScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(
         path: '/force-update',
         builder: (context, state) => const ForceUpdateScreen(),
@@ -120,7 +118,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final teamName = state.pathParameters['name'] ?? '';
-          final teamModel = state.extra is TeamModel ? state.extra as TeamModel : null;
+          final teamModel = state.extra is TeamModel
+              ? state.extra as TeamModel
+              : null;
           return TeamFixturesScreen(teamName: teamName, teamModel: teamModel);
         },
       ),
@@ -130,9 +130,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '0';
-          final match = state.extra is MatchModel ? state.extra as MatchModel : null;
+          final match = state.extra is MatchModel
+              ? state.extra as MatchModel
+              : null;
           return MatchDetailsScreen(matchId: id, initialMatch: match);
         },
+      ),
+      // About Developer screen
+      GoRoute(
+        path: '/about-developer',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AboutDeveloperScreen(),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {
@@ -162,7 +170,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final prefs = await SharedPreferences.getInstance();
-      final notifSetup = prefs.getBool('hasCompletedNotificationSetup') ?? false;
+      final notifSetup =
+          prefs.getBool('hasCompletedNotificationSetup') ?? false;
       final onboardingDone = prefs.getBool('hasCompletedOnboarding') ?? false;
 
       // 2. Guard: Require Notification setup before any other route
@@ -176,6 +185,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           (location == '/home' ||
               location == '/leagues' ||
               location == '/settings' ||
+              location == '/about-developer' ||
               location.startsWith('/match/') ||
               location == '/search' ||
               location.startsWith('/team/'))) {

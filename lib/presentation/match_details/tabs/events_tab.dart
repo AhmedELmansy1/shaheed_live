@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radii.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/date_formatter.dart';
 import '../../../data/models/match_event_model.dart';
-import '../../widgets/app_card.dart';
-import '../../widgets/app_empty_state.dart';
 import '../providers/match_details_providers.dart';
 
 class EventsTab extends ConsumerWidget {
@@ -31,23 +25,21 @@ class EventsTab extends ConsumerWidget {
       data: (events) {
         if (events.isEmpty) {
           return const Center(
-            child: AppEmptyState(
-              type: EmptyStateType.soccer,
-              title: 'لا توجد أحداث مسجلة',
-              subtitle: 'لم يتم تسجيل أي أحداث لهذه المباراة حتى الآن',
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text(
+                'لا توجد أحداث مسجلة لهذه المباراة حتى الآن',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
             ),
           );
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.md,
-            120,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           itemCount: events.length,
-          separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final event = events[index];
             if (event.eventType == MatchEventType.periodMarker) {
@@ -62,10 +54,9 @@ class EventsTab extends ConsumerWidget {
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
       error: (err, stack) => Center(
-        child: AppEmptyState(
-          type: EmptyStateType.error,
-          title: 'تعذر تحميل الأحداث',
-          subtitle: '$err',
+        child: Text(
+          'خطأ في تحميل الأحداث: $err',
+          style: const TextStyle(color: AppColors.livePulse),
         ),
       ),
     );
@@ -73,43 +64,51 @@ class EventsTab extends ConsumerWidget {
 
   Widget _buildPeriodMarker(MatchEventModel event) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.xs,
-        horizontal: AppSpacing.md,
-      ),
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadii.full),
-        border: Border.all(color: AppColors.darkBorder),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Center(
         child: Text(
-          event.statusName.isNotEmpty ? event.statusName : DateFormatter.toArabicNumerals(event.formattedMinute),
-          style: AppTypography.caption(color: AppColors.darkTextSecondary),
+          event.statusName.isNotEmpty
+              ? event.statusName
+              : event.formattedMinute,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEventItem(BuildContext context, MatchEventModel event, {required bool isHome}) {
-    final minuteText = DateFormatter.toArabicNumerals(event.formattedMinute);
-
+  Widget _buildEventItem(
+    BuildContext context,
+    MatchEventModel event, {
+    required bool isHome,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Home side (if isHome, display content; else empty space)
+        // Home side (if isHome, display content; else spacer)
         Expanded(
           child: isHome
-              ? _buildEventContent(event, Alignment.centerRight, CrossAxisAlignment.end)
+              ? _buildEventContent(
+                  event,
+                  Alignment.centerRight,
+                  CrossAxisAlignment.end,
+                )
               : const SizedBox.shrink(),
         ),
 
-        // Timeline Minute Badge with glow ring
+        // Timeline Minute Badge
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          width: 38,
-          height: 38,
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: _getEventBgColor(event.eventType),
             shape: BoxShape.circle,
@@ -117,26 +116,25 @@ class EventsTab extends ConsumerWidget {
               color: _getEventBorderColor(event.eventType),
               width: 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: _getEventBorderColor(event.eventType).withValues(alpha: 0.25),
-                blurRadius: 8,
-                spreadRadius: 1,
-              ),
-            ],
           ),
-          child: Center(
-            child: Text(
-              minuteText,
-              style: AppTypography.badge(color: Colors.white, size: 11),
+          child: Text(
+            event.formattedMinute,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
 
-        // Away side (if !isHome, display content; else empty space)
+        // Away side (if !isHome, display content; else spacer)
         Expanded(
           child: !isHome
-              ? _buildEventContent(event, Alignment.centerLeft, CrossAxisAlignment.start)
+              ? _buildEventContent(
+                  event,
+                  Alignment.centerLeft,
+                  CrossAxisAlignment.start,
+                )
               : const SizedBox.shrink(),
         ),
       ],
@@ -148,106 +146,95 @@ class EventsTab extends ConsumerWidget {
     Alignment alignment,
     CrossAxisAlignment crossAxis,
   ) {
-    final isGoal = event.eventType == MatchEventType.goal;
-
-    return AppCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      margin: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(AppRadii.sm),
-      borderColor: isGoal ? AppColors.primary.withValues(alpha: 0.5) : null,
-      child: Column(
-        crossAxisAlignment: crossAxis,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildEventIcon(event.eventType),
-              const SizedBox(width: AppSpacing.xs),
-              Flexible(
-                child: Text(
-                  event.playerName ?? event.statusName,
-                  style: AppTypography.bodySmall(
-                    color: isGoal ? AppColors.primary : AppColors.darkTextPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (event.assistPlayerName != null && event.assistPlayerName!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
+    return Column(
+      crossAxisAlignment: crossAxis,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildEventIcon(event.eventType),
+            const SizedBox(width: 6),
+            Flexible(
               child: Text(
-                event.eventType == MatchEventType.substitution
-                    ? 'خروج: ${event.assistPlayerName}'
-                    : 'تمريرة حاسمة: ${event.assistPlayerName}',
-                style: AppTypography.caption(color: AppColors.darkTextSecondary),
+                event.playerName ?? event.statusName,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-        ],
-      ),
+          ],
+        ),
+        if (event.assistPlayerName != null &&
+            event.assistPlayerName!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              event.eventType == MatchEventType.substitution
+                  ? 'خروج: ${event.assistPlayerName}'
+                  : 'تمريرة حاسمة: ${event.assistPlayerName}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildEventIcon(MatchEventType type) {
     switch (type) {
       case MatchEventType.goal:
-        return const Icon(Icons.sports_soccer_rounded, color: AppColors.primary, size: 18);
+        return const Icon(
+          Icons.sports_soccer,
+          color: AppColors.primary,
+          size: 18,
+        );
       case MatchEventType.yellowCard:
         return Container(
-          width: 11,
-          height: 15,
+          width: 12,
+          height: 16,
           decoration: BoxDecoration(
-            color: AppColors.gold,
+            color: Colors.amber,
             borderRadius: BorderRadius.circular(2),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.goldGlow,
-                blurRadius: 4,
-              ),
-            ],
           ),
         );
       case MatchEventType.redCard:
         return Container(
-          width: 11,
-          height: 15,
+          width: 12,
+          height: 16,
           decoration: BoxDecoration(
-            color: AppColors.live,
+            color: AppColors.livePulse,
             borderRadius: BorderRadius.circular(2),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.liveGlowColor,
-                blurRadius: 4,
-              ),
-            ],
           ),
         );
       case MatchEventType.substitution:
-        return const Icon(Icons.swap_horiz_rounded, color: AppColors.accentCyan, size: 18);
+        return const Icon(Icons.swap_horiz, color: AppColors.secondary, size: 18);
       default:
-        return const Icon(Icons.info_outline_rounded, color: AppColors.darkTextSecondary, size: 16);
+        return const Icon(
+          Icons.info_outline,
+          color: AppColors.textSecondary,
+          size: 16,
+        );
     }
   }
 
   Color _getEventBgColor(MatchEventType type) {
     switch (type) {
       case MatchEventType.goal:
-        return AppColors.primary.withValues(alpha: 0.2);
+        return AppColors.primary.withValues(alpha: 0.18);
       case MatchEventType.yellowCard:
-        return AppColors.gold.withValues(alpha: 0.2);
+        return Colors.amber.withValues(alpha: 0.2);
       case MatchEventType.redCard:
-        return AppColors.live.withValues(alpha: 0.2);
-      case MatchEventType.substitution:
-        return AppColors.accentCyan.withValues(alpha: 0.2);
+        return AppColors.livePulse.withValues(alpha: 0.2);
       default:
-        return AppColors.darkSurface;
+        return AppColors.surface;
     }
   }
 
@@ -256,13 +243,11 @@ class EventsTab extends ConsumerWidget {
       case MatchEventType.goal:
         return AppColors.primary;
       case MatchEventType.yellowCard:
-        return AppColors.gold;
+        return Colors.amber;
       case MatchEventType.redCard:
-        return AppColors.live;
-      case MatchEventType.substitution:
-        return AppColors.accentCyan;
+        return AppColors.livePulse;
       default:
-        return AppColors.darkBorder;
+        return AppColors.cardBorder;
     }
   }
 }
