@@ -1,11 +1,25 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/network/dio_client.dart';
 import '../models/league_model.dart';
 import '../models/team_model.dart';
 
-/// Abstract repository contract for fetching leagues and teams during onboarding.
+/// Exception thrown when the catalog cannot be loaded (no network and no local cache).
+class CatalogException implements Exception {
+  final String message;
+  const CatalogException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Abstract repository contract for fetching leagues and teams during onboarding and management.
 abstract class OnboardingRepository {
-  Future<List<LeagueModel>> getPopularLeagues();
-  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds);
-  List<TeamModel> getPopularTeams();
+  Future<List<LeagueModel>> getPopularLeagues({bool forceRefresh = false});
+  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false});
+  Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false});
 }
 
 /// Local mock implementation of [OnboardingRepository] with realistic Arabic names.
@@ -16,24 +30,32 @@ class MockOnboardingRepository implements OnboardingRepository {
       name: 'الدوري المصري الممتاز',
       nameEn: 'Egyptian Premier League',
       country: 'مصر',
-    ),
-    LeagueModel(
-      id: 'ucl',
-      name: 'دوري أبطال أوروبا',
-      nameEn: 'UEFA Champions League',
-      country: 'أوروبا',
+      isPopular: true,
+      displayOrder: 1,
     ),
     LeagueModel(
       id: 'eng_1',
       name: 'الدوري الإنجليزي الممتاز',
       nameEn: 'Premier League',
       country: 'إنجلترا',
+      isPopular: true,
+      displayOrder: 2,
     ),
     LeagueModel(
       id: 'esp_1',
       name: 'الدوري الإسباني',
       nameEn: 'La Liga',
       country: 'إسبانيا',
+      isPopular: true,
+      displayOrder: 3,
+    ),
+    LeagueModel(
+      id: 'ucl',
+      name: 'دوري أبطال أوروبا',
+      nameEn: 'UEFA Champions League',
+      country: 'أوروبا',
+      isPopular: true,
+      displayOrder: 4,
     ),
     LeagueModel(
       id: 'ita_1',
@@ -419,27 +441,205 @@ class MockOnboardingRepository implements OnboardingRepository {
   ];
 
   @override
-  Future<List<LeagueModel>> getPopularLeagues() async {
-    // ignore: avoid_print
-    print(
-      '[OnboardingRepository] getPopularLeagues() called. Returning ${_mockLeagues.length} mock leagues.',
-    );
-    // Simulate slight network delay
-    await Future.delayed(const Duration(milliseconds: 100));
+  Future<List<LeagueModel>> getPopularLeagues({bool forceRefresh = false}) async {
     return _mockLeagues;
   }
 
   @override
-  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    if (leagueIds.isEmpty) return [];
-
-    // Filter teams belonging to selected leagues or major continental competitions
+  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false}) async {
+    if (leagueIds.isEmpty) return _mockTeams;
     return _mockTeams
         .where((team) => leagueIds.contains(team.leagueId))
         .toList();
   }
 
   @override
-  List<TeamModel> getPopularTeams() => _mockTeams;
+  Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false}) async => _mockTeams;
+
+  List<TeamModel> getPopularTeamsSync() => _mockTeams;
+}
+
+/// Production API-backed implementation of [OnboardingRepository] with persistent caching.
+class ApiOnboardingRepository implements OnboardingRepository {
+  final DioClient dioClient;
+  final SharedPreferences? prefs;
+
+  static const String _leaguesCacheKey = 'cached_catalog_leagues_v1';
+  static const String _teamsCacheKey = 'cached_catalog_teams_v1';
+
+  ApiOnboardingRepository({
+    required this.dioClient,
+    this.prefs,
+  });
+
+  Future<SharedPreferences> _getPrefs() async => prefs ?? await SharedPreferences.getInstance();
+
+  @override
+  Future<List<LeagueModel>> getPopularLeagues({bool forceRefresh = false}) async {
+    final p = await _getPrefs();
+
+    // 1. Check local cache if not forcing refresh
+    if (!forceRefresh) {
+      final cachedJson = p.getString(_leaguesCacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List && decoded.isNotEmpty) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => LeagueModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return _sortLeagues(list);
+          }
+        } catch (e) {
+          debugPrint('[ApiOnboardingRepository] Error parsing cached leagues: $e');
+        }
+      }
+    }
+
+    // 2. Fetch fresh from API
+    try {
+      final response = await dioClient.get(
+        queryParameters: {'type': 'leagues'},
+      );
+
+      List<LeagueModel> leagues = [];
+      if (response is Map<String, dynamic>) {
+        final list = response['leagues'] ?? response['data'];
+        if (list is List) {
+          leagues = list
+              .whereType<Map<String, dynamic>>()
+              .map((m) => LeagueModel.fromMap(m))
+              .toList();
+        }
+      } else if (response is List) {
+        leagues = response
+            .whereType<Map<String, dynamic>>()
+            .map((m) => LeagueModel.fromMap(m))
+            .toList();
+      }
+
+      if (leagues.isNotEmpty) {
+        // Cache locally for offline resilience
+        final serialized = jsonEncode(leagues.map((l) => l.toMap()).toList());
+        await p.setString(_leaguesCacheKey, serialized);
+        return _sortLeagues(leagues);
+      }
+    } catch (e) {
+      debugPrint('[ApiOnboardingRepository] Remote fetch error for leagues: $e');
+      // If network failed, try fallback cache again
+      final cachedJson = p.getString(_leaguesCacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => LeagueModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return _sortLeagues(list);
+          }
+        } catch (_) {}
+      }
+      throw const CatalogException('تعذر تحميل الدوريات. يرجى التحقق من الاتصال بالإنترنت والمحاولة مجدداً.');
+    }
+
+    throw const CatalogException('لا توجد بيانات متاحة للدوريات حالياً.');
+  }
+
+  @override
+  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false}) async {
+    final allTeams = await _getAllTeams(forceRefresh: forceRefresh);
+    if (leagueIds.isEmpty) return allTeams;
+
+    final idSet = leagueIds.map((id) => id.trim()).toSet();
+    final filtered = allTeams.where((t) => idSet.contains(t.leagueId)).toList();
+    return filtered;
+  }
+
+  @override
+  Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false}) async {
+    return _getAllTeams(forceRefresh: forceRefresh);
+  }
+
+  Future<List<TeamModel>> _getAllTeams({bool forceRefresh = false}) async {
+    final p = await _getPrefs();
+
+    if (!forceRefresh) {
+      final cachedJson = p.getString(_teamsCacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List && decoded.isNotEmpty) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => TeamModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return list;
+          }
+        } catch (e) {
+          debugPrint('[ApiOnboardingRepository] Error parsing cached teams: $e');
+        }
+      }
+    }
+
+    try {
+      final response = await dioClient.get(
+        queryParameters: {'type': 'teams'},
+      );
+
+      List<TeamModel> teams = [];
+      if (response is Map<String, dynamic>) {
+        final list = response['teams'] ?? response['data'];
+        if (list is List) {
+          teams = list
+              .whereType<Map<String, dynamic>>()
+              .map((m) => TeamModel.fromMap(m))
+              .toList();
+        }
+      } else if (response is List) {
+        teams = response
+            .whereType<Map<String, dynamic>>()
+            .map((m) => TeamModel.fromMap(m))
+            .toList();
+      }
+
+      if (teams.isNotEmpty) {
+        final serialized = jsonEncode(teams.map((t) => t.toMap()).toList());
+        await p.setString(_teamsCacheKey, serialized);
+        return teams;
+      }
+    } catch (e) {
+      debugPrint('[ApiOnboardingRepository] Remote fetch error for teams: $e');
+      final cachedJson = p.getString(_teamsCacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => TeamModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return list;
+          }
+        } catch (_) {}
+      }
+      throw const CatalogException('تعذر تحميل الفرق. يرجى التحقق من الاتصال بالإنترنت والمحاولة مجدداً.');
+    }
+
+    return [];
+  }
+
+  List<LeagueModel> _sortLeagues(List<LeagueModel> list) {
+    final sorted = List<LeagueModel>.from(list);
+    sorted.sort((a, b) {
+      if (a.isPopular && !b.isPopular) return -1;
+      if (!a.isPopular && b.isPopular) return 1;
+      if (a.displayOrder != b.displayOrder) {
+        return a.displayOrder.compareTo(b.displayOrder);
+      }
+      return a.name.compareTo(b.name);
+    });
+    return sorted;
+  }
 }

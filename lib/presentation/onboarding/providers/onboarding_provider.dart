@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/network/dio_client.dart';
 import '../../../core/services/match_reminder_service.dart';
 import '../../../core/services/user_sync_service.dart';
 import '../../../data/models/league_model.dart';
@@ -9,11 +12,16 @@ import '../../../data/models/team_model.dart';
 import '../../../data/repositories/onboarding_repository.dart';
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
-  return MockOnboardingRepository();
+  if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    return MockOnboardingRepository();
+  }
+  final dioClient = ref.watch(dioClientProvider);
+  return ApiOnboardingRepository(dioClient: dioClient);
 });
 
 class OnboardingState {
   final bool isLoading;
+  final String? errorMessage;
   final bool hasCompletedNotificationSetup;
   final bool hasCompletedOnboarding;
   final List<LeagueModel> leagues;
@@ -23,6 +31,7 @@ class OnboardingState {
 
   const OnboardingState({
     this.isLoading = true,
+    this.errorMessage,
     this.hasCompletedNotificationSetup = false,
     this.hasCompletedOnboarding = false,
     this.leagues = const [],
@@ -33,6 +42,8 @@ class OnboardingState {
 
   OnboardingState copyWith({
     bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
     bool? hasCompletedNotificationSetup,
     bool? hasCompletedOnboarding,
     List<LeagueModel>? leagues,
@@ -42,6 +53,7 @@ class OnboardingState {
   }) {
     return OnboardingState(
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       hasCompletedNotificationSetup:
           hasCompletedNotificationSetup ?? this.hasCompletedNotificationSetup,
       hasCompletedOnboarding:
@@ -57,53 +69,79 @@ class OnboardingState {
 class OnboardingNotifier extends Notifier<OnboardingState> {
   @override
   OnboardingState build() {
-    // ignore: avoid_print
-    print('[OnboardingNotifier] build() called.');
     Future.microtask(() => init());
     return const OnboardingState(isLoading: true);
   }
 
+  /// Helper to determine if an ID is a legacy synthetic mock ID (e.g. 'egy_1', 'eng_ahly')
+  /// Real API IDs from YsScores are positive integers (numeric strings like '937599', '8650').
+  static bool isSyntheticId(String id) {
+    final trimmed = id.trim();
+    if (trimmed.isEmpty) return true;
+    return int.tryParse(trimmed) == null;
+  }
+
+  Future<void> retry() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    await init();
+  }
+
   Future<void> init() async {
-    // ignore: avoid_print
-    print('[OnboardingNotifier] init() started.');
     try {
       final repository = ref.read(onboardingRepositoryProvider);
       final prefs = await SharedPreferences.getInstance();
+
       final notifSetup =
           prefs.getBool('hasCompletedNotificationSetup') ?? false;
       final onboardingDone = prefs.getBool('hasCompletedOnboarding') ?? false;
-      final savedLeagues = prefs.getStringList('selected_leagues') ?? [];
-      final savedTeams = prefs.getStringList('selected_teams') ?? [];
 
-      // ignore: avoid_print
-      print('[OnboardingNotifier] Fetching popular leagues from repository...');
+      // 1. Synthetic ID Migration: detect and safely purge legacy mock IDs ('egy_1', etc.)
+      final rawLeagues = prefs.getStringList('selected_leagues') ?? [];
+      final rawTeams = prefs.getStringList('selected_teams') ?? [];
+
+      final cleanedLeagues = rawLeagues.where((id) => !isSyntheticId(id)).toList();
+      final cleanedTeams = rawTeams.where((id) => !isSyntheticId(id)).toList();
+
+      if (cleanedLeagues.length != rawLeagues.length) {
+        debugPrint(
+          '[OnboardingNotifier] Migrated synthetic league IDs: removed ${rawLeagues.length - cleanedLeagues.length} fake items',
+        );
+        await prefs.setStringList('selected_leagues', cleanedLeagues);
+      }
+      if (cleanedTeams.length != rawTeams.length) {
+        debugPrint(
+          '[OnboardingNotifier] Migrated synthetic team IDs: removed ${rawTeams.length - cleanedTeams.length} fake items',
+        );
+        await prefs.setStringList('selected_teams', cleanedTeams);
+      }
+
+      // 2. Fetch real catalog from API or local cache
       final leagues = await repository.getPopularLeagues();
-      // ignore: avoid_print
-      print('[OnboardingNotifier] Received ${leagues.length} leagues.');
       List<TeamModel> teams = [];
-      if (savedLeagues.isNotEmpty) {
-        teams = await repository.getTeamsForLeagues(savedLeagues);
+      if (cleanedLeagues.isNotEmpty) {
+        teams = await repository.getTeamsForLeagues(cleanedLeagues);
+      } else {
+        teams = await repository.getPopularTeams();
       }
 
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
+        clearError: true,
         hasCompletedNotificationSetup: notifSetup,
         hasCompletedOnboarding: onboardingDone,
         leagues: leagues,
-        selectedLeagueIds: savedLeagues,
+        selectedLeagueIds: cleanedLeagues,
         filteredTeams: teams,
-        selectedTeamIds: savedTeams,
-      );
-      // ignore: avoid_print
-      print(
-        '[OnboardingNotifier] State updated with isLoading: false, leagues: ${state.leagues.length}',
+        selectedTeamIds: cleanedTeams,
       );
     } catch (e, st) {
-      // ignore: avoid_print
-      print('[OnboardingNotifier] ERROR IN init(): $e\n$st');
+      debugPrint('[OnboardingNotifier] Error in init(): $e\n$st');
       if (ref.mounted) {
-        state = state.copyWith(isLoading: false);
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        );
       }
     }
   }
@@ -156,57 +194,40 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
       debugPrint('[OnboardingNotifier] Error syncing team FCM topics: $e');
     }
 
-    // Fire-and-forget: push selections to Firestore without blocking navigation.
-    // This runs asynchronously — if it fails, shared_preferences is still the
-    // source of truth and the user can navigate to the home screen immediately.
     _pushToFirestoreAsync();
-  }
-
-  /// Pushes local selections to Firestore in the background.
-  /// Intentionally not awaited by the caller.
-  void _pushToFirestoreAsync() {
-    try {
-      final syncService = ref.read(userSyncServiceProvider);
-      syncService
-          .pushLocalToFirestore()
-          .then((_) {
-            debugPrint(
-              '[OnboardingNotifier] Firestore push completed in background.',
-            );
-          })
-          .catchError((e) {
-            debugPrint(
-              '[OnboardingNotifier] Firestore push failed in background (non-fatal): $e',
-            );
-          });
-    } catch (e) {
-      debugPrint(
-        '[OnboardingNotifier] Failed to read userSyncServiceProvider (non-fatal): $e',
-      );
-    }
   }
 
   Future<void> completeNotificationSetup() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasCompletedNotificationSetup', true);
-
     state = state.copyWith(hasCompletedNotificationSetup: true);
   }
 
-  /// Helper debug method for clearing onboarding state
   Future<void> resetOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('hasCompletedNotificationSetup');
-    await prefs.remove('hasCompletedOnboarding');
     await prefs.remove('selected_leagues');
     await prefs.remove('selected_teams');
+    await prefs.setBool('hasCompletedOnboarding', false);
+    state = state.copyWith(
+      hasCompletedOnboarding: false,
+      selectedLeagueIds: [],
+      selectedTeamIds: [],
+    );
+  }
 
-    state = const OnboardingState();
-    await init();
+  void _pushToFirestoreAsync() {
+    Future.microtask(() async {
+      try {
+        final syncService = ref.read(userSyncServiceProvider);
+        await syncService.pushLocalToFirestore();
+      } catch (e) {
+        debugPrint('[OnboardingNotifier] Background Firestore sync failed: $e');
+      }
+    });
   }
 }
 
 final onboardingProvider =
     NotifierProvider<OnboardingNotifier, OnboardingState>(() {
-      return OnboardingNotifier();
-    });
+  return OnboardingNotifier();
+});

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/services/league_resolver_service.dart';
@@ -10,6 +11,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/match_filter_helper.dart';
 import '../../../data/cache/matches_cache_service.dart';
 import '../../../data/models/match_model.dart';
+import '../../../data/models/team_model.dart';
 import '../../../data/repositories/matches_repository.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 
@@ -80,6 +82,45 @@ final selectedCustomDateProvider =
 
 enum MatchFilterType { upcoming, live, finished, favorites, all }
 
+enum HomeFeedScope { myMatches, allMatches }
+
+class HomeFeedScopeNotifier extends Notifier<HomeFeedScope> {
+  static const String _prefKey = 'home_feed_scope_mode';
+
+  @override
+  HomeFeedScope build() {
+    Future.microtask(() => _loadFromPrefs());
+    final onboarding = ref.watch(onboardingProvider);
+    final hasSelections = onboarding.selectedLeagueIds.isNotEmpty ||
+        onboarding.selectedTeamIds.isNotEmpty;
+    return hasSelections ? HomeFeedScope.myMatches : HomeFeedScope.allMatches;
+  }
+
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_prefKey);
+    if (saved != null) {
+      if (saved == 'allMatches' && state != HomeFeedScope.allMatches) {
+        state = HomeFeedScope.allMatches;
+      } else if (saved == 'myMatches' && state != HomeFeedScope.myMatches) {
+        state = HomeFeedScope.myMatches;
+      }
+    }
+  }
+
+  Future<void> setScope(HomeFeedScope scope) async {
+    if (state == scope) return;
+    state = scope;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKey, scope.name);
+  }
+}
+
+final homeFeedScopeProvider =
+    NotifierProvider<HomeFeedScopeNotifier, HomeFeedScope>(() {
+  return HomeFeedScopeNotifier();
+});
+
 class MatchFilterNotifier extends Notifier<MatchFilterType> {
   @override
   MatchFilterType build() => MatchFilterType.all;
@@ -122,9 +163,9 @@ class MatchesNotifier extends AsyncNotifier<List<MatchModel>> {
 
   Future<void> _processMatches(List<MatchModel> matches) async {
     final onboardingState = ref.read(onboardingProvider);
-    final allTeams = onboardingState.filteredTeams.isNotEmpty
+    final List<TeamModel> allTeams = onboardingState.filteredTeams.isNotEmpty
         ? onboardingState.filteredTeams
-        : ref.read(onboardingRepositoryProvider).getPopularTeams();
+        : await ref.read(onboardingRepositoryProvider).getPopularTeams();
     TeamResolverService.updateMappingsFromMatches(matches, allTeams);
     final allLeagues = onboardingState.leagues.isNotEmpty
         ? onboardingState.leagues
@@ -257,6 +298,7 @@ final matchesProvider =
 final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
   final rawAsync = ref.watch(matchesProvider);
   final filter = ref.watch(matchFilterProvider);
+  final scope = ref.watch(homeFeedScopeProvider);
   final onboardingState = ref.watch(onboardingProvider);
   final selectedTeamIds = onboardingState.selectedTeamIds;
   final selectedLeagueIds = onboardingState.selectedLeagueIds;
@@ -264,41 +306,44 @@ final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
   final allLeagues = onboardingState.leagues;
 
   return rawAsync.whenData((matches) {
-    // 1. Central Leagues-Only Filter:
-    // Only matches belonging to user's chosen leagues are retained.
-    // Edge case: if a followed team plays in a non-selected league, that match
-    // is still retained (team selection wins!).
-    // Edge case: if user selected no leagues (legacy), all matches are retained.
-    final leaguesOnlyMatches = matches.where((m) {
-      return isMatchInUserLeaguesOrFollowedTeams(
-        match: m,
-        selectedLeagueIds: selectedLeagueIds,
-        selectedTeamIds: selectedTeamIds,
-        allLeagues: allLeagues,
-        allTeams: allTeams,
-      );
-    }).toList();
+    final hasSelections =
+        selectedLeagueIds.isNotEmpty || selectedTeamIds.isNotEmpty;
+
+    // Scope filter:
+    // When in myMatches mode and user has selections, retain ONLY matches of user's chosen leagues/teams.
+    // When in allMatches mode (or if user selected nothing), retain all matches.
+    final scopedMatches = (scope == HomeFeedScope.myMatches && hasSelections)
+        ? matches.where((m) {
+            return isMatchInUserLeaguesOrFollowedTeams(
+              match: m,
+              selectedLeagueIds: selectedLeagueIds,
+              selectedTeamIds: selectedTeamIds,
+              allLeagues: allLeagues,
+              allTeams: allTeams,
+            );
+          }).toList()
+        : matches;
 
     List<MatchModel> result;
     switch (filter) {
       case MatchFilterType.all:
-        result = leaguesOnlyMatches;
+        result = scopedMatches;
         break;
       case MatchFilterType.live:
-        result = leaguesOnlyMatches.where((m) => m.isLive).toList();
+        result = scopedMatches.where((m) => m.isLive).toList();
         break;
       case MatchFilterType.upcoming:
         result =
-            leaguesOnlyMatches.where((m) => !m.isLive && !m.isFinished).toList();
+            scopedMatches.where((m) => !m.isLive && !m.isFinished).toList();
         break;
       case MatchFilterType.finished:
-        result = leaguesOnlyMatches.where((m) => m.isFinished).toList();
+        result = scopedMatches.where((m) => m.isFinished).toList();
         break;
       case MatchFilterType.favorites:
         if (selectedTeamIds.isEmpty && selectedLeagueIds.isEmpty) {
           return [];
         }
-        final favMatches = leaguesOnlyMatches.where((m) {
+        final favMatches = scopedMatches.where((m) {
           return isFavoriteTeamMatch(m, selectedTeamIds, allTeams) ||
               isFavoriteLeagueMatch(m, selectedLeagueIds, allLeagues);
         }).toList();

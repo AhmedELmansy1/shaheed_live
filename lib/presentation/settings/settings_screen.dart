@@ -165,12 +165,12 @@ class SettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'إدارة الدوريات المتابعة',
+                        'إدارة البطولات والفرق المفضلة',
                         style: AppTypography.titleSmall(color: textPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'تحديد وتعديل الدوريات التي تظهر في شاشات المباريات (${DateFormatter.toArabicNumerals('$leagueCount')} محددة)',
+                        'تحديد وتعديل البطولات والأندية التي تتابعها (${DateFormatter.toArabicNumerals('$leagueCount')} بطولات، ${DateFormatter.toArabicNumerals('$favoriteCount')} أندية)',
                         style: AppTypography.caption(color: textSecondary),
                       ),
                     ],

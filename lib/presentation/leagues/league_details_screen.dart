@@ -142,8 +142,7 @@ final leagueMatchesProvider =
     FutureProvider.family<List<MatchModel>, String>((ref, leagueId) async {
   final repo = ref.watch(matchesRepositoryProvider);
   final range = ref.watch(leagueMatchesRangeProvider(leagueId));
-  final onboardingState = ref.watch(onboardingProvider);
-  final allLeagues = onboardingState.leagues;
+  final allLeagues = ref.read(onboardingProvider).leagues;
 
   final dateStrings = getLeagueDateRangeStrings(range);
 

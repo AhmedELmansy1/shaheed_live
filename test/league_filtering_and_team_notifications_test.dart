@@ -279,7 +279,7 @@ void main() {
 
     testWidgets('Empty state displays "لا توجد مباريات في دورياتك اليوم" and manage button', (tester) async {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('selected_leagues', ['esp_1']);
+      await prefs.setStringList('selected_leagues', ['938652']);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -308,10 +308,13 @@ class _EmptyMatchesNotifier extends MatchesNotifier {
 
 class FakeOnboardingRepository implements OnboardingRepository {
   @override
-  Future<List<LeagueModel>> getPopularLeagues() async => [];
+  Future<List<LeagueModel>> getPopularLeagues({bool forceRefresh = false}) async => [];
 
   @override
-  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds) async => [];
+  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false}) async => [];
+
+  @override
+  Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false}) async => [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

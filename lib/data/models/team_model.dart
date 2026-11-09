@@ -16,11 +16,11 @@ class TeamModel {
 
   factory TeamModel.fromMap(Map<String, dynamic> map) {
     return TeamModel(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      nameEn: map['name_en'] as String,
-      logoUrl: map['logo_url'] as String?,
-      leagueId: map['league_id'] as String,
+      id: (map['id'] ?? map['row_id'] ?? '').toString(),
+      name: (map['name'] ?? map['title'] ?? '').toString(),
+      nameEn: (map['name_en'] ?? '').toString(),
+      logoUrl: (map['logo_url'] ?? map['logo'] ?? map['image']) as String?,
+      leagueId: (map['league_id'] ?? map['champ_id'] ?? '').toString(),
     );
   }
 

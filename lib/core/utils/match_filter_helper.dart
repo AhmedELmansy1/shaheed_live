@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
@@ -182,32 +180,24 @@ bool isMatchInUserLeaguesOrFollowedTeams({
   required List<LeagueModel> allLeagues,
   required List<TeamModel> allTeams,
 }) {
-  // Edge case 1: Legacy users who selected no leagues -> show everything
-  if (selectedLeagueIds.isEmpty) {
+  // If user selected neither leagues nor teams -> show everything
+  if (selectedLeagueIds.isEmpty && selectedTeamIds.isEmpty) {
     return true;
   }
 
-  // Edge case 2: If a followed team plays in a league the user did NOT select,
-  // still show that team's match (team selection wins!)
-  if (isFavoriteTeamMatch(match, selectedTeamIds, allTeams)) {
+  // If a followed team plays in this match, show it (team selection wins!)
+  if (selectedTeamIds.isNotEmpty &&
+      isFavoriteTeamMatch(match, selectedTeamIds, allTeams)) {
     return true;
   }
 
-  // Match by league ID or normalized name fallback
-  final isLeagueMatch = isFavoriteLeagueMatch(
-    match,
-    selectedLeagueIds,
-    allLeagues,
-  );
-
-  if (!isLeagueMatch && kDebugMode) {
-    debugPrint(
-      '[LeagueFilter] Match excluded (not in selected leagues): '
-      '"${match.homeTeam.title} × ${match.awayTeam.title}" in league "${match.championship.title}" (ID: ${match.championship.id})',
-    );
+  // If the match belongs to one of user's selected leagues, show it
+  if (selectedLeagueIds.isNotEmpty &&
+      isFavoriteLeagueMatch(match, selectedLeagueIds, allLeagues)) {
+    return true;
   }
 
-  return isLeagueMatch;
+  return false;
 }
 
 /// Applies automatic match prioritization:

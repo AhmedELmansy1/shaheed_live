@@ -1,0 +1,2444 @@
+<div class="ajax-details-wrapper">
+    <div class="inner-section-title">تفاصيل المباراة</div>
+    
+        <div class="profile-header-wrapper match" style="--champ-tint: 79, 166, 200">
+        <div class="match-mobile-toolbar" data-mm-toolbar>
+    <a href="https://www.ysscores.com/ar"
+       class="mm-icon-btn mm-back"
+       aria-label="الرئيسية"
+       onclick="if (history.length > 1) { event.preventDefault(); history.back(); }">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 8 14" aria-hidden="true">
+            <path d="M5.586,7,.293,12.293a1,1,0,0,0,1.414,1.414l6-6a1,1,0,0,0,0-1.414l-6-6A1,1,0,0,0,.293,1.707Z" fill="currentColor"/>
+        </svg>
+    </a>
+
+    <div class="mm-toolbar-center">
+                                    <a href="https://www.ysscores.com/ar/championship/233484/Eliteserien" class="mm-league-chip" title="الدوري النرويجي الممتاز">
+                                                <img src="https://imgs.ysscores.com/championship/48/17870045308225.png" alt="شعار الدوري النرويجي الممتاز" class="mm-league-logo" loading="lazy" decoding="async">
+                                                    <span class="mm-league-text">
+                    <span class="mm-league-name">الدوري النرويجي الممتاز</span>
+                                            <span class="mm-league-round">الجولة 26</span>
+                                    </span>
+                            </a>
+                        </div>
+
+            
+        <button type="button" class="mm-icon-btn mm-bell js-match-bell" style="display: none"
+                data-match-id="5105046" aria-pressed="false"
+                aria-label="نبّهني بأحداث المباراة" title="نبّهني بأحداث المباراة">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="mm-bell-label">نبّهني بأحداث المباراة</span>
+        </button>
+    
+    <button type="button" class="mm-icon-btn mm-share" aria-label="شارك" data-mm-share data-mm-copied="تم نسخ رابط المباراة">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+(function () {
+    if (window.__mmShareBound) return;
+    window.__mmShareBound = true;
+
+    function mmCopyUrl(url) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(url);
+        }
+        return new Promise(function (resolve, reject) {
+            var ta = document.createElement('textarea');
+            ta.value = url;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                resolve();
+            } catch (err) {
+                document.body.removeChild(ta);
+                reject(err);
+            }
+        });
+    }
+
+    function mmShareFeedback(btn, msg) {
+        if (typeof window.toastMessage === 'function') {
+            window.toastMessage('success', msg);
+            return;
+        }
+        btn.classList.add('mm-shared');
+        setTimeout(function () { btn.classList.remove('mm-shared'); }, 1800);
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mm-share]');
+        if (!btn) return;
+        e.preventDefault();
+
+        var url = window.location.href;
+        var title = document.title;
+        var copiedMsg = btn.getAttribute('data-mm-copied') || 'تم نسخ الرابط';
+
+        function fallbackCopy() {
+            mmCopyUrl(url).then(function () {
+                mmShareFeedback(btn, copiedMsg);
+            }).catch(function () {});
+        }
+
+        if (navigator.share) {
+            navigator.share({ title: title, text: title, url: url }).catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                fallbackCopy();
+            });
+        } else {
+            fallbackCopy();
+        }
+    });
+})();
+</script>
+        <div class="match-profile-info">
+            <div class="match-profile-details">
+                <div class="right-team team-item">
+                    <a href="https://www.ysscores.com/ar/team/8605/Kristiansund-BK" class="match-team-link">
+                        <h3>
+                                                        كريستيانسوند
+                        </h3>
+                    </a>
+                                        <a href="https://www.ysscores.com/ar/team/8605/Kristiansund-BK" class="match-team-link match-team-logo-link">
+                        <div class="img"><img title="كريستيانسوند" src="https://imgs.ysscores.com/teams/128/9491739334756.png" alt="كريستيانسوند"/></div>
+                    </a>
+                </div>
+                
+                    <div id="detail5105046" class="match-details">
+                        <span class="time">08:00 م</span>
+                        <span style="display:none;"
+                               class="timer is_remain-5105046">تبدأ قريباً</span>
+                        <span class="timer days_remain-5105046" style="display:none;" ><b
+                                class="d">0</b> يوم</span>
+                        <div class="timer count-item-5105046"
+                             ><b
+                                class="s">51</b> : <b
+                                class="m">23</b> : <b class="h">09</b></div>
+                    </div>
+                                <div class="left-team team-item">
+                    <a href="https://www.ysscores.com/ar/team/8007/Vålerenga-Fotball-Elite" class="match-team-link">
+                        <h3>فاليرينغا </h3>
+                    </a>
+                                        <a href="https://www.ysscores.com/ar/team/8007/Vålerenga-Fotball-Elite" class="match-team-link match-team-logo-link">
+                        <div class="img"><img title="فاليرينغا" src="https://imgs.ysscores.com/teams/128/1161690370511.png" alt="فاليرينغا"/></div>
+                    </a>
+                </div>
+            </div>
+            <div class="match-mobile-meta">
+                    <span class="mm-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z" fill="currentColor"/>
+                </svg>
+                ملعب نوردمور
+            </span>
+                            <span class="mm-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z" fill="currentColor"/>
+                </svg>
+                الاثنين 09-11-2026 · 08:00 م            </span>
+            </div>
+
+                        <div class="match-links-scroll scrollable-area-x">
+                <div class="filter-categories-wrap tiny match-tabs--few">
+                                            <a href="https://www.ysscores.com/ar/match/5105046/Kristiansund-BK-vs-Vålerenga-Fotball-Elite" link="Kristiansund-BK-vs-Vålerenga-Fotball-Elite"
+                           title="القناة الناقلة والمعلق لمباراة كريستيانسوند وفاليرينغا - الدوري النرويجي الممتاز - الاثنين 09-11-2026"
+                           class="filter-cat-item match-tab-item detail_ active"
+                           data-target="details">التفاصيل</a>
+
+                                                <a href="https://www.ysscores.com/ar/match/5105046/Kristiansund-BK-vs-Vålerenga-Fotball-Elite-lineup" link="Kristiansund-BK-vs-Vålerenga-Fotball-Elite-lineup"
+                                                        title="التشكيلة المتوقعة مباراة كريستيانسوند وفاليرينغا - الدوري النرويجي الممتاز - الاثنين 09-11-2026"
+                                                        class="filter-cat-item match-tab-item lineup_tab"
+                                                        data-target="lineup">التشكيلة المتوقعة</a>
+
+
+                        
+                        <span class="rank-tab-with-dropdown"><a role="button" tabindex="0"
+                                                   class="filter-cat-item match-tab-item rank_tab"
+                                                   data-target="rank">الترتيب</a><div id="rank_pos" class="rank-scope-wrap rank-scope-wrap--nav" style="display: none;" >
+    <button type="button" class="rank-scope-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="rankScopePanel">
+        <svg class="rank-scope-chevron" xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1.5L5 4.5L9 1.5" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div id="rankScopePanel" class="rank-scope-panel" hidden role="menu" dir="rtl">
+        <a tabindex="0" class="inline-tab-rank rank_pos active" data-target="rank_all" role="menuitem">الكل</a>
+        <a tabindex="0" class="inline-tab-rank rank_pos" data-target="rank_home" role="menuitem">داخل الأرض</a>
+        <a tabindex="0" class="inline-tab-rank rank_pos" data-target="rank_away" role="menuitem">خارج الأرض</a>
+    </div>
+</div>
+</span>                        <a role="button" tabindex="0"
+                                                      class="filter-cat-item match-tab-item players_rank_tab"
+                                                      data-target="players_rank">الهدافون</a>
+
+
+                    
+
+                        <a role="button" tabindex="0" class="filter-cat-item match-tab-item news_tab"
+                           data-target="news">الأخبار</a>
+
+                    <a role="button" tabindex="0" class="filter-cat-item match-tab-item visitors_area_tab"
+                       data-target="visitors_area">ركن الجماهير</a>
+                        
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<section class="inner-page-content match-detail-content">
+    <div class="container">
+        <div class="match-page-inner">
+            <div  class="tab-content-item inner-match-tab-content events ">
+                <div class="small-container">
+                    <div class="match-block-item">
+                                            </div>
+                                                                                    <div class="match-block-item">
+
+                                            </div>
+                    <div class="match-block-item">
+                        <div class="section-title">الأحداث</div>
+
+                                                    <div class="match-events-wrap">
+
+                                                            </div>
+
+                        
+                    </div>
+                                                                                <div class="match-block-item match-prediction-block">
+                        <div class="section-title">تصويت الجمهور</div>
+                        <div class="prediction-result-wrap prediction-poll-card  is-visible "
+               data-home-pct="27"
+     data-draw-pct="26"
+     data-away-pct="47">
+    <div class="prediction-poll-bar-track" role="img"
+         aria-label="تصويت الجمهور: كريستيانسوند 27%, تعادل 26%, فاليرينغا 47%">
+        <span               class="prediction-poll-seg seg-home progress-bar win"
+              data-width="27%"
+              style="width: 27%"></span>
+        <span               class="prediction-poll-seg seg-draw progress-bar equal"
+              data-width="26%"
+              style="width: 26%"></span>
+        <span               class="prediction-poll-seg seg-away progress-bar lose"
+              data-width="47%"
+              style="width: 47%"></span>
+    </div>
+    <div class="prediction-poll-legend">
+        <div class="prediction-poll-leg leg-home" data-vote="home">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  class="prediction-poll-pct">27%</strong>
+                <span class="prediction-poll-team">كريستيانسوند</span>
+            </div>
+        </div>
+        <div class="prediction-poll-leg leg-draw" data-vote="draw">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  class="prediction-poll-pct">26%</strong>
+                <span class="prediction-poll-team">تعادل</span>
+            </div>
+        </div>
+        <div class="prediction-poll-leg leg-away" data-vote="away">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  class="prediction-poll-pct">47%</strong>
+                <span class="prediction-poll-team">فاليرينغا</span>
+            </div>
+        </div>
+    </div>
+    <p class="prediction-poll-thanks" data-poll-thanks hidden>تم تسجيل تصويتك — شكراً لمشاركتك!</p>
+</div>
+
+                    </div>
+                    
+                    <input id="match_time" hidden type="text" value="0">
+                    <input id="ht_time" hidden type="text" value="0">
+                    <input id="match_status" hidden type="text" value="0">
+                    <input id="match_code" hidden type="text" value="5105046">
+                    <input id="match_league" hidden type="text" value="916225">
+                    <input id="match_datetime" hidden type="text" value="Mon, 09 Nov 2026 18:00:00 GMT">
+                </div>
+            </div>
+
+            <div class="tab-content-item inner-match-tab-content stats">
+                <div class="small-container">
+    
+</div>
+            </div>
+
+            <div   class="tab-content-item inner-match-tab-content details active">
+                <div class="small-container">
+                                            <div class="match-block-item">
+                                                    </div>
+                                                                                                                                                                                
+                                        <div class="match-block-item pt-2">
+                        <div class="section-title">معلومات اللقاء</div>
+                        <div class="match-info-item">
+                            <div class="title">البطولة</div>
+                            <div class="content"><a target="_blank" href="https://www.ysscores.com/ar/championship/233484/Eliteserien">الدوري النرويجي الممتاز</a>
+</div>
+                        </div>
+                                                    <div class="match-info-item">
+                                <div class="title">الجولة</div>
+                                <div class="content">الجولة 26 - مباراة الإياب</div>
+                            </div>
+                                                                            <div class="match-info-item">
+                                <div class="title">مباراة الذهاب</div>
+                                <div class="content"><a target="_blank"
+                                                        href="https://www.ysscores.com/ar/match/5104927/Vålerenga-Fotball-Elite-vs-Kristiansund-BK">فاليرينغا 3
+                                        - 1 كريستيانسوند</a></div>
+                            </div>
+                                                                            <div class="match-info-item">
+                                <div class="title">ملعب المباراة</div>
+                                <div class="content"><a
+                                        href="https://www.ysscores.com/ar/stadium/2633/Nordmore-Stadion"
+                                        target="_blank">ملعب نوردمور</a></div>
+                            </div>
+                                                <div class="match-info-item match-info-referees">
+        <div class="title">الحكم</div>
+        <div class="content match-info-referees__content">
+            <a href="https://www.ysscores.com/ar/referee/1317487/Marius-Lien" target="_blank" rel="noopener" class="match-info-referees__name">
+                ماريوس ليان
+            </a>
+                    </div>
+    </div>
+
+<script>
+(function () {
+    if (window.__matchRefereesToggleBound) return;
+    window.__matchRefereesToggleBound = true;
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.match-info-referees__more');
+        if (!btn) return;
+
+        var panel = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!panel) return;
+
+        e.preventDefault();
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        panel.hidden = open;
+    });
+})();
+</script>
+                                                <div class="match-info-item">
+                            <div class="title">وقت المباراة</div>
+                            <div class="content">08:00 مساءً</div>
+                        </div>
+                        <div class="match-info-item">
+                            <div class="title">تاريخ المباراة</div>
+                            <div class="content">الاثنين 09-11-2026</div>
+                        </div>
+                    </div>
+                    
+                                                                <div class="match-block-item pt-2">
+                            <div class="section-title">ترتيب</div>
+                            <div class="match-teams-rank">
+                                <div class="ranking-table">
+                                    <div class="rank-row header">
+                                        <div class="rank-group main">
+                                            <div class="rank-col number"></div>
+                                            <div class="rank-col name">الأندية</div>
+                                        </div>
+                                        <div class="rank-group matches mr-auto">
+                                            <div class="rank-col played">م</div>
+                                            <div class="rank-col goals">الأهداف</div>
+                                            <div class="rank-col diff">ف.أ</div>
+                                        </div>
+                                        <div class="rank-group results">
+                                            <div class="rank-col win">فاز</div>
+                                            <div class="rank-col equal">تعادل</div>
+                                            <div class="rank-col lose">خسر</div>
+                                            <div class="rank-col points">النقاط</div>
+                                        </div>
+                                    </div>
+                                                                            <div class="rank-row">
+                                            <div class="rank-group main">
+                                                <div class="rank-col number">
+                                                    8
+                                                </div>
+                                                <div class="rank-col name">
+                                                    <a href="https://www.ysscores.com/ar/team/8007/Vålerenga-Fotball-Elite">
+                                                        <div class="team-name"><img
+                                                                src="https://imgs.ysscores.com/teams/64/1161690370511.png" alt="شعار فاليرينغا" /> فاليرينغا
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="rank-group matches mr-auto">
+                                                <div class="rank-col played">25</div>
+                                                <div class="rank-col goals">43</div>
+                                                <div class="rank-col diff white">-3</div>
+                                            </div>
+                                            <div class="rank-group results">
+                                                <div class="rank-col win">9</div>
+                                                <div class="rank-col equal">5</div>
+                                                <div class="rank-col lose">11</div>
+                                                <div class="rank-col points">32</div>
+                                            </div>
+                                        </div>
+                                                                            <div class="rank-row">
+                                            <div class="rank-group main">
+                                                <div class="rank-col number">
+                                                    15
+                                                </div>
+                                                <div class="rank-col name">
+                                                    <a href="https://www.ysscores.com/ar/team/8605/Kristiansund-BK">
+                                                        <div class="team-name"><img
+                                                                src="https://imgs.ysscores.com/teams/64/9491739334756.png" alt="شعار كريستيانسوند" /> كريستيانسوند
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="rank-group matches mr-auto">
+                                                <div class="rank-col played">25</div>
+                                                <div class="rank-col goals">29</div>
+                                                <div class="rank-col diff white">-22</div>
+                                            </div>
+                                            <div class="rank-group results">
+                                                <div class="rank-col win">6</div>
+                                                <div class="rank-col equal">5</div>
+                                                <div class="rank-col lose">14</div>
+                                                <div class="rank-col points">23</div>
+                                            </div>
+                                        </div>
+                                                                    </div>
+                            </div>
+                        </div>
+                                                    <div class="match-block-item pt-2">
+                        <div class="section-title">آخر لقاءات جمعت الفريقين</div>
+                        <div class="teams-last-matches teams-last-10-matches">
+                            <div class="minor-details-wrapper">
+                                <div class="teams_last_matches_header">
+                                    <a href="#" class="team_item team_a">
+                                        <img src="https://imgs.ysscores.com/teams/64/9491739334756.png" alt="شعار كريستيانسوند" />
+                                    </a>
+                                    <div class="teams_results_wrap">
+                                        <div class="teams_result_item">
+                                            <b>0</b>
+                                            <span>فاز</span>
+                                        </div>
+                                        <div class="teams_result_item">
+                                            <b>0</b>
+                                            <span>تعادل</span>
+                                        </div>
+                                        <div class="teams_result_item">
+                                            <b>1</b>
+                                            <span>فاز</span>
+                                        </div>
+                                    </div>
+                                    <a href="#" class="team_item team_b">
+                                        <img src="https://imgs.ysscores.com/teams/64/1161690370511.png" alt="شعار فاليرينغا" />
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="full-matches">
+                                                                    <div class="full-m-item win1">
+                                        <div class="teams">
+                                            <span class="team-a">فاليرينغا</span>
+                                            <span
+                                                class="result">3 - 1</span>
+                                            <span class="team-b">كريستيانسوند</span>
+                                        </div>
+                                        <div class="date">2026-05-29</div>
+                                        <div class="champ">الدوري النرويجي الممتاز</div>
+                                    </div>
+                                                            </div>
+                        </div>
+                    </div>
+                                <div class="match-block-item team-last-five-block">
+        <div class="section-title">آخر 5 مباريات لكل فريق</div>
+        <p class="team-form-hint">من اليمين: آخر مباراة · اضغط على الحرف لعرض التفاصيل</p>
+        <div class="team-form-grid">
+                            <article class="team-form-card">
+    <a class="team-form-card__identity"  href="https://www.ysscores.com/ar/team/8605/Kristiansund-BK" target="_blank" rel="noopener" >
+        <span class="team-form-card__logo">
+            <img src="https://imgs.ysscores.com/teams/128/9491739334756.png" alt="كريستيانسوند" loading="lazy" width="32" height="32" />
+        </span>
+        <span class="team-form-card__text">
+            <span class="team-form-card__name">كريستيانسوند</span>
+            <span class="team-form-summary" aria-label="آخر 5 مباريات لكل فريق">
+                <span class="team-form-summary__item team-form-summary__item--win">
+                    <b>1</b>ف
+                </span>
+                <span class="team-form-summary__item team-form-summary__item--draw">
+                    <b>1</b>ت
+                </span>
+                <span class="team-form-summary__item team-form-summary__item--lose">
+                    <b>3</b>خ
+                </span>
+            </span>
+        </span>
+    </a>
+    <div class="team-form-strip" role="list">
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105037/Sarpsborg-08-FF-vs-Kristiansund-BK"
+                class="team-form-pill team-form-pill--win"
+                title="ساربسبورغ 2-4 كريستيانسوند"
+                aria-label="ف — ساربسبورغ 2-4 كريستيانسوند"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ف</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5104933/Kristiansund-BK-vs-KFUM-Kameratene-Oslo"
+                class="team-form-pill team-form-pill--equal"
+                title="كريستيانسوند 2-2 كفوم أوسلو"
+                aria-label="ت — كريستيانسوند 2-2 كفوم أوسلو"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ت</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105028/Kristiansund-BK-vs-Aalesunds-FK"
+                class="team-form-pill team-form-pill--lose"
+                title="كريستيانسوند 1-4 أوليسوند"
+                aria-label="خ — كريستيانسوند 1-4 أوليسوند"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">خ</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105017/FK-Bodø-Glimt-vs-Kristiansund-BK"
+                class="team-form-pill team-form-pill--lose"
+                title="بودو/غليمت 3-1 كريستيانسوند"
+                aria-label="خ — بودو/غليمت 3-1 كريستيانسوند"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">خ</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/6367380/Molde-FK-vs-Kristiansund-BK"
+                class="team-form-pill team-form-pill--lose"
+                title="مولده 3-0 كريستيانسوند"
+                aria-label="خ — مولده 3-0 كريستيانسوند"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">خ</span>
+            </a>
+            </div>
+</article>
+                                        <article class="team-form-card">
+    <a class="team-form-card__identity"  href="https://www.ysscores.com/ar/team/8007/Vålerenga-Fotball-Elite" target="_blank" rel="noopener" >
+        <span class="team-form-card__logo">
+            <img src="https://imgs.ysscores.com/teams/128/1161690370511.png" alt="فاليرينغا" loading="lazy" width="32" height="32" />
+        </span>
+        <span class="team-form-card__text">
+            <span class="team-form-card__name">فاليرينغا</span>
+            <span class="team-form-summary" aria-label="آخر 5 مباريات لكل فريق">
+                <span class="team-form-summary__item team-form-summary__item--win">
+                    <b>3</b>ف
+                </span>
+                <span class="team-form-summary__item team-form-summary__item--draw">
+                    <b>1</b>ت
+                </span>
+                <span class="team-form-summary__item team-form-summary__item--lose">
+                    <b>1</b>خ
+                </span>
+            </span>
+        </span>
+    </a>
+    <div class="team-form-strip" role="list">
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105038/Vålerenga-Fotball-Elite-vs-Tromsø-IL"
+                class="team-form-pill team-form-pill--win"
+                title="فاليرينغا 4-0 ترومسو"
+                aria-label="ف — فاليرينغا 4-0 ترومسو"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ف</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5104932/FK-Bodø-Glimt-vs-Vålerenga-Fotball-Elite"
+                class="team-form-pill team-form-pill--win"
+                title="بودو/غليمت 0-1 فاليرينغا"
+                aria-label="ف — بودو/غليمت 0-1 فاليرينغا"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ف</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105027/Vålerenga-Fotball-Elite-vs-SK-Brann"
+                class="team-form-pill team-form-pill--win"
+                title="فاليرينغا 3-1 بران"
+                aria-label="ف — فاليرينغا 3-1 بران"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ف</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105024/KFUM-Kameratene-Oslo-vs-Vålerenga-Fotball-Elite"
+                class="team-form-pill team-form-pill--lose"
+                title="كفوم أوسلو 2-1 فاليرينغا"
+                aria-label="خ — كفوم أوسلو 2-1 فاليرينغا"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">خ</span>
+            </a>
+                                <a
+                role="listitem"
+                target="_blank"
+                rel="noopener"
+                href="https://www.ysscores.com/ar/match/5105010/Vålerenga-Fotball-Elite-vs-Fredrikstad-FK"
+                class="team-form-pill team-form-pill--equal"
+                title="فاليرينغا 1-1 فريدريكستاد"
+                aria-label="ت — فاليرينغا 1-1 فريدريكستاد"
+                data-toggle="tooltip"
+                data-placement="top"
+            >
+                <span class="team-form-pill__letter">ت</span>
+            </a>
+            </div>
+</article>
+                    </div>
+    </div>
+
+                
+            </div>
+        </div>
+
+        <div class="tab-content-item inner-match-tab-content news">
+            <div id="news_list" class="small-container">
+            </div>
+            <div id="loader_news" class="inline-loader"></div>
+            <a id="news_list_more" style="display: none" role="button" tabindex="0"
+               class="show-more-matches view-all-button">المزيد</a>
+        </div>
+
+        <div class="tab-content-item inner-match-tab-content lineup">
+            <div class="teams-lineup tab-area">
+                <div class="inline-tabs-wrapper">
+                    <div class="inline-tabs-items justify-content-center">
+                        <a id="lineup_home_team" role="button" tabindex="0" class="inline-tab-item tab-item "
+                           data-target="team-A">كريستيانسوند</a>
+                        <a id="lineup_away_team" role="button" tabindex="0" class="inline-tab-item tab-item "
+                           data-target="team-B">فاليرينغا</a>
+                    </div>
+                </div>
+                <div class="tab-content-item team-A ">
+                    <div class="lineup-wrap">
+                        <div class="lineup-bg" style="aspect-ratio:1162/1116;background:url('https://www.ysscores.com/images/lineup-bg.png') center top/100% 100% no-repeat;background-image:image-set(url('https://www.ysscores.com/images/lineup-bg.webp') type('image/webp'),url('https://www.ysscores.com/images/lineup-bg.png') type('image/png'))"></div>
+                        <div id="home_lineup"  class="lineup-wrapper">
+                            <div class="lineup-row s home_s">
+                                <div id="home_S" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row f home_f">
+                                <div id="home_F" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row m home_m">
+                                <div id="home_M" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row d home_d">
+                                <div id="home_D" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row g home_g">
+                                <div id="home_G" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row lineup-custom-row">
+                                <div class="logo"><img src="https://www.ysscores.com/images/yala-logo.svg" alt="يلا شووت" /></div>
+                                <div id="lineup_formation_home" class="lineup-text"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="lineup_formation_list-A" class="section-title">التشكيلة</div>
+                        <div id="formation_list_players-A"></div>
+                    </div>
+                    <div class="match-block-item">
+                        <div class="section-title">المدرب</div>
+                        <div class="inline-player-item">
+                            <a id="coach_home_link" target="_blank" role="button" tabindex="0" class="player">
+                                <div class="img"><img id="coach_home_img" src="https://www.ysscores.com/images/unknown-man.svg" alt="المدرب" />
+                                </div>
+                                <div class="text">
+                                    <h5 id="coach_home_title">غير متوفر</h5>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="sub_players_h_name" class="section-title">البدلاء</div>
+                        <div id="sub_players_h" class="row">
+
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="home_sub_h_name" class="section-title">التبديلات</div>
+                        <div id="home_sub_h"></div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="miss_players_h_name" class="section-title">الغائبون</div>
+                        <div id="miss_players_h"></div>
+                    </div>
+
+                </div>
+                <div class="tab-content-item team-B ">
+                    <div class="lineup-wrap">
+                        <div class="lineup-bg" style="aspect-ratio:1162/1116;background:url('https://www.ysscores.com/images/lineup-bg.png') center top/100% 100% no-repeat;background-image:image-set(url('https://www.ysscores.com/images/lineup-bg.webp') type('image/webp'),url('https://www.ysscores.com/images/lineup-bg.png') type('image/png'))"></div>
+                        <div id="away_lineup"  class="lineup-wrapper">
+                            <div class="lineup-row s away_s">
+                                <div id="away_S" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row f away_f">
+                                <div id="away_F" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row m away_m">
+                                <div id="away_M" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row d away_d">
+                                <div id="away_D" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row g away_g">
+                                <div id="away_G" class="row justify-content-center">
+
+                                </div>
+                            </div>
+                            <div class="lineup-row lineup-custom-row">
+                                <div class="logo"><img src="https://www.ysscores.com/images/yala-logo.svg" alt="يلا شووت" /></div>
+                                <div id="lineup_formation_away" class="lineup-text"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="lineup_formation_list-B" class="section-title">التشكيلة</div>
+                        <div id="formation_list_players-B"></div>
+                    </div>
+                    <div class="match-block-item">
+                        <div class="section-title">المدرب</div>
+                        <div class="inline-player-item">
+                            <a id="coach_away_link" target="_blank" role="button" tabindex="0" class="player">
+                                <div class="img"><img id="coach_away_img" src="https://www.ysscores.com/images/unknown-man.svg" alt="المدرب" />
+                                </div>
+                                <div class="text">
+                                    <h5 id="coach_away_title">غير متوفر</h5>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="sub_players_a_name" class="section-title">البدلاء</div>
+                        <div id="sub_players_a" class="row">
+
+                        </div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="home_sub_a_name" class="section-title">التبديلات</div>
+                        <div id="home_sub_a"></div>
+                    </div>
+                    <div class="match-block-item">
+                        <div id="miss_players_a_name" class="section-title">الغائبون</div>
+                        <div id="miss_players_a"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="tab-content-item inner-match-tab-content videos">
+                        <div id="live_match" class="mini-videos-items">
+            </div>
+        </div>
+
+        <div class="tab-content-item inner-match-tab-content visitors_area">
+            <div class="match-block-item match-prediction-block"
+         data-poll-match-id="5105046"
+         >
+        <div class="section-title">توقعاتك من سيفوز ؟</div>
+        <div class="match-prediction-stage ">
+                            <div class="match-prediction-vote-panel" id="pre_is">
+                    <div class="match-prediction" match_id="5105046" home_image="https://imgs.ysscores.com/teams/128/9491739334756.png" away_image="https://imgs.ysscores.com/teams/128/1161690370511.png">
+  <a role="button" tabindex="0" type_p="home"
+     class="predict-link predict-vote-card pre vote-home"
+     >
+    <span class="vote-logo"><img src="https://imgs.ysscores.com/teams/128/9491739334756.png" alt="كريستيانسوند" /></span>
+    <span class="vote-label vote-team-name">كريستيانسوند</span>
+  </a>
+  <a role="button" tabindex="0" type_p="draw"
+     class="predict-link predict-vote-card pre vote-draw"
+     >
+    <span class="vote-icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M6 12h12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="vote-label">تعادل</span>
+  </a>
+  <a role="button" tabindex="0" type_p="away"
+     class="predict-link predict-vote-card pre vote-away"
+     >
+    <span class="vote-logo"><img src="https://imgs.ysscores.com/teams/128/1161690370511.png" alt="فاليرينغا" /></span>
+    <span class="vote-label vote-team-name">فاليرينغا</span>
+  </a>
+  <div class="match-prediction-loading" aria-hidden="true">
+    <span class="match-prediction-loading__dot"></span>
+    <span class="match-prediction-loading__dot"></span>
+    <span class="match-prediction-loading__dot"></span>
+  </div>
+</div>
+                </div>
+                        <div class="prediction-result-wrap prediction-poll-card "
+      id="pre_result"       hidden      data-home-pct="27"
+     data-draw-pct="26"
+     data-away-pct="47">
+    <div class="prediction-poll-bar-track" role="img"
+         aria-label="تصويت الجمهور: كريستيانسوند 27%, تعادل 26%, فاليرينغا 47%">
+        <span  id="home_value"               class="prediction-poll-seg seg-home progress-bar win"
+              data-width="27%"
+              style="width:  0% "></span>
+        <span  id="draw_value"               class="prediction-poll-seg seg-draw progress-bar equal"
+              data-width="26%"
+              style="width:  0% "></span>
+        <span  id="away_value"               class="prediction-poll-seg seg-away progress-bar lose"
+              data-width="47%"
+              style="width:  0% "></span>
+    </div>
+    <div class="prediction-poll-legend">
+        <div class="prediction-poll-leg leg-home" data-vote="home">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  id="home_pct"  class="prediction-poll-pct">27%</strong>
+                <span class="prediction-poll-team">كريستيانسوند</span>
+            </div>
+        </div>
+        <div class="prediction-poll-leg leg-draw" data-vote="draw">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  id="draw_pct"  class="prediction-poll-pct">26%</strong>
+                <span class="prediction-poll-team">تعادل</span>
+            </div>
+        </div>
+        <div class="prediction-poll-leg leg-away" data-vote="away">
+            <span class="prediction-poll-leg__dot" aria-hidden="true"></span>
+            <div class="prediction-poll-leg__body">
+                <strong  id="away_pct"  class="prediction-poll-pct">47%</strong>
+                <span class="prediction-poll-team">فاليرينغا</span>
+            </div>
+        </div>
+    </div>
+    <p class="prediction-poll-thanks" data-poll-thanks hidden>تم تسجيل تصويتك — شكراً لمشاركتك!</p>
+</div>
+        </div>
+    </div>
+                
+                <div class="news-comments-wrapper news-page__comments">
+            <h2 class="news-page__comments-title">عرض التعليقات</h2>
+        <div class="comment-form">
+        <textarea maxlength="400" id="comm_text" type="text" placeholder="اكتب تعليقك هنا"></textarea>
+        <button id="comment_match"
+                type="button"
+                class="radius-btn"
+                                                aria-label="اكتب تعليقك هنا">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17">
+                <path id="Shape" d="M14.5,16.89,8,13.883,1.5,16.89c-.811.374-1.757-.274-1.434-.983l7-15.378a1.1,1.1,0,0,1,1.876,0l7,15.378C16.192,16.473,15.642,17,15,17A1.18,1.18,0,0,1,14.5,16.89Z" fill="#131521"></path>
+            </svg>
+        </button>
+    </div>
+    <div id="error_msg" class="comment-text text-center"></div>
+    <div id="user_comment"></div>
+    <div id="comments_users" class="news-page__comments-list"></div>
+    <div id="loader_comment" class="inline-loader"></div>
+    <a id="more_comments" style="display: none" tabindex="0" class="news-page__more-btn" role="button">
+        <span>المزيد</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M7,10.5a.7.7,0,0,1-.5-.2l-4-4A.7.7,0,0,1,3.7,5.3L7,8.6l3.3-3.3a.7.7,0,0,1,.99.99l-4,4A.7.7,0,0,1,7,10.5Z" fill="currentColor"/>
+        </svg>
+    </a>
+</div>
+        </div>
+
+            <div class="tab-content-item inner-match-tab-content predict_area" style="display: none">
+                <div id="predict_area">
+                </div>
+                </div>
+
+            <div class="inline-tabs-wrapper rank-stages-wrapper" style="display:none">
+                <div id="stages_target" class="inline-tabs-items justify-content-center">
+                </div>
+            </div>
+            <div class="tab-content-item inner-match-tab-content rank">
+                <div id="league" class="match-page-inner">
+                    <div class="small-container">
+                        <div class="ranking-table">
+                            <div class="rank-row header">
+                                <div class="rank-group main">
+                                    <div class="rank-col number"></div>
+                                    <div class="rank-col name">الأندية</div>
+                                </div>
+                                <div class="rank-group matches results">
+                                    <div class="rank-col played">م</div>
+                                    <div class="rank-col win">فاز</div>
+                                    <div class="rank-col equal">تعادل</div>
+                                    <div class="rank-col lose">خسر</div>
+                                </div>
+                                <div class="rank-group mr-auto">
+                                    <div class="rank-col goals">الأهداف</div>
+                                    <div class="rank-col diff">ف.أ</div>
+                                    <div class="rank-col points">النقاط</div>
+                                </div>
+                            </div>
+                            <div id="main_table" class="tab-pos-rank rank_all"></div>
+                            <div id="main_table_h" class="tab-pos-rank rank_home" style="display: none"></div>
+                            <div id="main_table_a" class="tab-pos-rank rank_away" style="display: none"></div>
+
+                        </div>
+                        <div id="key_main" keytitle="مفتاح الترتيب" up_rank="صعد في الترتيب" down_rank="نزل في الترتيب" >
+
+                        </div>
+
+                        <div id="rules_main" keytitle="معايير كسر التعادل" class="pt-2">
+
+                        </div>
+                    </div>
+                </div>
+                                <div id="group_cup" class="match-page-inner tab-area">
+                    <div class="inline-tabs-wrapper">
+                        <div class="inline-tabs-items justify-content-center">
+                            <a role="button" tabindex="0" id="rank_team" class="inline-tab-item tab-item active"
+                               style="display: none" data-target="teams-rank">ترتيب المجموعات</a>
+                            <a role="button" tabindex="0" id="playoff" class="inline-tab-item tab-item"
+                               style="display: none" data-target="elimination-round">الأدوار الإقصائية</a>
+                            <a role="button" tabindex="0" id="cups_map" class="inline-tab-item tab-item"
+                               style="display: none" data-target="matches-line">المخطط</a>
+                        </div>
+                    </div>
+                    <div id="rank_team_detail" class="tab-content-item teams-rank active">
+                        <div class="rank-group-wrapper">
+
+
+                            <div id="main_table_g" class="tab-pos-rank rank_all" clubs="الأندية" play="م"
+                                 goals="الأهداف" diff="ف.أ"
+                                 win="فاز" draw="تعادل" lose="خسر"
+                                 points="النقاط" group="المجموعة"></div>
+
+
+
+                            <div id="main_table_g_h" class="tab-pos-rank rank_home" clubs="الأندية" play="م"
+                                 goals="الأهداف" diff="ف.أ"
+                                 win="فاز" draw="تعادل" lose="خسر"
+                                 points="النقاط" group="المجموعة" style="display: none"></div>
+
+
+                            <div id="main_table_g_a"  class="tab-pos-rank rank_away" clubs="الأندية" play="م"
+                                 goals="الأهداف" diff="ف.أ"
+                                 win="فاز" draw="تعادل" lose="خسر"
+                                 points="النقاط" group="المجموعة" style="display: none"></div>
+
+                            <div id="key_main_g" keytitle="مفتاح الترتيب" up_rank="صعد في الترتيب"
+                                 down_rank="نزل في الترتيب">
+
+                            </div>
+
+
+                            <div id="rules_main_g" keytitle="معايير كسر التعادل" class="pt-2">
+
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                            <div id="cups_map_detail" class="tab-content-item matches-line">
+                                        <div class="small-container">
+                                            <div id="round_a_32" class="line-row line-8 row justify-content-center">
+                                                <div class="round-title d-flex justify-content-center">دور 32</div>
+
+                                                <div class="col-3">
+                                                    <div id="round_32_A_A1" class="line-row-wrap row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_A_A2" class="line-row-wrap row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_A_A3" class="line-row-wrap row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_A_A4" class="line-row-wrap row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div id="round_a_16" class="line-row line-4 row justify-content-center">
+                                                <div class="round-title d-flex justify-content-center">دور 16</div>
+                                                <div class="col-6">
+                                                    <div id="round_16_A_A" class="line-row-wrap row d-flex justify-content-center">
+                                                        <div id="16_A1" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div id="16_A2" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div id="round_16_A_B" class="line-row-wrap row d-flex justify-content-center">
+                                                        <div id="16_A3" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div id="16_A4" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="line-row line-row-wrap line-2">
+                                                <div class="round-title d-flex justify-content-center">ربع النهائي</div>
+                                                <div id="round_8_A_A" class="row justify-content-center">
+                                                    <div id="8_A1" class="col-6 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div id="8_A2" class="col-6 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="line-row line-1">
+                                                <div class="round-title d-flex justify-content-center">نصف النهائي</div>
+                                                <div id="round_Q_A_A" class="row justify-content-center">
+                                                    <div id="4_A1" class="col-12 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="line-row line-0">
+                                                <div class="round-title d-flex justify-content-center">النهائي</div>
+                                                <div id="round_F" class="row justify-content-center">
+                                                    <div class="col-12 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="time">
+                                                                        <div class="date">-</div>
+                                                                        <span class="t-time">-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="round-title d-flex justify-content-center">النهائي</div>
+                                            </div>
+                                            <div class="line-row reverse line-1">
+
+                                                <div id="round_Q_B_A" class="row justify-content-center">
+                                                    <div id="4_B1" class="col-12 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="round-title d-flex justify-content-center">نصف النهائي</div>
+                                            </div>
+                                            <div class="line-row line-row-wrap reverse line-2">
+
+                                                <div id="round_8_B_A" class="row justify-content-center">
+                                                    <div id="8_B1" class="col-6 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div id="8_B2" class="col-6 d-flex justify-content-center">
+                                                        <div class="line-match-item">
+                                                            <a role="button" tabindex="0">
+                                                                <div class="teams">
+                                                                    <div class="team-a">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                    <div class="team-b">
+                                                                        <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="round-title d-flex justify-content-center">ربع النهائي</div>
+                                            </div>
+                                            <div id="round_b_16" class="line-row reverse line-4 row justify-content-center">
+                                                <div class="col-6">
+                                                    <div id="round_16_B_A"
+                                                         class="line-row-wrap reverse row d-flex justify-content-center">
+                                                        <div id="16_B1" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div id="16_B2" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div id="round_16_B_B"
+                                                         class="line-row-wrap reverse row d-flex justify-content-center">
+                                                        <div id="16_B3" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <div id="16_B4" class="col-6 d-flex justify-content-center">
+                                                            <div class="line-match-item">
+                                                                <a role="button" tabindex="0">
+                                                                    <div class="teams">
+                                                                        <div class="team-a">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                        <div class="team-b">
+                                                                            <div class="img"><img src="../../../images/unknown.svg" alt="اللاعب"></div>
+                                                                            <span>-</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="round-title d-flex justify-content-center">دور 16</div>
+                                            </div>
+                                            <div id="round_b_32" class="line-row reverse line-8 row justify-content-center">
+
+                                                <div class="col-3">
+                                                    <div id="round_32_B_A1" class="line-row-wrap reverse row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_B_A2" class="line-row-wrap reverse row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_B_A3" class="line-row-wrap reverse row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <div id="round_32_B_A4" class="line-row-wrap reverse row d-flex justify-content-center">
+
+                                                    </div>
+                                                </div>
+                                                <div class="round-title d-flex justify-content-center">دور 32</div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                    <div id="playoff_detail" class="tab-content-item elimination-round">
+                        <div class="small-container">
+                            <div class="championship-wrap">
+                                <div id="playoff_div">
+
+                                </div>
+                                <div id="round_div" end_match="انتهت المباراة"
+                                     on_match="جارية الآن">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        <div class="tab-content-item inner-match-tab-content players_rank">
+            <div class="teams-lineup tab-area">
+                <div class="inline-tabs-wrapper">
+                    <div class="inline-tabs-items justify-content-center">
+                         <a id="lineup_home_team" role="button" tabindex="0"
+                                                              class="inline-tab-item tab-item active"
+                                                              data-target="goal_rank">الهدافون</a>                          <a id="lineup_away_team" role="button" tabindex="0"
+                                                                 class="inline-tab-item tab-item "
+                                                                 data-target="assist_rank">صناع الأهداف</a>                    </div>
+                </div>
+                <div class="tab-content-item goal_rank " style="display: block;">
+                    <div class="match-page-inner">
+                        <div class="small-container">
+                            <div class="ranking-table players-table "
+     >
+            <div class="rank-row header">
+            <div class="rank-group main">
+                <div class="rank-col number"></div>
+                <div class="rank-col name">اللاعبون</div>
+            </div>
+            <div class="rank-group matches mr-auto">
+                <div class="rank-col">الأهداف</div>
+                <div class="rank-col">ركلات الترجيح</div>
+            </div>
+        </div>
+        <div id="goals_rank_player_league"
+                   data-scorers-loaded="1" >
+                                    <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">1</div>
+        <div class="rank-col name">
+            <a title="أمين شياخة" href="https://www.ysscores.com/ar/player/1555050/Amin-Chiakha">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/6091719500026.png" alt="صورة أمين شياخة" loading="lazy"></div>
+                    <div class="text">
+                        <span>أمين شياخة</span>
+                        <p>روسنبورغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">18</div>
+        <div class="rank-col">5</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">2</div>
+        <div class="rank-col name">
+            <a title="بيتر كريستيانسن" href="https://www.ysscores.com/ar/player/955759/Peter-Christiansen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5321753392406.png" alt="صورة بيتر كريستيانسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>بيتر كريستيانسن</span>
+                        <p>فيكينغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">17</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">3</div>
+        <div class="rank-col name">
+            <a title="كريستيان لونبو" href="https://www.ysscores.com/ar/player/1636023/Kristian-Lonebu">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870378164704.png" alt="صورة كريستيان لونبو" loading="lazy"></div>
+                    <div class="text">
+                        <span>كريستيان لونبو</span>
+                        <p>مولده</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">15</div>
+        <div class="rank-col">2</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">4</div>
+        <div class="rank-col name">
+            <a title="أندرياس هلميرسن" href="https://www.ysscores.com/ar/player/615292/Andreas-Helmersen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17888752664004.png" alt="صورة أندرياس هلميرسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>أندرياس هلميرسن</span>
+                        <p>بودو/غليمت</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">13</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">1</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">5</div>
+        <div class="rank-col name">
+            <a title="لياندر ألفهيم" href="https://www.ysscores.com/ar/player/1352482/Leander-Alvheim">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870361687368.png" alt="صورة لياندر ألفهيم" loading="lazy"></div>
+                    <div class="text">
+                        <span>لياندر ألفهيم</span>
+                        <p>كريستيانسوند</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">12</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">1</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">6</div>
+        <div class="rank-col name">
+            <a title="ماتياس كريستنسن" href="https://www.ysscores.com/ar/player/1192981/Mathias-Christensen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870358422690.png" alt="صورة ماتياس كريستنسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>ماتياس كريستنسن</span>
+                        <p>أوليسوند</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">11</div>
+        <div class="rank-col">2</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">7</div>
+        <div class="rank-col name">
+            <a title="لوكاس هارين" href="https://www.ysscores.com/ar/player/768821/Lucas-Haren">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870366874815.png" alt="صورة لوكاس هارين" loading="lazy"></div>
+                    <div class="text">
+                        <span>لوكاس هارين</span>
+                        <p>فاليرينغا</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">11</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">2</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">8</div>
+        <div class="rank-col name">
+            <a title="هاين آسن لارسن" href="https://www.ysscores.com/ar/player/1295653/Heine-Aasen-Larsen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/9781721502726.png" alt="صورة هاين آسن لارسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>هاين آسن لارسن</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">10</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">9</div>
+        <div class="rank-col name">
+            <a title="إميل بريفيك" href="https://www.ysscores.com/ar/player/962795/Emil-Breivik">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/6581695300051.png" alt="صورة إميل بريفيك" loading="lazy"></div>
+                    <div class="text">
+                        <span>إميل بريفيك</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">10</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">10</div>
+        <div class="rank-col name">
+            <a title="سيمين كفيا إيغيسكوغ" href="https://www.ysscores.com/ar/player/1267374/Simen-Kvia-Egeskog">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/9671753391990.png" alt="صورة سيمين كفيا إيغيسكوغ" loading="lazy"></div>
+                    <div class="text">
+                        <span>سيمين كفيا إيغيسكوغ</span>
+                        <p>فيكينغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">9</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">11</div>
+        <div class="rank-col name">
+            <a title="إيريك هيستاد" href="https://www.ysscores.com/ar/player/375712/Eirik-Hestad">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5941695300291.png" alt="صورة إيريك هيستاد" loading="lazy"></div>
+                    <div class="text">
+                        <span>إيريك هيستاد</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">12</div>
+        <div class="rank-col name">
+            <a title="بلال نجي" href="https://www.ysscores.com/ar/player/876446/Bilal-Njie">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870354021150.png" alt="صورة بلال نجي" loading="lazy"></div>
+                    <div class="text">
+                        <span>بلال نجي</span>
+                        <p>كفوم أوسلو</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">13</div>
+        <div class="rank-col name">
+            <a title="إيفانجيلوس باتوليديس" href="https://www.ysscores.com/ar/player/1073446/Evangelos-Patoulidis">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870365953172.png" alt="صورة إيفانجيلوس باتوليديس" loading="lazy"></div>
+                    <div class="text">
+                        <span>إيفانجيلوس باتوليديس</span>
+                        <p>سانديفيورد</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">14</div>
+        <div class="rank-col name">
+            <a title="فيليكس فا" href="https://www.ysscores.com/ar/player/791597/Felix-Vá">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17921483527286.png" alt="صورة فيليكس فا" loading="lazy"></div>
+                    <div class="text">
+                        <span>فيليكس فا</span>
+                        <p>ليلستروم</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">15</div>
+        <div class="rank-col name">
+            <a title="كريستال ماني إنجاسون" href="https://www.ysscores.com/ar/player/856936/Kristall-Máni-Ingason">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17810961567787.png" alt="صورة كريستال ماني إنجاسون" loading="lazy"></div>
+                    <div class="text">
+                        <span>كريستال ماني إنجاسون</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">16</div>
+        <div class="rank-col name">
+            <a title="نواه جان هولم" href="https://www.ysscores.com/ar/player/1186576/Noah-Holm">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/271721065922.png" alt="صورة نواه جان هولم" loading="lazy"></div>
+                    <div class="text">
+                        <span>نواه جان هولم</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">17</div>
+        <div class="rank-col name">
+            <a title="ماركوس ريد" href="https://www.ysscores.com/ar/player/1691110/Marcus-Reed">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870378432198.png" alt="صورة ماركوس ريد" loading="lazy"></div>
+                    <div class="text">
+                        <span>ماركوس ريد</span>
+                        <p>أوليسوند</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+        <div class="rank-col">0</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">18</div>
+        <div class="rank-col name">
+            <a title="دانيال كارلسباك" href="https://www.ysscores.com/ar/player/1099476/Daniel-Karlsbakk">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/8731691428283.png" alt="صورة دانيال كارلسباك" loading="lazy"></div>
+                    <div class="text">
+                        <span>دانيال كارلسباك</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">7</div>
+        <div class="rank-col">3</div>
+        <div class="rank-col" style="color: red">1</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">19</div>
+        <div class="rank-col name">
+            <a title="هنريك أودال" href="https://www.ysscores.com/ar/player/741418/Henrik-Udahl">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870398907137.png" alt="صورة هنريك أودال" loading="lazy"></div>
+                    <div class="text">
+                        <span>هنريك أودال</span>
+                        <p>هام كام</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">7</div>
+        <div class="rank-col">2</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">20</div>
+        <div class="rank-col name">
+            <a title="فريدريك جولبراندسن" href="https://www.ysscores.com/ar/player/120432/Fredrik-Gulbrandsen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/3451695298177.png" alt="صورة فريدريك جولبراندسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>فريدريك جولبراندسن</span>
+                        <p>ليلستروم</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">7</div>
+        <div class="rank-col">1</div>
+        <div class="rank-col" style="color: red">0</div>
+    </div>
+</div>
+                        </div>
+</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content-item assist_rank ">
+                    <div class="match-page-inner">
+                        <div class="small-container">
+                            <div class="ranking-table players-table ">
+            <div class="rank-row header">
+            <div class="rank-group main">
+                <div class="rank-col number"></div>
+                <div class="rank-col name">اللاعبون</div>
+            </div>
+            <div class="rank-group matches mr-auto">
+                <div class="rank-col">تمريرات حاسمة</div>
+            </div>
+        </div>
+        <div id="assist_rank_player_league"
+                   data-scorers-loaded="1" >
+                                    <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">1</div>
+        <div class="rank-col name">
+            <a title="زلاتكو تريبيتش" href="https://www.ysscores.com/ar/player/279191/Zlatko-Tripic">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/8991753391861.png" alt="صورة زلاتكو تريبيتش" loading="lazy"></div>
+                    <div class="text">
+                        <span>زلاتكو تريبيتش</span>
+                        <p>فيكينغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">20</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">2</div>
+        <div class="rank-col name">
+            <a title="إميل بريفيك" href="https://www.ysscores.com/ar/player/962795/Emil-Breivik">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/6581695300051.png" alt="صورة إميل بريفيك" loading="lazy"></div>
+                    <div class="text">
+                        <span>إميل بريفيك</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">10</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">3</div>
+        <div class="rank-col name">
+            <a title="هنريك بيوردال" href="https://www.ysscores.com/ar/player/440313/Henrik-Bjørdal">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17888756308315.png" alt="صورة هنريك بيوردال" loading="lazy"></div>
+                    <div class="text">
+                        <span>هنريك بيوردال</span>
+                        <p>فيكينغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">9</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">4</div>
+        <div class="rank-col name">
+            <a title="أولي كريستيان سيلنيس" href="https://www.ysscores.com/ar/player/255963/Ole-Kristian-Selnaes">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5421721124561.png" alt="صورة أولي كريستيان سيلنيس" loading="lazy"></div>
+                    <div class="text">
+                        <span>أولي كريستيان سيلنيس</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">5</div>
+        <div class="rank-col name">
+            <a title="إميل كونرادسن سيد." href="https://www.ysscores.com/ar/player/848951/Emil-Konradsen-Ceide">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/3391690722171.png" alt="صورة إميل كونرادسن سيد." loading="lazy"></div>
+                    <div class="text">
+                        <span>إميل كونرادسن سيد.</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">6</div>
+        <div class="rank-col name">
+            <a title="روبن يترغارد جنسن" href="https://www.ysscores.com/ar/player/28115/Ruben-Yttergaard-Jenssen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/3161721503026.png" alt="صورة روبن يترغارد جنسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>روبن يترغارد جنسن</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">8</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">7</div>
+        <div class="rank-col name">
+            <a title="أولي بلومبرج" href="https://www.ysscores.com/ar/player/1086551/Ole-Didrik-Blomberg">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/4301721584435.png" alt="صورة أولي بلومبرج" loading="lazy"></div>
+                    <div class="text">
+                        <span>أولي بلومبرج</span>
+                        <p>بودو/غليمت</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">7</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">8</div>
+        <div class="rank-col name">
+            <a title="بيتر كريستيانسن" href="https://www.ysscores.com/ar/player/955759/Peter-Christiansen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5321753392406.png" alt="صورة بيتر كريستيانسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>بيتر كريستيانسن</span>
+                        <p>فيكينغ</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">7</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">9</div>
+        <div class="rank-col name">
+            <a title="أولريك ماثيسن" href="https://www.ysscores.com/ar/player/940963/Ulrik-Mathisen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5531721586212.png" alt="صورة أولريك ماثيسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>أولريك ماثيسن</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">6</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">10</div>
+        <div class="rank-col name">
+            <a title="باتريك ميتكالف" href="https://www.ysscores.com/ar/player/1136261/Patrick-Metcalfe">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/3401754581079.png" alt="صورة باتريك ميتكالف" loading="lazy"></div>
+                    <div class="text">
+                        <span>باتريك ميتكالف</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">6</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">11</div>
+        <div class="rank-col name">
+            <a title="ماتياس غروندتيرن" href="https://www.ysscores.com/ar/player/1047922/Mathias-Grundetjern">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870379369217.png" alt="صورة ماتياس غروندتيرن" loading="lazy"></div>
+                    <div class="text">
+                        <span>ماتياس غروندتيرن</span>
+                        <p>فاليرينغا</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">6</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">12</div>
+        <div class="rank-col name">
+            <a title="سوندر أوكليند" href="https://www.ysscores.com/ar/player/1160076/Sondre-Auklend">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17888752571174.png" alt="صورة سوندر أوكليند" loading="lazy"></div>
+                    <div class="text">
+                        <span>سوندر أوكليند</span>
+                        <p>بودو/غليمت</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">6</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">13</div>
+        <div class="rank-col name">
+            <a title="ماتياس كريستنسن" href="https://www.ysscores.com/ar/player/1192981/Mathias-Christensen">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870358422690.png" alt="صورة ماتياس كريستنسن" loading="lazy"></div>
+                    <div class="text">
+                        <span>ماتياس كريستنسن</span>
+                        <p>أوليسوند</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">6</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">14</div>
+        <div class="rank-col name">
+            <a title="فيليكس فا" href="https://www.ysscores.com/ar/player/791597/Felix-Vá">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17921483527286.png" alt="صورة فيليكس فا" loading="lazy"></div>
+                    <div class="text">
+                        <span>فيليكس فا</span>
+                        <p>ليلستروم</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">15</div>
+        <div class="rank-col name">
+            <a title="يواكيم سولتفيدت" href="https://www.ysscores.com/ar/player/538644/Joachim-Soltvedt">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5261721586475.png" alt="صورة يواكيم سولتفيدت" loading="lazy"></div>
+                    <div class="text">
+                        <span>يواكيم سولتفيدت</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">16</div>
+        <div class="rank-col name">
+            <a title="يوناس لانج هورث" href="https://www.ysscores.com/ar/player/1047489/Jonas-Lange-Hjorth">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870382947663.png" alt="صورة يوناس لانج هورث" loading="lazy"></div>
+                    <div class="text">
+                        <span>يوناس لانج هورث</span>
+                        <p>كفوم أوسلو</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">17</div>
+        <div class="rank-col name">
+            <a title="إندر أوزنبروخ" href="https://www.ysscores.com/ar/player/1460652/Endre-Osenbroch">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/17870373412646.png" alt="صورة إندر أوزنبروخ" loading="lazy"></div>
+                    <div class="text">
+                        <span>إندر أوزنبروخ</span>
+                        <p>أوليسوند</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">18</div>
+        <div class="rank-col name">
+            <a title="كولبين فينسون" href="https://www.ysscores.com/ar/player/635743/Kolbeinn-Finnsson">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/1491696992162.png" alt="صورة كولبين فينسون" loading="lazy"></div>
+                    <div class="text">
+                        <span>كولبين فينسون</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">19</div>
+        <div class="rank-col name">
+            <a title="كاسبر هوج" href="https://www.ysscores.com/ar/player/934960/Kasper-Høgh">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/311721465479.png" alt="صورة كاسبر هوج" loading="lazy"></div>
+                    <div class="text">
+                        <span>كاسبر هوج</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                                                <div class="rank-row">
+    <div class="rank-group main">
+        <div class="rank-col number">20</div>
+        <div class="rank-col name">
+            <a title="مادس بومهولت" href="https://www.ysscores.com/ar/player/1437590/Mads-Bomholt">
+                <div class="team-name player-name">
+                    <div class="img"><img src="https://imgs.ysscores.com/player/48/5901719379355.png" alt="صورة مادس بومهولت" loading="lazy"></div>
+                    <div class="text">
+                        <span>مادس بومهولت</span>
+                        <p></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="rank-group matches mr-auto">
+        <div class="rank-col white">5</div>
+    </div>
+</div>
+                        </div>
+</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+    </div>
+
+</section>
+
+
+<div class="popup-item" id="comment_popup">
+    <div class="popup-content event-comments news-page__comments-popup">
+        <div class="news-page__comments-popup-topbar">
+            <a role="button" tabindex="0" class="comments-popup-back" id="comments_popup_back" aria-label="رجوع">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M10.5 3.5 5 8l5.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>رجوع</span>
+            </a>
+            <a role="button" tabindex="0" class="close-popup" aria-label="إغلاق">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <path id="Combined_Shape" data-name="Combined Shape" d="M12.293,13.707,7,8.414,1.707,13.707A1,1,0,0,1,.293,12.293L5.586,7,.293,1.707A1,1,0,0,1,1.707.293L7,5.586,12.293.293a1,1,0,0,1,1.414,1.415L8.414,7l5.293,5.293a1,1,0,1,1-1.414,1.414Z" transform="translate(0 0)" fill="currentColor"></path>
+                </svg>
+            </a>
+        </div>
+        <div id="info_sub"></div>
+        <div class="player-popup-head comment-replies news-page__comment-parent">
+            <div class="comment-item">
+                <div class="comment-head">
+                    <div id="user_pop_info" class="commenter"></div>
+                </div>
+                <div id="comm_pop_info" class="comment-text"></div>
+            </div>
+        </div>
+
+        <div class="news-comments-wrapper news-page__comments news-page__comments--replies">
+            <h2 class="news-page__comments-title news-page__comments-title--replies">عرض التعليقات</h2>
+            <div class="comment-form">
+                <textarea maxlength="400" id="comm_text_user" type="text" placeholder="اكتب تعليقك هنا"></textarea>
+                <button id="comment_match_user" type="button" class="radius-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17">
+                        <path id="Shape" d="M14.5,16.89,8,13.883,1.5,16.89c-.811.374-1.757-.274-1.434-.983l7-15.378a1.1,1.1,0,0,1,1.876,0l7,15.378C16.192,16.473,15.642,17,15,17A1.18,1.18,0,0,1,14.5,16.89Z" fill="#131521"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="error_msg_user" class="comment-text text-center"></div>
+            <div id="user_comment_user"></div>
+            <div id="comments_users_user" class="news-page__comments-list"></div>
+            <div id="loader_comment_user" class="inline-loader"></div>
+            <a id="more_comments_user" style="display: none" tabindex="0" class="news-page__more-btn" role="button">
+                <span>المزيد</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <path d="M7,10.5a.7.7,0,0,1-.5-.2l-4-4A.7.7,0,0,1,3.7,5.3L7,8.6l3.3-3.3a.7.7,0,0,1,.99.99l-4,4A.7.7,0,0,1,7,10.5Z" fill="currentColor"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="popup-item " id="channel_popup">
+    <div class="popup-content channel_popup" style="width: 580px;">
+        <div class="popup-title"></div>
+        <a role="button" tabindex="0" class="close-popup" aria-label="إغلاق">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+                <path id="Combined_Shape" data-name="Combined Shape"
+                      d="M12.293,13.707,7,8.414,1.707,13.707A1,1,0,0,1,.293,12.293L5.586,7,.293,1.707A1,1,0,0,1,1.707.293L7,5.586,12.293.293a1,1,0,0,1,1.414,1.415L8.414,7l5.293,5.293a1,1,0,1,1-1.414,1.414Z"
+                      transform="translate(0 0)" fill="#bfc3d4"/>
+            </svg>
+        </a>
+        <div class="player-popup-head comment-replies">
+            <div class="comment-item">
+                <div class="comment-head">
+                    <div id="user_pop_info" class="">
+                        <div class="inline-player-item">
+                            <a role="button" tabindex="0" class="player">
+                                <div id="channel_img" class="img"></div>
+                                <div class="text">
+                                    <h5 id="channel_name"></h5>
+                                    <div class="player-def">
+                                        <span id="channel_country"></span>
+                                    </div>
+                                </div>
+
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="news-comments-wrapper">
+            <div class="tab-area">
+
+                <div id="channel_details" class="match-block-item pt-2">
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<div class="popup-item" id="pre_popup" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="popup-content event-comments pre-popup">
+        <a role="button" tabindex="0" class="close-popup" aria-label="إغلاق">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <path d="M12.293,13.707,7,8.414,1.707,13.707A1,1,0,0,1,.293,12.293L5.586,7,.293,1.707A1,1,0,0,1,1.707.293L7,5.586,12.293.293a1,1,0,0,1,1.414,1.415L8.414,7l5.293,5.293a1,1,0,1,1-1.414,1.414Z" fill="currentColor"/>
+            </svg>
+        </a>
+        <div id="info_sub"></div>
+
+        <div class="player-popup-head comment-replies pre-popup-header">
+            <div class="comment-item">
+                <div class="comment-head">
+                    <div id="user_pop_info" class="commenter match_image">
+                        <img src="" alt="">
+                        <div class="text"><h3>توقع النتيجة</h3></div>
+                    </div>
+                </div>
+                <div id="comm_pop_info" class="comment-text">عند توقع النتيجة الصحيحة يتم إضافة 30 نقطة</div>
+                            </div>
+        </div>
+
+        <div class="news-comments-wrapper pre-popup-body">
+            
+            <div class="prediction-step" data-step="1">
+                <h2>توقع النتيجة</h2>
+
+                <div class="score-box team-predict-row">
+                    <div class="team">
+                        <img id="home_image" src="" alt="">
+                        <div class="counter">
+                            <button type="button" class="minus" aria-label="-">−</button>
+                            <input type="number" id="home_score_pre" class="score home-score" value="0" min="0" max="99" aria-label="home score">
+                            <button type="button" class="plus" aria-label="+">+</button>
+                        </div>
+                    </div>
+
+                    <div class="vs" aria-hidden="true">VS</div>
+
+                    <div class="team">
+                        <img id="away_image" src="" alt="">
+                        <div class="counter">
+                            <button type="button" class="minus" aria-label="-">−</button>
+                            <input type="number" id="away_score_pre" class="score away-score" value="0" min="0" max="99" aria-label="away score">
+                            <button type="button" class="plus" aria-label="+">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="2" match_type="0" class="btn-save  save_match_pre">حفظ</button>
+            </div>
+
+            
+            <div class="prediction-step" data-step="2">
+                <div class="pre-knockout-banner">
+                    <span class="pre-knockout-banner__title">مرحلة خروج المغلوب : يجب اعتماد الفائز بركلات الترجيح</span>
+                    <p class="pre-knockout-banner__desc">توقع فائز ركلات الترجيح لتحصل على 30 نقطة</p>
+                </div>
+
+                <div class="winner-select team-predict-row">
+                    <div class="winner-card" data-team="1" role="button" tabindex="0">
+                        <img id="home_image" src="" alt="">
+                    </div>
+                    <div class="winner-card" data-team="2" role="button" tabindex="0">
+                        <img id="away_image" src="" alt="">
+                    </div>
+                </div>
+
+                <div class="collapse-item-wrap match-info-collapse">
+                    <div class="collapse-header match-collapse">
+                        <div class="title">متقدم: توقع نتيجة ركلات الترجيح +50 نقطة</div>
+                        <div class="content"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="collapse-content" style="display: none;">
+                        <div class="score-box team-predict-row">
+                            <div class="team">
+                                <img id="home_image" src="" alt="">
+                                <div class="counter">
+                                    <button type="button" class="minus" aria-label="-">−</button>
+                                    <input type="number" class="score penalty-home" value="0" min="0" max="99">
+                                    <button type="button" class="plus" aria-label="+">+</button>
+                                </div>
+                            </div>
+
+                            <div class="vs" aria-hidden="true">VS</div>
+
+                            <div class="team">
+                                <img id="away_image" src="" alt="">
+                                <div class="counter">
+                                    <button type="button" class="minus" aria-label="-">−</button>
+                                    <input type="number" class="score penalty-away" value="0" min="0" max="99">
+                                    <button type="button" class="plus" aria-label="+">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-save save_pre_pen">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+
+
+
+
+<script>
+    var sett_more = [];
+</script>

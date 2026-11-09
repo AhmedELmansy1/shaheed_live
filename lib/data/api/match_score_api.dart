@@ -489,21 +489,110 @@ class LineupParser {
     final root = _map(data);
     if (root.isEmpty) return null;
 
-    final info = _map(root['0']);
+    final info = _map(root['info']).isNotEmpty ? _map(root['info']) : _map(root['0']);
     final lineups = _map(root['lineup']);
     if (lineups.isEmpty) return null;
 
-    final hId = _i(info['home_team']) != 0 ? _i(info['home_team']) : (homeId ?? 0);
-    final aId = _i(info['away_team']) != 0 ? _i(info['away_team']) : (awayId ?? 0);
+    // Detect team IDs from info, fallbacks, or the lineup map keys
+    var hId = _i(info['home_team']) != 0 ? _i(info['home_team']) : (homeId ?? 0);
+    var aId = _i(info['away_team']) != 0 ? _i(info['away_team']) : (awayId ?? 0);
+
+    if (hId == 0 || aId == 0) {
+      final keys = lineups.keys.map((k) => int.tryParse(k) ?? 0).where((k) => k > 0).toList();
+      if (keys.length >= 2) {
+        if (hId == 0) hId = keys[0];
+        if (aId == 0) aId = keys[1];
+      } else if (keys.length == 1 && hId == 0) {
+        hId = keys[0];
+      }
+    }
+
+    List<LineupPlayer> extractStarters(dynamic block) {
+      if (block == null) return const [];
+      final b = _map(block);
+
+      // Case 1: direct 'lineup' list inside team block
+      if (b.containsKey('lineup') && b['lineup'] != null) {
+        return _players(b['lineup']);
+      }
+
+      // Case 2: position group maps/lists ('G', 'D', 'M', 'F', 'S')
+      final starters = <LineupPlayer>[];
+      for (final pos in ['G', 'D', 'M', 'F', 'S']) {
+        if (b.containsKey(pos)) {
+          final group = b[pos];
+          if (group is Map) {
+            starters.addAll(_players(group.values));
+          } else if (group is List) {
+            starters.addAll(_players(group));
+          }
+        }
+      }
+      if (starters.isNotEmpty) return starters;
+
+      // Case 3: block is directly a list
+      if (block is List) {
+        return _players(block);
+      }
+
+      return const [];
+    }
+
+    List<LineupPlayer> extractSubstitutes(int teamId, dynamic block) {
+      final b = _map(block);
+
+      // Helper to unpack subs whether list or map (with optional 'sub' wrapper)
+      List<LineupPlayer> unpackSubs(dynamic raw) {
+        if (raw == null) return const [];
+        if (raw is List) return _players(raw);
+        if (raw is Map) {
+          if (raw.containsKey('sub')) {
+            final inner = raw['sub'];
+            if (inner is List) return _players(inner);
+            if (inner is Map) return _players(inner.values);
+          }
+          return _players(raw.values);
+        }
+        return const [];
+      }
+
+      // Case 1: inside block['substitutions']
+      if (b.containsKey('substitutions') && b['substitutions'] != null) {
+        final res = unpackSubs(b['substitutions']);
+        if (res.isNotEmpty) return res;
+      }
+
+      // Case 2: inside root['substitutions'][teamId]
+      final rootSubs = _map(root['substitutions']);
+      if (rootSubs.containsKey(teamId.toString())) {
+        final res = unpackSubs(rootSubs[teamId.toString()]);
+        if (res.isNotEmpty) return res;
+      }
+
+      // Case 3: inside root['substitutes'][teamId]
+      final rootSubstitutes = _map(root['substitutes']);
+      if (rootSubstitutes.containsKey(teamId.toString())) {
+        final res = unpackSubs(rootSubstitutes[teamId.toString()]);
+        if (res.isNotEmpty) return res;
+      }
+
+      // Case 4: inside block['S']
+      if (b.containsKey('S')) {
+        final res = unpackSubs(b['S']);
+        if (res.isNotEmpty) return res;
+      }
+
+      return const [];
+    }
 
     TeamLineup build(int id, String formation, String coach) {
-      final block = _map(lineups[id.toString()]);
+      final block = lineups[id.toString()];
       return TeamLineup(
         teamId: id,
         formation: formation.isEmpty ? '4-4-2' : formation,
         coach: coach,
-        starters: _players(block['lineup']),
-        substitutes: _players(block['substitutions']),
+        starters: extractStarters(block),
+        substitutes: extractSubstitutes(id, block),
       );
     }
 
@@ -565,10 +654,22 @@ class LineupParser {
 
   // -- internals ------------------------------------------------------------
 
-  static List<LineupPlayer> _players(dynamic raw) => _list(raw)
-      .whereType<Map>()
-      .map((e) => _player(Map<String, dynamic>.from(e)))
-      .toList();
+  static List<LineupPlayer> _players(dynamic raw) {
+    final Iterable items;
+    if (raw is List) {
+      items = raw;
+    } else if (raw is Iterable) {
+      items = raw;
+    } else if (raw is Map) {
+      items = raw.values;
+    } else {
+      items = const [];
+    }
+    return items
+        .whereType<Map>()
+        .map((e) => _player(Map<String, dynamic>.from(e)))
+        .toList();
+  }
 
   /// Items are either wrapped ({player:{...}, position:'D'}) or flat
   /// ({short_title, shirt_number, pos}) depending on the endpoint version.
@@ -600,7 +701,9 @@ class LineupParser {
     ].map(_s).firstWhere((v) => v.isNotEmpty, orElse: () => '');
 
     return LineupPlayer(
-      id: _i(p['row_id']) != 0 ? _i(p['row_id']) : _i(p['player_id']),
+      id: _i(p['row_id']) != 0
+          ? _i(p['row_id'])
+          : (_i(p['id']) != 0 ? _i(p['id']) : _i(item['player_id'])),
       name: resolvedName,
       shortName: _s(p['short_title']),
       number: number,
@@ -612,13 +715,13 @@ class LineupParser {
   }
 
   static String _normalisePos(String raw) {
-    final p = raw.toUpperCase();
-    if (p == 'G' || p == 'GK') return 'G';
-    if (p == 'D' || p.endsWith('B')) return 'D'; // CB, LB, RB, LWB, RWB
-    if (p == 'F' || p == 'S' || p == 'ST' || p == 'CF' || p.endsWith('W')) {
-      return 'F'; // LW, RW
+    final p = raw.toUpperCase().trim();
+    if (p == 'G' || p == 'GK' || raw.contains('حارس')) return 'G';
+    if (p == 'D' || p.endsWith('B') || raw.contains('دفاع') || raw.contains('ظهير')) return 'D';
+    if (p == 'F' || p == 'S' || p == 'ST' || p == 'CF' || p.endsWith('W') || raw.contains('هجوم') || raw.contains('مهاجم') || raw.contains('جناح')) {
+      return 'F';
     }
-    if (p == 'M' || p.endsWith('M')) return 'M'; // CM, DM, AM, LM, RM
+    if (p == 'M' || p.endsWith('M') || raw.contains('وسط')) return 'M';
     return 'M';
   }
 

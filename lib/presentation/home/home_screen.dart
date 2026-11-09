@@ -293,6 +293,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final surface = AppColors.surfaceOf(context);
     final border = AppColors.borderOf(context);
     final liveColor = AppColors.primaryOf(context);
+    final scope = ref.watch(homeFeedScopeProvider);
+    final onboarding = ref.watch(onboardingProvider);
+    final hasSelections = onboarding.selectedLeagueIds.isNotEmpty ||
+        onboarding.selectedTeamIds.isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -309,6 +313,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
+            if (hasSelections) ...[
+              AppChip(
+                label: 'مبارياتي',
+                icon: Icons.bookmark_rounded,
+                isSelected: scope == HomeFeedScope.myMatches,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(homeFeedScopeProvider.notifier)
+                      .setScope(HomeFeedScope.myMatches);
+                },
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              AppChip(
+                label: 'كل المباريات',
+                icon: Icons.sports_soccer_rounded,
+                isSelected: scope == HomeFeedScope.allMatches,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref
+                      .read(homeFeedScopeProvider.notifier)
+                      .setScope(HomeFeedScope.allMatches);
+                },
+              ),
+              Container(
+                height: 20,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                color: border,
+              ),
+            ],
             AppChip(
               label: 'الكل',
               isSelected: activeFilter == MatchFilterType.all,

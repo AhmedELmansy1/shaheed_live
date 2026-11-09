@@ -8,6 +8,7 @@ import 'package:shoot_live/core/services/notification_service.dart';
 import 'package:shoot_live/core/utils/match_filter_helper.dart';
 import 'package:shoot_live/data/models/league_model.dart';
 import 'package:shoot_live/data/models/match_model.dart';
+import 'package:shoot_live/data/models/team_model.dart';
 import 'package:shoot_live/data/repositories/onboarding_repository.dart';
 import 'package:shoot_live/core/services/remote_config_service.dart';
 import 'package:shoot_live/data/models/ad_config_model.dart';
@@ -23,10 +24,11 @@ void main() {
 
   final mockRepo = MockOnboardingRepository();
   final allLeagues = <LeagueModel>[];
-  final allTeams = mockRepo.getPopularTeams();
+  final allTeams = <TeamModel>[];
 
   setUpAll(() async {
     allLeagues.addAll(await mockRepo.getPopularLeagues());
+    allTeams.addAll(await mockRepo.getPopularTeams());
   });
 
   setUp(() {
