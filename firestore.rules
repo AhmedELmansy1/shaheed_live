@@ -2,14 +2,14 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Helper function verifying if the authenticated user has explicit administrator privileges.
     // Requires Firebase Custom Claim: { admin: true }
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.get('admin', false) == true;
     }
 
-    // 1. App Remote Settings (AdMob, Version Updates, API Override)
+    // 1. App Remote Settings (AdMob, Version Updates, API Override, Themes, Kickoff Offset)
     // - Public read-only for client apps (including anonymous users)
     // - Writes (create/update/delete) allowed ONLY for verified administrators
     match /config/{document=**} {
@@ -29,6 +29,62 @@ service cloud.firestore {
     // - Authenticated owner read/write
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 4. Match Polls (Strict Server-Side Voting Architecture)
+    // - Public read for all users
+    // - Direct client writes are STRICTLY FORBIDDEN (admin only)
+    // - Mobile voting is routed through server endpoint POST /api/polls/vote
+    match /match_polls/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      // Per-user vote receipt subcollection:
+      // - Authenticated users may ONLY read their own receipt
+      // - Direct client writes are forbidden (created by server-side Admin SDK transaction)
+      match /votes/{userId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if isAdmin();
+      }
+    }
+
+    // 5. Direct Sponsorship Campaigns
+    // - Public read for client apps to display active sponsor campaigns
+    // - Full campaign management is admin-only
+    // - Authenticated users may ONLY increment exactly one counter by exactly +1
+    // - No no-op writes, no changing both counters, no decrements
+    match /sponsorships/{campaignId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['impression_count', 'click_count']) &&
+        (
+          (request.resource.data.impression_count == resource.data.get('impression_count', 0) + 1 && request.resource.data.get('click_count', 0) == resource.data.get('click_count', 0)) ||
+          (request.resource.data.get('impression_count', 0) == resource.data.get('impression_count', 0) && request.resource.data.click_count == resource.data.get('click_count', 0) + 1)
+        )
+      );
+    }
+
+    // 6. Stream Issue Reports (Private Streaming Builds Only)
+    // - Authenticated users can create reports with status 'pending'
+    // - Document ID must strictly match: {uid}_{match_id}_{issue_type}
+    // - Duplicates rejected because update is admin-only
+    // - Strict schema whitelist, string length limits, and server timestamp verification
+    // - Clients have NO read, update, or delete access (Admin only)
+    match /stream_reports/{reportId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if request.auth != null &&
+        reportId == request.auth.uid + '_' + string(request.resource.data.match_id) + '_' + request.resource.data.issue_type &&
+        request.resource.data.keys().hasOnly(['user_id', 'match_id', 'match_title', 'server_id', 'server_name', 'issue_type', 'user_comment', 'status', 'created_at']) &&
+        request.resource.data.user_id == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.issue_type in ['buffering', 'offline', 'wrong_match', 'no_audio', 'bad_quality'] &&
+        request.resource.data.user_comment is string && request.resource.data.user_comment.size() <= 250 &&
+        request.resource.data.match_title is string && request.resource.data.match_title.size() <= 150 &&
+        request.resource.data.server_id is string && request.resource.data.server_id.size() <= 50 &&
+        request.resource.data.server_name is string && request.resource.data.server_name.size() <= 100 &&
+        request.resource.data.created_at == request.time;
     }
   }
 }
