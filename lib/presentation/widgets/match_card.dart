@@ -10,6 +10,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/match_model.dart';
+import 'bottom_sheets/watch_match_bottom_sheet.dart';
 import 'score_view.dart';
 import 'status_chip.dart';
 import 'team_logo.dart';
@@ -128,8 +129,57 @@ class MatchCard extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
-                          // Status Badge (Live minute / FT / Postponed / Kickoff)
-                          StatusChip(match: match, isCompact: true),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isLive) ...[
+                                InkWell(
+                                  borderRadius: AppRadii.smRadius,
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    WatchMatchBottomSheet.show(
+                                      context,
+                                      matchId: match.matchId,
+                                      match: match,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.vermilion.withValues(alpha: 0.15),
+                                      borderRadius: AppRadii.smRadius,
+                                      border: Border.all(
+                                        color: AppColors.vermilion.withValues(alpha: 0.5),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.live_tv_rounded,
+                                          size: 13,
+                                          color: AppColors.vermilion,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'بث مباشر',
+                                          style: AppTypography.caption(
+                                            color: AppColors.vermilion,
+                                          ).copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                              StatusChip(match: match, isCompact: true),
+                            ],
+                          ),
                         ],
                       ),
 

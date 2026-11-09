@@ -1,0 +1,152 @@
+Add-Type -AssemblyName System.Drawing
+
+$svgContent = @'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Shield Gradient -->
+    <linearGradient id="shieldBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0E1626" />
+      <stop offset="50%" stop-color="#0A0F1D" />
+      <stop offset="100%" stop-color="#050811" />
+    </linearGradient>
+
+    <!-- Shield Border Gradient (Gold to Vermilion) -->
+    <linearGradient id="goldVermilion" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB800" />
+      <stop offset="50%" stop-color="#FF5A36" />
+      <stop offset="100%" stop-color="#E52D19" />
+    </linearGradient>
+
+    <!-- Football Sphere Shading Gradient -->
+    <radialGradient id="ballSphere" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="55%" stop-color="#E2E8F0" />
+      <stop offset="85%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </radialGradient>
+
+    <!-- Velocity Swoosh Gradient -->
+    <linearGradient id="swooshGrad" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#FF4528" stop-opacity="0" />
+      <stop offset="40%" stop-color="#FF4528" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#FFB800" stop-opacity="1" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================= 1. SHIELD BACKDROP ================= -->
+  <!-- Outer Shield Shadow -->
+  <path d="M 256 34 L 434 70 L 434 270 C 434 380 348 452 256 478 C 164 452 78 380 78 270 L 78 70 Z"
+        fill="#000000" opacity="0.45" transform="translate(0, 6)" />
+
+  <!-- Shield Body -->
+  <path d="M 256 34 L 434 70 L 434 270 C 434 380 348 452 256 478 C 164 452 78 380 78 270 L 78 70 Z"
+        fill="url(#shieldBg)" />
+
+  <!-- Shield Golden-Vermilion Rim -->
+  <path d="M 256 34 L 434 70 L 434 270 C 434 380 348 452 256 478 C 164 452 78 380 78 270 L 78 70 Z"
+        fill="none" stroke="url(#goldVermilion)" stroke-width="8" stroke-linejoin="round" />
+
+  <!-- Inner Precision Rim -->
+  <path d="M 256 48 L 420 81 L 420 268 C 420 368 340 436 256 460 C 172 436 92 368 92 268 L 92 81 Z"
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="2" />
+
+  <!-- ================= 2. CHAMPIONSHIP STAR & APEX ================= -->
+  <!-- Center Star at Apex -->
+  <polygon points="256,66 261.5,77 273.5,78 264.5,86 267,98 256,92 245,98 247.5,86 238.5,78 250.5,77"
+           fill="#FFB800" filter="url(#neonGlow)" />
+  <circle cx="224" cy="84" r="2.5" fill="#FFB800" opacity="0.8" />
+  <circle cx="288" cy="84" r="2.5" fill="#FFB800" opacity="0.8" />
+
+  <!-- ================= 3. STADIUM TERRACES ("مدرّج") ================= -->
+  <!-- Tier 3: Upper Terrace Arc (White glow) -->
+  <path d="M 118 340 A 176 176 0 0 0 394 340"
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="7" stroke-linecap="round" />
+
+  <!-- Tier 2: Middle Terrace Arc (Radiant Gold) -->
+  <path d="M 144 374 A 142 142 0 0 0 368 374"
+        fill="none" stroke="#FFB800" stroke-width="9" stroke-linecap="round" />
+
+  <!-- Tier 1: Lower Terrace Arc (Electric Vermilion) -->
+  <path d="M 176 408 A 108 108 0 0 0 336 408"
+        fill="none" stroke="#FF4528" stroke-width="11" stroke-linecap="round" filter="url(#neonGlow)" />
+
+  <!-- Terrace Vertical Seat Aisles (Subtle radial cuts) -->
+  <line x1="216" y1="360" x2="204" y2="416" stroke="#0E1626" stroke-width="3" stroke-linecap="round" />
+  <line x1="256" y1="364" x2="256" y2="422" stroke="#0E1626" stroke-width="3" stroke-linecap="round" />
+  <line x1="296" y1="360" x2="308" y2="416" stroke="#0E1626" stroke-width="3" stroke-linecap="round" />
+
+  <!-- ================= 4. THE FOOTBALL (SOCCER BALL) ================= -->
+  <!-- Ball Shadow -->
+  <ellipse cx="256" cy="306" rx="72" ry="14" fill="#000000" opacity="0.5" />
+
+  <!-- Ball Sphere Clip & Body -->
+  <g id="football">
+    <clipPath id="ballClip">
+      <circle cx="256" cy="210" r="84" />
+    </clipPath>
+
+    <!-- Spherical Base with 3D Light -->
+    <circle cx="256" cy="210" r="84" fill="url(#ballSphere)" />
+
+    <!-- Content clipped inside sphere -->
+    <g clip-path="url(#ballClip)">
+      <!-- Outer Pentagons on Sphere Edge -->
+      <!-- Top Edge Pentagon -->
+      <polygon points="256,126 238,138 244,158 268,158 274,138" fill="#111827" stroke="#1E293B" stroke-width="3" />
+      <!-- Top-Right Edge Pentagon -->
+      <polygon points="340,192 322,176 308,188 316,208 338,206" fill="#111827" stroke="#1E293B" stroke-width="3" />
+      <!-- Bottom-Right Edge Pentagon -->
+      <polygon points="320,274 326,252 308,242 292,258 300,278" fill="#111827" stroke="#1E293B" stroke-width="3" />
+      <!-- Bottom-Left Edge Pentagon -->
+      <polygon points="192,274 184,252 204,242 220,258 212,278" fill="#111827" stroke="#1E293B" stroke-width="3" />
+      <!-- Top-Left Edge Pentagon -->
+      <polygon points="172,192 190,176 204,188 196,208 174,206" fill="#111827" stroke="#1E293B" stroke-width="3" />
+
+      <!-- Center Pentagon -->
+      <!-- Vertices: (256, 183), (282, 202), (272, 232), (240, 232), (230, 202) -->
+      <polygon points="256,183 282,202 272,232 240,232 230,202" fill="#0F172A" stroke="#1E293B" stroke-width="3" />
+
+      <!-- Ball Seam Lines connecting Center to Edge Pentagons -->
+      <line x1="256" y1="183" x2="256" y2="158" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" />
+      <line x1="282" y1="202" x2="308" y2="188" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" />
+      <line x1="272" y1="232" x2="292" y2="258" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" />
+      <line x1="240" y1="232" x2="220" y2="258" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" />
+      <line x1="230" y1="202" x2="204" y2="188" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" />
+
+      <!-- 3D Specular Highlight Gloss -->
+      <ellipse cx="228" cy="172" rx="34" ry="18" transform="rotate(-25 228 172)"
+               fill="#FFFFFF" opacity="0.45" />
+
+      <!-- Bottom Sphere Shadow -->
+      <path d="M 172 210 A 84 84 0 0 0 340 210 Z" fill="#0A0F1D" opacity="0.22" />
+    </g>
+
+    <!-- Ball Outer Rim Definition -->
+    <circle cx="256" cy="210" r="84" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2" />
+  </g>
+
+  <!-- ================= 5. DYNAMIC VELOCITY SWOOSH ================= -->
+  <!-- High-velocity live flame swoosh wrapping the football -->
+  <path d="M 160 252 C 180 300 240 316 294 292 C 330 276 358 244 366 216 C 362 234 340 262 308 274 C 264 290 206 280 180 246 Z"
+        fill="url(#swooshGrad)" filter="url(#neonGlow)" />
+
+  <!-- Live Pulse Core Dot at Swoosh Apex -->
+  <circle cx="366" cy="214" r="5" fill="#FFFFFF" />
+  <circle cx="366" cy="214" r="8" fill="#FF4528" opacity="0.6" filter="url(#neonGlow)" />
+</svg>
+'@
+
+$svgPath = "D:\My_Project\shoot_live\assets\branding\modarraj_logo.svg"
+[System.IO.File]::WriteAllText($svgPath, $svgContent, [System.Text.Encoding]::UTF8)
+Write-Host "SVG written to $svgPath"
+

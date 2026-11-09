@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
-import '../../presentation/about/about_developer_screen.dart';
 import '../../presentation/diagnostics/diagnostics_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
@@ -150,12 +149,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return LeagueDetailsScreen(leagueId: id, initialLeague: league);
         },
       ),
-      // About Developer screen
-      GoRoute(
-        path: '/about-developer',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const AboutDeveloperScreen(),
-      ),
       // Settings: Manage Leagues screen
       GoRoute(
         path: '/settings/leagues',
@@ -216,7 +209,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           (location == '/home' ||
               location == '/leagues' ||
               location == '/settings' ||
-              location == '/about-developer' ||
               location.startsWith('/match/') ||
               location.startsWith('/league/') ||
               location == '/search' ||

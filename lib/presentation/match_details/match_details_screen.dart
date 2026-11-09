@@ -168,9 +168,13 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
             ),
 
             // TV Stream Action (if active)
-            if (hasActiveStream)
+            if (AppConstants.enableStreaming && hasActiveStream)
               IconButton(
-                icon: Icon(Icons.tv_rounded, color: primary, size: 22),
+                icon: Icon(
+                  Icons.tv_rounded,
+                  color: match.isLive ? AppColors.vermilion : primary,
+                  size: 22,
+                ),
                 tooltip: 'البث المباشر',
                 onPressed: () {
                   HapticFeedback.lightImpact();
@@ -403,22 +407,25 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
             ),
 
             // Prominent Watch Match Button (Live Stream Access)
-            // Visible ONLY when ENABLE_STREAMING=true and match has active stream servers
-            if (AppConstants.enableStreaming && hasActiveStream) ...[
+            if (AppConstants.enableStreaming) ...[
               const SizedBox(height: AppSpacing.md),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primary,
+                    backgroundColor: match.isLive ? AppColors.vermilion : primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadii.mdRadius,
                     ),
-                    elevation: 0,
+                    elevation: 1,
                   ),
-                  icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
+                  icon: Icon(
+                    match.isLive ? Icons.live_tv_rounded : Icons.play_circle_filled_rounded,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                   label: const Text(
                     'مشاهدة المباراة',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -42,6 +43,36 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM Background]   - Topic/From: ${message.from}');
   debugPrint('[FCM Background]   - Data: ${message.data}');
   debugPrint('[FCM Background]   - Notification: title="${message.notification?.title}", body="${message.notification?.body}"');
+
+  // If the message has no system notification payload (e.g. data-only message), display it via local notifications
+  if (message.notification == null && message.data.isNotEmpty) {
+    final title = message.data['title']?.toString() ?? 'مدرّج';
+    final body = message.data['body']?.toString() ?? '';
+    if (title.isNotEmpty || body.isNotEmpty) {
+      try {
+        final localPlugin = FlutterLocalNotificationsPlugin();
+        const androidDetails = AndroidNotificationDetails(
+          NotificationService.channelMatches,
+          'تنبيهات المباريات',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@drawable/ic_stat_notify',
+        );
+        const details = NotificationDetails(android: androidDetails);
+        await localPlugin.show(
+          id: message.messageId.hashCode,
+          title: title,
+          body: body,
+          notificationDetails: details,
+          payload: message.data['match_id'] != null
+              ? '{"type":"match_reminder","matchId":"${message.data['match_id']}"}'
+              : null,
+        );
+      } catch (e) {
+        debugPrint('[FCM Background] Fallback local notification error: $e');
+      }
+    }
+  }
 }
 
 Future<void> _initNotificationsSafely() async {

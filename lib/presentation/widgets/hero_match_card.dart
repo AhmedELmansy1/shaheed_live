@@ -14,7 +14,6 @@ import '../../core/theme/app_typography.dart';
 import '../../data/models/match_model.dart';
 import 'app_button.dart';
 import 'app_card.dart';
-import 'bottom_sheets/coming_soon_bottom_sheet.dart';
 import 'bottom_sheets/watch_match_bottom_sheet.dart';
 import 'live_badge.dart';
 import 'match_countdown_widget.dart';
@@ -278,41 +277,37 @@ class HeroMatchCard extends ConsumerWidget {
             ],
           ),
 
-          // Action Buttons: Watch Now & Highlights
+          // Action Buttons: Details & Live Stream
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: AppButton(
-                  label: 'ملخص المباراة 🎬',
-                  variant: AppButtonVariant.secondary,
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ComingSoonBottomSheet.show(context);
-                  },
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton(
-                  label: AppConstants.enableStreaming
-                      ? 'شاهد المباراة الآن ⚽'
-                      : 'تفاصيل المباراة',
+                  label: 'تفاصيل المباراة',
                   variant: AppButtonVariant.primary,
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    if (AppConstants.enableStreaming) {
+                    context.push('/match/${match.matchId}');
+                  },
+                ),
+              ),
+              if (AppConstants.enableStreaming) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: AppButton(
+                    label: 'شاهد المباراة الآن ⚽',
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
                       WatchMatchBottomSheet.show(
                         context,
                         matchId: match.matchId,
                         match: match,
                       );
-                    } else {
-                      context.push('/match/${match.matchId}');
-                    }
-                  },
+                    },
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],

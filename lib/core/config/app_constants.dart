@@ -8,9 +8,8 @@ class AppConstants {
 
   static const String defaultLocale = 'ar';
 
-  /// Compile-time feature flag to completely gate live streaming features in public store builds.
-  /// Defaults to `false` so public builds contain zero stream UI entry points and never fetch stream URLs.
-  /// Pass `--dart-define=ENABLE_STREAMING=true` only for private/internal builds with live video streaming.
+  /// Compile-time feature flag for live streaming features. Defaults to `false` for store compliance.
+  /// Enable via `--dart-define=ENABLE_STREAMING=true`.
   static bool enableStreaming =
       const bool.fromEnvironment('ENABLE_STREAMING', defaultValue: false);
 }

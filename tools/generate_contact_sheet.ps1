@@ -31,7 +31,7 @@ $brushWhite = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslat
 $brushMuted = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#94A3B8"))
 $brushDarkText = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#0F172A"))
 
-$g.DrawString("MODARRAJ (مدرج) — BRANDING & ICON CONTACT SHEET", $fontTitle, $brushWhite, 40, 25)
+$g.DrawString("MODARRAJ - BRANDING AND ICON CONTACT SHEET", $fontTitle, $brushWhite, 40, 25)
 $g.DrawString("Multi-density inspection: 512px, 192px, 96px, 72px, 48px | Adaptive Monochrome | Status Bar Notification", $fontSubtitle, $brushMuted, 40, 65)
 
 # Helper function to draw rounded container
@@ -120,14 +120,14 @@ $g.DrawString("Status Bar Notification Icon (ic_stat_notify)", $fontLabelBold, $
 Draw-RoundedPanel $g 490 815 380 40 "#0A0A0A" "#262626"
 $g.DrawImage($monoBmp, 505, 823, 24, 24)
 $g.DrawString("12:45", $fontLabel, $brushWhite, 540, 826)
-$g.DrawString("Shoot Live • مباراة مشتعلة الآن!", $fontLabel, $brushMuted, 600, 826)
+$g.DrawString("Shoot Live - Live Match Alert!", $fontLabel, $brushMuted, 600, 826)
 
 # Expanded Notification tray preview
 Draw-RoundedPanel $g 490 865 380 45 "#1E293B" "#334155"
 $accentCircleBrush = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#10B981"))
 $g.FillEllipse($accentCircleBrush, 505, 873, 28, 28)
 $g.DrawImage($monoBmp, 511, 879, 16, 16)
-$g.DrawString("مدرج | إشعار هدف: ليفربول 1 - 0 كريستال بالاس", $fontLabel, $brushWhite, 545, 878)
+$g.DrawString("Modarraj | Goal: Liverpool 1 - 0 Crystal Palace", $fontLabel, $brushWhite, 545, 878)
 
 # Platform / Resolution Audit Notes
 Draw-RoundedPanel $g 920 775 420 145 "#1E293B" "#334155"

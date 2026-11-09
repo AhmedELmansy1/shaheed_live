@@ -24,6 +24,7 @@ import '../widgets/app_button.dart';
 import '../widgets/app_chip.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_error_state.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/battery_guidance_dialog.dart';
 import '../widgets/day_selector.dart';
@@ -93,39 +94,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         toolbarHeight: 68,
         titleSpacing: AppSpacing.lg,
         shape: Border(bottom: BorderSide(color: border, width: 1.0)),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              AppConstants.appName,
-              style: AppTypography.displayMedium(color: textPrimary).copyWith(
-                fontSize: 21,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.2,
-                height: 1.15,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Row(
+            const AppLogo(size: 38, showSubtitle: false),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: vermilion,
-                    shape: BoxShape.circle,
+                Text(
+                  AppConstants.appName,
+                  style: AppTypography.displayMedium(color: textPrimary).copyWith(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.2,
+                    height: 1.15,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'كل نتيجة، لحظة بلحظة',
-                  style: AppTypography.labelSmall(color: textSecondary).copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.1,
-                  ),
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: vermilion,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'كل نتيجة، لحظة بلحظة',
+                      style: AppTypography.labelSmall(color: textSecondary).copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

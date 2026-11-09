@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_constants.dart';
-import '../../core/localization/app_strings.dart';
 import '../../core/services/cache_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
@@ -436,31 +435,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             borderRadius: BorderRadius.circular(AppRadii.md),
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.badge_outlined,
-                    color: AppColors.primary,
-                    size: 22,
-                  ),
-                  title: Text(
-                    AppStrings.aboutDeveloper,
-                    style: AppTypography.titleSmall(color: textPrimary),
-                  ),
-                  subtitle: Text(
-                    AppStrings.aboutDeveloperSubtitle,
-                    style: AppTypography.caption(color: textSecondary),
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: textMuted,
-                    size: 15,
-                  ),
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.push('/about-developer');
-                  },
-                ),
-                Divider(color: border, height: 1),
                 ListTile(
                   leading: const Icon(
                     Icons.privacy_tip_outlined,

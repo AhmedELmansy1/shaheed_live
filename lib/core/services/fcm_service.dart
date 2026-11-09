@@ -68,16 +68,32 @@ class FcmService {
       return;
     }
 
-    // 1. Auto-subscribe to the global 'all' broadcast topic
-    subscribeToGlobalBroadcast();
+    // 1. Request OS notification permissions on Android 13+ and iOS
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      debugPrint('[FCM] Notification permission status: ${settings.authorizationStatus}');
+    } catch (e) {
+      debugPrint('[FCM] Notification permission request notice: $e');
+    }
 
-    // 2. Foreground message receiver
+    // 2. Auto-subscribe to the global 'all' broadcast topic
+    await subscribeToGlobalBroadcast();
+
+    // 3. Foreground message receiver
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('[FCM Foreground] 📩 Message received: ${message.messageId}, from: ${message.from}');
       handleForegroundMessage(message);
     });
 
-    // 3. Token refresh listener - re-subscribe to all active match topics if token rotates
+    // 4. Token refresh listener - re-subscribe to all active match topics if token rotates
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       debugPrint('[FCM] 🔄 Registration token refreshed: $newToken');
       try {
@@ -113,6 +129,12 @@ class FcmService {
       debugPrint('[FCM] 📡 Subscribed to global broadcast topic: $globalBroadcastTopic');
     } catch (e) {
       debugPrint('[FCM] ⚠️ Error subscribing to global broadcast topic $globalBroadcastTopic: $e');
+      Future.delayed(const Duration(seconds: 2), () async {
+        try {
+          await FirebaseMessaging.instance.subscribeToTopic(globalBroadcastTopic);
+          debugPrint('[FCM] 📡 Subscribed to global broadcast topic on retry: $globalBroadcastTopic');
+        } catch (_) {}
+      });
     }
   }
 
