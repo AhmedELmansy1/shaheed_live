@@ -83,8 +83,10 @@ app.*.symbols
 app.*.map.json
 
 # Environment file
-.env
+.env*
 !.env.example
+*service*account*.json
+serviceAccountKey.json
 
 # Node / Tools dependencies & Firebase caches
 tools/node_modules/

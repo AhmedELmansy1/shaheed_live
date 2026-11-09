@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,10 +11,15 @@ import '../config/env_config.dart';
 /// Service managing observation and metric tracking for Direct Sponsorships.
 class SponsorshipService {
   final FirebaseFirestore? _explicitFirestore;
+  final FirebaseAuth? _explicitAuth;
   final Set<String> _recordedImpressions = <String>{};
+  Future<void> _writeQueue = Future.value();
 
-  SponsorshipService({FirebaseFirestore? firestore})
-      : _explicitFirestore = firestore;
+  SponsorshipService({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : _explicitFirestore = firestore,
+        _explicitAuth = auth;
 
   FirebaseFirestore? get _firestore {
     if (_explicitFirestore != null) return _explicitFirestore;
@@ -21,6 +27,26 @@ class SponsorshipService {
       return FirebaseFirestore.instance;
     } catch (_) {
       return null;
+    }
+  }
+
+  FirebaseAuth? get _auth {
+    if (_explicitAuth != null) return _explicitAuth;
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _ensureAuth() async {
+    final auth = _auth;
+    if (auth != null && auth.currentUser == null) {
+      try {
+        await auth.signInAnonymously();
+      } catch (e) {
+        debugPrint('[SponsorshipService] Anonymous sign-in notice: $e');
+      }
     }
   }
 
@@ -53,7 +79,11 @@ class SponsorshipService {
           return list;
         })
         .handleError((err) {
-          debugPrint('[SponsorshipService] Stream error: $err');
+          if (err is FirebaseException && err.code == 'permission-denied') {
+            debugPrint('[SponsorshipService] 🔒 PERMISSION DENIED reading sponsorships collection. Firestore rules must allow read.');
+          } else {
+            debugPrint('[SponsorshipService] Stream error: $err');
+          }
           return const <SponsorshipCampaign>[];
         });
   }
@@ -65,35 +95,54 @@ class SponsorshipService {
 
     _recordedImpressions.add(campaignId);
 
-    try {
-      final fs = _firestore;
-      if (fs == null) return;
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        await _ensureAuth();
+        final fs = _firestore;
+        if (fs == null) return;
 
-      debugPrint('[SponsorshipService] Recording impression for campaign: $campaignId');
-      await fs.collection('sponsorships').doc(campaignId).update({
-        'impression_count': FieldValue.increment(1),
-      });
-    } catch (e) {
-      debugPrint('[SponsorshipService] Failed to record impression: $e');
-    }
+        debugPrint('[SponsorshipService] Recording impression (+1) for campaign: $campaignId');
+        await fs.collection('sponsorships').doc(campaignId).update({
+          'impression_count': FieldValue.increment(1),
+        });
+      } on FirebaseException catch (fe) {
+        if (fe.code == 'permission-denied') {
+          debugPrint('[SponsorshipService] 🔒 PERMISSION DENIED updating impression for $campaignId. Check Firestore Security Rules.');
+        } else {
+          debugPrint('[SponsorshipService] Firebase error recording impression: $fe');
+        }
+      } catch (e) {
+        debugPrint('[SponsorshipService] Failed to record impression: $e');
+      }
+    });
+    return _writeQueue;
   }
 
   /// Records a user click (+1) and opens the target landing URL.
   Future<void> recordClickAndOpen(SponsorshipCampaign campaign) async {
     if (EnvConfig.isDemoMode) return;
 
-    // 1. Increment click count asynchronously
-    try {
-      final fs = _firestore;
-      if (fs != null) {
-        debugPrint('[SponsorshipService] Recording click for campaign: ${campaign.id}');
-        fs.collection('sponsorships').doc(campaign.id).update({
-          'click_count': FieldValue.increment(1),
-        });
+    // 1. Increment click count asynchronously in sequential queue
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        await _ensureAuth();
+        final fs = _firestore;
+        if (fs != null) {
+          debugPrint('[SponsorshipService] Recording click (+1) for campaign: ${campaign.id}');
+          await fs.collection('sponsorships').doc(campaign.id).update({
+            'click_count': FieldValue.increment(1),
+          });
+        }
+      } on FirebaseException catch (fe) {
+        if (fe.code == 'permission-denied') {
+          debugPrint('[SponsorshipService] 🔒 PERMISSION DENIED updating click for ${campaign.id}. Check Firestore Security Rules.');
+        } else {
+          debugPrint('[SponsorshipService] Firebase error recording click: $fe');
+        }
+      } catch (e) {
+        debugPrint('[SponsorshipService] Failed to record click: $e');
       }
-    } catch (e) {
-      debugPrint('[SponsorshipService] Failed to record click: $e');
-    }
+    });
 
     // 2. Open click URL
     if (campaign.clickUrl.isNotEmpty) {

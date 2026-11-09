@@ -80,7 +80,11 @@ class PollService {
       final cachedVote = await getCachedVote(matchId);
       return PollModel.fromMap(snap.data()!, matchId, userVotedOptionId: cachedVote);
     }).handleError((err) {
-      debugPrint('[PollService] Stream error for match $matchId: $err');
+      if (err is FirebaseException && err.code == 'permission-denied') {
+        debugPrint('[PollService] 🔒 PERMISSION DENIED reading match_polls/$matchId. Firestore rules must allow read.');
+      } else {
+        debugPrint('[PollService] Stream error for match $matchId: $err');
+      }
       return null;
     });
   }

@@ -17,6 +17,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/utils/date_formatter.dart';
 import '../onboarding/providers/onboarding_provider.dart';
+import '../diagnostics/diagnostics_screen.dart';
 import '../widgets/app_card.dart';
 import '../widgets/battery_guidance_dialog.dart';
 
@@ -76,6 +77,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _cacheFootprint = 'جاري الحساب...';
   bool _isClearingCache = false;
+  int _diagnosticTapCount = 0;
 
   @override
   void initState() {
@@ -500,24 +502,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     _openUrl('https://shootlive.app/terms');
                   },
                 ),
+                if (kEnableDiagnostics) ...[
+                  Divider(height: 1, thickness: 0.5, color: border),
+                  ListTile(
+                    leading: const Icon(Icons.bug_report_rounded, color: AppColors.primary),
+                    title: Text(
+                      'تشخيص النظام (Diagnostics)',
+                      style: AppTypography.titleSmall(color: textPrimary),
+                    ),
+                    subtitle: Text(
+                      'أدوات فحص الإشعارات والصلاحيات',
+                      style: AppTypography.caption(color: textMuted),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      color: textMuted,
+                      size: 14,
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.push('/diagnostics');
+                    },
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // App Version Footer
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              final version = snapshot.data?.version ?? '1.0.0';
-              final build = snapshot.data?.buildNumber ?? '1';
-              return Center(
-                child: Text(
-                  '${AppConstants.appName} • الإصدار ${DateFormatter.toArabicNumerals(version)} (${DateFormatter.toArabicNumerals(build)})',
-                  style: AppTypography.caption(color: textMuted),
-                ),
-              );
+          // App Version Footer (Tap 5 times when diagnostics enabled)
+          GestureDetector(
+            onTap: () {
+              if (kEnableDiagnostics) {
+                _diagnosticTapCount++;
+                if (_diagnosticTapCount >= 5) {
+                  _diagnosticTapCount = 0;
+                  context.push('/diagnostics');
+                }
+              }
             },
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.data?.version ?? '1.0.0';
+                final build = snapshot.data?.buildNumber ?? '1';
+                return Center(
+                  child: Text(
+                    '${AppConstants.appName} • الإصدار ${DateFormatter.toArabicNumerals(version)} (${DateFormatter.toArabicNumerals(build)})',
+                    style: AppTypography.caption(color: textMuted),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

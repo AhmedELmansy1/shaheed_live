@@ -7,6 +7,7 @@ import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
 import '../../presentation/about/about_developer_screen.dart';
+import '../../presentation/diagnostics/diagnostics_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/leagues/league_details_screen.dart';
@@ -161,6 +162,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) =>
             const LeagueSelectionScreen(isEditing: true),
+      ),
+      // Diagnostics screen (enabled only via --dart-define=ENABLE_DIAGNOSTICS=true)
+      GoRoute(
+        path: '/diagnostics',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          if (!kEnableDiagnostics) {
+            return const Scaffold(
+              body: Center(child: Text('Diagnostics disabled in this build.')),
+            );
+          }
+          return const DiagnosticsScreen();
+        },
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {

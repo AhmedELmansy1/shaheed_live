@@ -9,6 +9,24 @@ import 'match_reminder_service.dart';
 import 'notification_service.dart';
 import '../utils/date_formatter.dart';
 
+class ReceivedFcmLog {
+  final String id;
+  final DateTime timestamp;
+  final String? from;
+  final String title;
+  final String body;
+  final Map<String, dynamic> data;
+
+  const ReceivedFcmLog({
+    required this.id,
+    required this.timestamp,
+    this.from,
+    required this.title,
+    required this.body,
+    required this.data,
+  });
+}
+
 final fcmServiceProvider = Provider<FcmService>((ref) {
   final notificationService = ref.watch(notificationServiceProvider);
   return FcmService(notificationService, ref);
@@ -18,14 +36,30 @@ class FcmService {
   final NotificationService _notificationService;
   final Ref _ref;
 
+  /// Global broadcast topic that all app instances subscribe to.
+  static const String globalBroadcastTopic = 'all';
+
   /// Dedicated test topic for Phase 2.5 production verification.
   /// Devices only subscribe to this topic when explicitly initiated by a developer/tester.
   static const String testNotificationTopic = 'match_score_test_notifications';
   static const String testTopicEnabledKey = 'is_test_notification_topic_enabled';
 
+  /// Ring buffer storing the last 10 received messages for diagnostics.
+  static final List<ReceivedFcmLog> recentMessages = <ReceivedFcmLog>[];
+
+  static void recordMessageLog(ReceivedFcmLog log) {
+    recentMessages.insert(0, log);
+    if (recentMessages.length > 10) {
+      recentMessages.removeLast();
+    }
+  }
+
   FcmService(this._notificationService, this._ref);
 
   void init() {
+    // 0. Auto-subscribe to the global 'all' broadcast topic
+    subscribeToGlobalBroadcast();
+
     // 1. Foreground message receiver
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('[FCM Foreground] 📩 Message received: ${message.messageId}, from: ${message.from}');
@@ -36,6 +70,7 @@ class FcmService {
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       debugPrint('[FCM] 🔄 Registration token refreshed: $newToken');
       try {
+        await subscribeToGlobalBroadcast();
         final reminderService = _ref.read(matchReminderServiceProvider);
         await reminderService.reapplyAllTopicSubscriptions();
       } catch (e) {
@@ -58,6 +93,16 @@ class FcmService {
     }
 
     setupInteractiveHandlers();
+  }
+
+  /// Subscribes the device to the global broadcast topic ('all') matching dashboard sends.
+  Future<void> subscribeToGlobalBroadcast() async {
+    try {
+      await FirebaseMessaging.instance.subscribeToTopic(globalBroadcastTopic);
+      debugPrint('[FCM] 📡 Subscribed to global broadcast topic: $globalBroadcastTopic');
+    } catch (e) {
+      debugPrint('[FCM] ⚠️ Error subscribing to global broadcast topic $globalBroadcastTopic: $e');
+    }
   }
 
   /// Explicitly subscribes this device to the isolated test topic [testNotificationTopic].
@@ -126,12 +171,32 @@ class FcmService {
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     final data = message.data;
 
-    String title = message.notification?.title ?? 'إشعار جديد';
-    String body = message.notification?.body ?? '';
+    // 1. Fallback gracefully: Check message.notification title/body first, then data['title']/data['body']
+    String title = message.notification?.title ?? data['title']?.toString() ?? 'إشعار جديد';
+    String body = message.notification?.body ?? data['body']?.toString() ?? '';
 
     final eventType = data['event_type'];
     final isTestNotification =
         data['type'] == 'test_notification' || eventType == 'production_verification';
+
+    // 2. Notification preference gating
+    final prefs = await SharedPreferences.getInstance();
+    final matchStartEnabled = prefs.getBool('pref_notify_match_start') ?? true;
+    final goalAlertsEnabled = prefs.getBool('pref_notify_goal_alerts') ?? true;
+
+    final isMatchStartEvent =
+        eventType == 'kickoff' || eventType == 'reminder_1hr' || eventType == 'reminder_15min';
+    final isGoalEvent =
+        eventType == 'goal' || eventType == 'penalty' || eventType == 'penalty_scored' || eventType == 'penalty_missed';
+
+    if (isMatchStartEvent && !matchStartEnabled) {
+      debugPrint('[FCM] 🔇 Match start notification suppressed by user setting (pref_notify_match_start=false)');
+      return;
+    }
+    if (isGoalEvent && !goalAlertsEnabled) {
+      debugPrint('[FCM] 🔇 Goal alert notification suppressed by user setting (pref_notify_goal_alerts=false)');
+      return;
+    }
 
     if (data.containsKey('event_type')) {
       final home = data['home'] ?? '';
@@ -213,6 +278,15 @@ class FcmService {
         : (isTestNotification
             ? NotificationService.channelMatches
             : NotificationService.channelLiveEvents);
+
+    recordMessageLog(ReceivedFcmLog(
+      id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      from: message.from,
+      title: title,
+      body: body,
+      data: Map<String, dynamic>.from(data),
+    ));
 
     await _notificationService.showNotification(
       message.messageId.hashCode,

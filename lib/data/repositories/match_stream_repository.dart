@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/match_stream_model.dart';
 
@@ -13,9 +14,13 @@ abstract class MatchStreamRepository {
 
 class FirestoreMatchStreamRepository implements MatchStreamRepository {
   final FirebaseFirestore? _explicitFirestore;
+  final FirebaseAuth? _explicitAuth;
 
-  FirestoreMatchStreamRepository({FirebaseFirestore? firestore})
-      : _explicitFirestore = firestore;
+  FirestoreMatchStreamRepository({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : _explicitFirestore = firestore,
+        _explicitAuth = auth;
 
   FirebaseFirestore? get _firestore {
     if (_explicitFirestore != null) return _explicitFirestore;
@@ -26,6 +31,27 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
     }
   }
 
+  FirebaseAuth? get _auth {
+    if (_explicitAuth != null) return _explicitAuth;
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _ensureAuth() async {
+    final auth = _auth;
+    if (auth != null && auth.currentUser == null) {
+      try {
+        await auth.signInAnonymously();
+        debugPrint('[MatchStreamRepo] Anonymous sign-in established: ${auth.currentUser?.uid}');
+      } catch (e) {
+        debugPrint('[MatchStreamRepo] Anonymous sign-in notice: $e');
+      }
+    }
+  }
+
   @override
   Stream<MatchStreamModel?> listenToMatchStream(int matchId) {
     try {
@@ -33,6 +59,38 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
       if (fs == null) {
         debugPrint('[MatchStreamRepo] Firestore unavailable.');
         return Stream.value(null);
+      }
+
+      final auth = _auth;
+      // If auth is available, attach stream after auth is verified, with automatic retry/re-subscribe on auth state changes
+      if (auth != null) {
+        return auth.authStateChanges().asyncExpand((user) async* {
+          if (user == null) {
+            // Initiate anonymous sign-in in background
+            _ensureAuth();
+            yield null;
+            return;
+          }
+
+          yield* fs
+              .collection('match_streams')
+              .doc(matchId.toString())
+              .snapshots()
+              .map((docSnap) {
+                if (!docSnap.exists || docSnap.data() == null) {
+                  return null;
+                }
+                return MatchStreamModel.fromMap(docSnap.data()!, matchId);
+              })
+              .handleError((error) {
+                if (error is FirebaseException && error.code == 'permission-denied') {
+                  debugPrint('[MatchStreamRepo] 🔒 PERMISSION DENIED reading match_streams/$matchId. User must be authenticated.');
+                } else {
+                  debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
+                }
+                return null;
+              });
+        });
       }
 
       return fs
@@ -58,6 +116,7 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
   @override
   Future<MatchStreamModel?> getMatchStreamOnce(int matchId) async {
     try {
+      await _ensureAuth();
       final fs = _firestore;
       if (fs == null) return null;
 
@@ -70,6 +129,13 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
         return null;
       }
       return MatchStreamModel.fromMap(docSnap.data()!, matchId);
+    } on FirebaseException catch (fe) {
+      if (fe.code == 'permission-denied') {
+        debugPrint('[MatchStreamRepo] 🔒 PERMISSION DENIED fetching match_streams/$matchId.');
+      } else {
+        debugPrint('[MatchStreamRepo] FirebaseException fetching match stream: $fe');
+      }
+      return null;
     } catch (e) {
       debugPrint('[MatchStreamRepo] Error fetching match stream once: $e');
       return null;

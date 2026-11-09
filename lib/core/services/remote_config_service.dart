@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/ad_config_model.dart';
 import '../../data/models/theme_config_model.dart';
+import '../../data/models/ticker_config_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../network/dio_client.dart';
 
 /// Data model representing remote app configuration from Firestore (`config/app_settings`).
@@ -103,9 +105,13 @@ class RemoteConfigService {
             return const AdConfig(); // Safe offline/missing fallback: all enabled: false
           })
           .handleError((error) {
-            debugPrint(
-              '[RemoteConfigService] Error listening to app_settings ad_config: $error. Defaulting to ads DISABLED.',
-            );
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              debugPrint('[RemoteConfigService] 🔒 PERMISSION DENIED listening to app_settings ad_config. Firestore rules must allow read.');
+            } else {
+              debugPrint(
+                '[RemoteConfigService] Error listening to app_settings ad_config: $error. Defaulting to ads DISABLED.',
+              );
+            }
             return const AdConfig(); // Safe fallback: all enabled: false
           });
     } catch (e) {
@@ -140,9 +146,13 @@ class RemoteConfigService {
             return const RemoteConfigModel();
           })
           .handleError((err) {
-            debugPrint(
-              '[RemoteConfigService] Error listening to remote config stream: $err',
-            );
+            if (err is FirebaseException && err.code == 'permission-denied') {
+              debugPrint('[RemoteConfigService] 🔒 PERMISSION DENIED listening to remote config. Firestore rules must allow read.');
+            } else {
+              debugPrint(
+                '[RemoteConfigService] Error listening to remote config stream: $err',
+              );
+            }
             return const RemoteConfigModel();
           });
     } catch (e) {
@@ -164,13 +174,65 @@ class RemoteConfigService {
             return const ThemeConfigModel();
           })
           .handleError((error) {
-            debugPrint('[RemoteConfigService] Error listening to theme_config: $error');
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              debugPrint('[RemoteConfigService] 🔒 PERMISSION DENIED listening to theme_config. Firestore rules must allow read.');
+            } else {
+              debugPrint('[RemoteConfigService] Error listening to theme_config: $error');
+            }
             return const ThemeConfigModel();
           });
     } catch (e) {
       debugPrint('[RemoteConfigService] Failed to initialize theme_config listener: $e');
       return Stream.value(const ThemeConfigModel());
     }
+  }
+
+  /// Listens to Firestore document `config/app_settings` and extracts the `ticker_config` in real-time.
+  Stream<TickerConfigModel> listenToTickerConfig() {
+    try {
+      return _getAppSettingsSnapshotStream()
+          .map((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              final data = snapshot.data()!;
+              final tickerMap = data['ticker_config'] as Map<String, dynamic>?;
+              if (tickerMap != null && tickerMap.isNotEmpty) {
+                final model = TickerConfigModel.fromMap(tickerMap);
+                _cacheTicker(model);
+                return model;
+              }
+            }
+            return const TickerConfigModel();
+          })
+          .handleError((error) {
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              debugPrint('[RemoteConfigService] 🔒 PERMISSION DENIED listening to ticker_config. Firestore rules must allow read.');
+            } else {
+              debugPrint('[RemoteConfigService] Error listening to ticker_config: $error');
+            }
+            return const TickerConfigModel();
+          });
+    } catch (e) {
+      debugPrint('[RemoteConfigService] Failed to initialize ticker_config listener: $e');
+      return Stream.value(const TickerConfigModel());
+    }
+  }
+
+  Future<void> _cacheTicker(TickerConfigModel model) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_ticker_config', model.toJson());
+    } catch (_) {}
+  }
+
+  Future<TickerConfigModel> getCachedTickerConfig() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final str = prefs.getString('cached_ticker_config');
+      if (str != null && str.isNotEmpty) {
+        return TickerConfigModel.fromJson(str);
+      }
+    } catch (_) {}
+    return const TickerConfigModel();
   }
 
   /// Fetches the latest remote configuration once directly from Firestore.
@@ -206,6 +268,13 @@ class RemoteConfigService {
       debugPrint(
         '[RemoteConfigService] fetchInitialConfig: doc does not exist.',
       );
+      return const RemoteConfigModel();
+    } on FirebaseException catch (fe) {
+      if (fe.code == 'permission-denied') {
+        debugPrint('[RemoteConfigService] 🔒 PERMISSION DENIED in fetchInitialConfig: ${fe.message}');
+      } else {
+        debugPrint('[RemoteConfigService] FirebaseException in fetchInitialConfig: $fe');
+      }
       return const RemoteConfigModel();
     } catch (e) {
       debugPrint('[RemoteConfigService] fetchInitialConfig error: $e');
@@ -259,4 +328,16 @@ final currentThemeConfigProvider = Provider<ThemeConfigModel>((ref) {
 final kickoffOffsetHoursProvider = Provider<int>((ref) {
   final themeConfig = ref.watch(currentThemeConfigProvider);
   return themeConfig.kickoffOffsetHours;
+});
+
+/// StreamProvider listening to real-time breaking news ticker updates.
+final tickerConfigStreamProvider = StreamProvider<TickerConfigModel>((ref) {
+  final service = ref.watch(remoteConfigServiceProvider);
+  return service.listenToTickerConfig();
+});
+
+/// Accessor provider for current active [TickerConfigModel].
+final currentTickerConfigProvider = Provider<TickerConfigModel>((ref) {
+  final asyncVal = ref.watch(tickerConfigStreamProvider);
+  return asyncVal.value ?? const TickerConfigModel();
 });

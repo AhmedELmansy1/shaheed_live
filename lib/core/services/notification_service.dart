@@ -234,7 +234,8 @@ class NotificationService {
     final androidDetails = AndroidNotificationDetails(
       channelId,
       _getChannelName(channelId),
-      icon: '@mipmap/launcher_icon',
+      icon: '@drawable/ic_notification',
+      color: const Color(0xFFE5482D),
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
@@ -266,7 +267,8 @@ class NotificationService {
     final androidDetails = AndroidNotificationDetails(
       channelId,
       _getChannelName(channelId),
-      icon: '@mipmap/launcher_icon',
+      icon: '@drawable/ic_notification',
+      color: const Color(0xFFE5482D),
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
@@ -373,6 +375,24 @@ class NotificationService {
   Future<List<PendingNotificationRequest>>
   getPendingNotificationRequests() async {
     return await _notificationsPlugin.pendingNotificationRequests();
+  }
+
+  /// Returns active notification channels registered in Android OS.
+  Future<List<AndroidNotificationChannel>?> getRegisteredChannels() async {
+    final android = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    return android?.getNotificationChannels();
+  }
+
+  /// Checks if the app currently has permission to schedule exact alarms (Android 12+).
+  Future<bool?> canScheduleExactAlarms() async {
+    final android = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    return android?.canScheduleExactNotifications();
   }
 
   String _getChannelName(String channelId) {

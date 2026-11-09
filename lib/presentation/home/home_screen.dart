@@ -33,6 +33,7 @@ import '../widgets/match_card.dart';
 import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
 import '../widgets/sponsorship_banner_widget.dart';
+import 'widgets/breaking_news_ticker.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
@@ -211,6 +212,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             // 4. Restyled Offline Cache Fallback Banner
             if (isOffline) _buildOfflineBanner(context),
+
+            // Breaking News Ticker (driven by config/app_settings.ticker_config)
+            const BreakingNewsTicker(),
 
             // Direct Sponsorship (Home Top Placement)
             const SponsorshipBannerWidget(
