@@ -19,7 +19,6 @@ import '../../presentation/search/team_fixtures_screen.dart';
 import '../../presentation/search/team_search_screen.dart';
 import '../../presentation/settings/settings_screen.dart';
 import '../../presentation/shell/main_shell.dart';
-import '../../presentation/splash/splash_screen.dart';
 import '../../presentation/update/force_update_screen.dart';
 import '../services/notification_service.dart';
 import '../services/update_service.dart';
@@ -47,10 +46,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   router = GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/home',
     refreshListenable: refreshNotifier,
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/', redirect: (context, state) => '/home'),
       GoRoute(
         path: '/force-update',
         builder: (context, state) => const ForceUpdateScreen(),
@@ -166,9 +165,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
     redirect: (BuildContext context, GoRouterState state) async {
       final location = state.matchedLocation;
-
-      // Allow Splash screen to run its startup sequence
-      if (location == '/') return null;
 
       // 1. Guard against Hard Block: Check Version / Force Update FIRST
       final updateInfo = ref.read(appUpdateInfoProvider);

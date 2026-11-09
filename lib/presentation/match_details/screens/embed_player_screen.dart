@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../widgets/stream_report_sheet.dart';
 
 class EmbedPlayerScreen extends StatefulWidget {
   final String streamUrl;
   final String serverName;
+  final dynamic matchId;
+  final String matchTitle;
+  final String serverId;
 
   const EmbedPlayerScreen({
     super.key,
     required this.streamUrl,
     required this.serverName,
+    this.matchId = '',
+    this.matchTitle = '',
+    this.serverId = '',
   });
 
   @override
@@ -105,6 +112,19 @@ class _EmbedPlayerScreenState extends State<EmbedPlayerScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.report_problem_outlined, color: Colors.amberAccent),
+            tooltip: 'إبلاغ عن عطل في البث',
+            onPressed: () {
+              StreamReportBottomSheet.show(
+                context,
+                matchId: widget.matchId,
+                matchTitle: widget.matchTitle.isNotEmpty ? widget.matchTitle : 'مباراة مباشرة',
+                serverId: widget.serverId.isNotEmpty ? widget.serverId : 'srv_default',
+                serverName: widget.serverName,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             onPressed: () {

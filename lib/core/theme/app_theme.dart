@@ -6,8 +6,11 @@ import 'app_typography.dart';
 
 /// Central theme configuration for "Paper × Ink × Vermilion".
 class AppTheme {
-  static ThemeData get lightTheme {
-    const colors = AppThemeColors.light;
+  static ThemeData get lightTheme => getLightTheme();
+  static ThemeData get darkTheme => getDarkTheme();
+
+  static ThemeData getLightTheme({AppThemeColors? overrideColors}) {
+    final colors = overrideColors ?? AppThemeColors.light;
     final textTheme = AppTypography.textTheme(
       colors.textPrimary,
       colors.textSecondary,
@@ -19,7 +22,7 @@ class AppTheme {
       fontFamily: AppTypography.fontFamily,
       scaffoldBackgroundColor: colors.background,
       primaryColor: colors.vermilion,
-      extensions: const [colors],
+      extensions: [colors],
       colorScheme: ColorScheme.light(
         primary: colors.vermilion,
         secondary: colors.upcoming,
@@ -65,8 +68,8 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
-    const colors = AppThemeColors.dark;
+  static ThemeData getDarkTheme({AppThemeColors? overrideColors}) {
+    final colors = overrideColors ?? AppThemeColors.dark;
     final textTheme = AppTypography.textTheme(
       colors.textPrimary,
       colors.textSecondary,
@@ -78,7 +81,7 @@ class AppTheme {
       fontFamily: AppTypography.fontFamily,
       scaffoldBackgroundColor: colors.background,
       primaryColor: colors.vermilion,
-      extensions: const [colors],
+      extensions: [colors],
       colorScheme: ColorScheme.dark(
         primary: colors.vermilion,
         secondary: colors.upcoming,

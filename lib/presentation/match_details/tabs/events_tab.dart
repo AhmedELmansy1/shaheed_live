@@ -58,7 +58,13 @@ class EventsTab extends ConsumerWidget {
           itemCount: events.length,
           itemBuilder: (context, index) {
             final event = events[index];
-            if (event.eventType == MatchEventType.periodMarker) {
+            // Neutral centered marker for period markers (type 100), team_id 0, or unassigned events
+            final isNeutral = event.eventType == MatchEventType.periodMarker ||
+                event.teamId == 0 ||
+                event.teamId == '0' ||
+                event.teamId == null;
+
+            if (isNeutral) {
               return _buildPeriodMarker(context, event);
             }
 
@@ -75,9 +81,9 @@ class EventsTab extends ConsumerWidget {
     final border = AppColors.borderOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
 
-    final title = event.statusName.isNotEmpty
-        ? event.statusName
-        : event.formattedMinute;
+    final title = event.statusName.trim().isNotEmpty
+        ? event.statusName.trim()
+        : (event.minute > 0 ? event.formattedMinute : 'صافرة الحكم');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

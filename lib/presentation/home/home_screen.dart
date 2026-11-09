@@ -18,6 +18,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
 import '../onboarding/providers/onboarding_provider.dart';
+import '../../data/models/sponsorship_model.dart';
 import '../update/widgets/soft_update_banner.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_chip.dart';
@@ -31,6 +32,7 @@ import '../widgets/live_badge.dart';
 import '../widgets/match_card.dart';
 import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
+import '../widgets/sponsorship_banner_widget.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
@@ -209,6 +211,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             // 4. Restyled Offline Cache Fallback Banner
             if (isOffline) _buildOfflineBanner(context),
+
+            // Direct Sponsorship (Home Top Placement)
+            const SponsorshipBannerWidget(
+              placement: SponsorshipPlacement.homeTopBanner,
+            ),
 
             // 5. Matches Scrollable Content Area with Pull-to-Refresh
             Expanded(

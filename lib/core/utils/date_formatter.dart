@@ -38,7 +38,8 @@ class DateFormatter {
 
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in source timezone ([ApiConfig.sourceTimezone])
   /// using IANA data, converts to the device's local timezone, and formats as Arabic time string (e.g., "٧:٣٠ م").
-  static String formatMatchTime(String? rawDate, String? rawTime) {
+  /// An optional [offsetHours] (clamped to [-3, +3]) adjusts for remote timezone/DST overrides without shifting date tabs.
+  static String formatMatchTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
     if (rawDate == null ||
         rawDate.isEmpty ||
         rawTime == null ||
@@ -70,18 +71,35 @@ class DateFormatter {
       );
 
       // Convert to local device timezone
-      final localDateTime = cairoTZDateTime.toLocal();
+      var localDateTime = cairoTZDateTime.toLocal();
+
+      if (offsetHours != 0) {
+        final clamped = offsetHours.clamp(-3, 3);
+        localDateTime = localDateTime.add(Duration(hours: clamped));
+      }
 
       final formatted = DateFormat('h:mm a', 'ar').format(localDateTime);
       return toArabicNumerals(formatted);
     } catch (_) {
-      return toArabicNumerals(rawTime.substring(0, 5));
+      try {
+        var hour = int.tryParse(rawTime.substring(0, 2)) ?? 0;
+        final minute = rawTime.substring(2, 5);
+        if (offsetHours != 0) {
+          hour = (hour + offsetHours.clamp(-3, 3)) % 24;
+          if (hour < 0) hour += 24;
+        }
+        final hourStr = hour.toString().padLeft(2, '0');
+        return toArabicNumerals('$hourStr$minute');
+      } catch (_) {
+        return toArabicNumerals(rawTime.substring(0, 5));
+      }
     }
   }
 
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in [ApiConfig.sourceTimezone]
   /// using IANA data, and returns the resolved local device [DateTime].
-  static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime) {
+  /// An optional [offsetHours] (clamped to [-3, +3]) applies remote timezone/DST adjustment.
+  static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
     if (rawDate == null ||
         rawDate.isEmpty ||
         rawTime == null ||
@@ -111,10 +129,19 @@ class DateFormatter {
         second,
       );
 
-      return sourceTZDateTime.toLocal();
+      var localDateTime = sourceTZDateTime.toLocal();
+      if (offsetHours != 0) {
+        final clamped = offsetHours.clamp(-3, 3);
+        localDateTime = localDateTime.add(Duration(hours: clamped));
+      }
+      return localDateTime;
     } catch (_) {
       try {
-        return DateTime.parse('${rawDate.trim()} ${rawTime.trim()}');
+        var dt = DateTime.parse('${rawDate.trim()} ${rawTime.trim()}');
+        if (offsetHours != 0) {
+          dt = dt.add(Duration(hours: offsetHours.clamp(-3, 3)));
+        }
+        return dt;
       } catch (_) {
         return null;
       }

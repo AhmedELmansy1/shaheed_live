@@ -84,8 +84,12 @@ class MatchModel {
   String get displayDate => matchDate ?? '';
   String get formattedLocalTime =>
       DateFormatter.formatMatchTime(matchDate, matchTime);
+  String formatLocalTime({int offsetHours = 0}) =>
+      DateFormatter.formatMatchTime(matchDate, matchTime, offsetHours: offsetHours);
   DateTime? get kickoffDateTime =>
       DateFormatter.parseCairoMatchDateTime(matchDate, matchTime);
+  DateTime? getKickoffDateTime({int offsetHours = 0}) =>
+      DateFormatter.parseCairoMatchDateTime(matchDate, matchTime, offsetHours: offsetHours);
 
   /// Returns the formatted live minute or status (e.g. "٤٥'", "٩٠+٤'", "استراحة"), or null if not live.
   String? get currentMinute {

@@ -11,8 +11,12 @@ import 'core/config/env_config.dart';
 import 'core/localization/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/ad_service.dart';
+import 'core/services/auth_service.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/match_reminder_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/remote_config_service.dart';
+import 'core/services/user_sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/utils/timezone_helper.dart';
@@ -98,6 +102,44 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
       } catch (e) {
         debugPrint('[Main] FCM service init skipped/failed: $e');
       }
+
+      // 3. Preload App Open Ad in parallel non-blocking
+      try {
+        ref.read(adServiceProvider).loadAppOpenAd();
+      } catch (_) {}
+
+      // 4. Background Auth and Cloud Sync (guarded for runtime when Firebase is configured)
+      if (Firebase.apps.isNotEmpty) {
+        try {
+          ref.read(authServiceProvider).ensureAuthenticated().then((_) {
+            ref.read(userSyncServiceProvider).pullFirestoreToLocal().catchError((e) {
+              debugPrint('[Main] Firestore pull sync notice: $e');
+            });
+          }).catchError((e) {
+            debugPrint('[Main] Auth notice: $e');
+          });
+        } catch (e) {
+          debugPrint('[Main] Auth notice: $e');
+        }
+
+        // 5. Reschedule pending match reminders
+        try {
+          ref.read(matchReminderServiceProvider).rescheduleAllReminders().catchError((e) {
+            debugPrint('[Main] Match reminder reschedule notice: $e');
+          });
+        } catch (e) {
+          debugPrint('[Main] Match reminder reschedule notice: $e');
+        }
+
+        // 6. Fetch initial remote config
+        () async {
+          try {
+            await ref.read(remoteConfigServiceProvider).fetchInitialConfig();
+          } catch (e) {
+            debugPrint('[Main] Remote config fetch notice: $e');
+          }
+        }();
+      }
     });
   }
 
@@ -122,12 +164,15 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final themeConfig = ref.watch(currentThemeConfigProvider);
+    final lightColors = themeConfig.toThemeColors(isDark: false);
+    final darkColors = themeConfig.toThemeColors(isDark: true);
 
     return MaterialApp.router(
       title: AppStrings.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.getLightTheme(overrideColors: lightColors),
+      darkTheme: AppTheme.getDarkTheme(overrideColors: darkColors),
       themeMode: themeMode,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar')],

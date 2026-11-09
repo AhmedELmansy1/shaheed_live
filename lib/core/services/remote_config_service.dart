@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/ad_config_model.dart';
+import '../../data/models/theme_config_model.dart';
 import '../network/dio_client.dart';
 
 /// Data model representing remote app configuration from Firestore (`config/app_settings`).
@@ -152,6 +153,26 @@ class RemoteConfigService {
     }
   }
 
+  /// Listens to Firestore document `config/app_settings` and extracts the `theme_config` in real-time.
+  Stream<ThemeConfigModel> listenToThemeConfig() {
+    try {
+      return _getAppSettingsSnapshotStream()
+          .map((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              return ThemeConfigModel.fromMap(snapshot.data()!);
+            }
+            return const ThemeConfigModel();
+          })
+          .handleError((error) {
+            debugPrint('[RemoteConfigService] Error listening to theme_config: $error');
+            return const ThemeConfigModel();
+          });
+    } catch (e) {
+      debugPrint('[RemoteConfigService] Failed to initialize theme_config listener: $e');
+      return Stream.value(const ThemeConfigModel());
+    }
+  }
+
   /// Fetches the latest remote configuration once directly from Firestore.
   /// Used during startup sequence to guarantee fresh values before splash navigation.
   Future<RemoteConfigModel> fetchInitialConfig() async {
@@ -220,4 +241,22 @@ final currentAdConfigProvider = Provider<AdConfig>((ref) {
     return config.withTestUnitIds();
   }
   return config;
+});
+
+/// StreamProvider listening to real-time seasonal theme and kickoff offset updates.
+final themeConfigStreamProvider = StreamProvider<ThemeConfigModel>((ref) {
+  final service = ref.watch(remoteConfigServiceProvider);
+  return service.listenToThemeConfig();
+});
+
+/// Accessor provider for current active [ThemeConfigModel].
+final currentThemeConfigProvider = Provider<ThemeConfigModel>((ref) {
+  final asyncVal = ref.watch(themeConfigStreamProvider);
+  return asyncVal.value ?? const ThemeConfigModel();
+});
+
+/// Accessor provider for current kickoff hour offset (clamped [-3, +3]).
+final kickoffOffsetHoursProvider = Provider<int>((ref) {
+  final themeConfig = ref.watch(currentThemeConfigProvider);
+  return themeConfig.kickoffOffsetHours;
 });

@@ -12,22 +12,24 @@ import '../../core/utils/date_formatter.dart';
 import '../../core/utils/match_share_helper.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/match_stream_model.dart';
+import '../../data/models/sponsorship_model.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/bottom_sheets/watch_match_bottom_sheet.dart';
 import '../widgets/score_view.dart';
+import '../widgets/sponsorship_banner_widget.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/team_logo.dart';
 import 'controllers/live_match_polling_manager.dart';
 import 'providers/match_details_providers.dart';
 import 'providers/match_stream_provider.dart';
-import 'screens/embed_player_screen.dart';
-import 'screens/hls_player_screen.dart';
+import 'services/stream_player.dart';
 import 'tabs/events_tab.dart';
 import 'tabs/info_tab.dart';
 import 'tabs/lineup_tab.dart';
 import 'tabs/news_tab.dart';
 import 'tabs/standings_tab.dart';
 import 'tabs/statistics_tab.dart';
+import 'widgets/poll_card.dart';
 
 /// Premium Match Details Screen in "Paper × Ink × Vermilion".
 ///
@@ -199,7 +201,23 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
           child: Column(
             children: [
               // 1. Sticky Hero Header Match Card
-              _buildMatchHeaderCard(context, match),
+              _buildMatchHeaderCard(
+                context,
+                match,
+                hasActiveStream: hasActiveStream,
+                streamModel: streamModel,
+              ),
+
+              // Sponsorship Banner (Match Details Top Placement)
+              const SponsorshipBannerWidget(
+                placement: SponsorshipPlacement.matchDetailsTop,
+              ),
+
+              // Interactive Match Poll Card
+              PollCard(
+                matchId: match.id,
+                isMatchFinished: match.isFinished,
+              ),
 
               // 2. Clean Editorial Tab Bar
               Container(
@@ -263,12 +281,18 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
     );
   }
 
-  Widget _buildMatchHeaderCard(BuildContext context, MatchModel match) {
+  Widget _buildMatchHeaderCard(
+    BuildContext context,
+    MatchModel match, {
+    required bool hasActiveStream,
+    required MatchStreamModel? streamModel,
+  }) {
     final surface = AppColors.surfaceOf(context);
     final surfaceElevated = AppColors.surfaceElevatedOf(context);
     final border = AppColors.borderOf(context);
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
+    final primary = AppColors.primaryOf(context);
 
     return Container(
       color: surface,
@@ -377,6 +401,35 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                 ),
               ],
             ),
+
+            // Prominent Watch Match Button (Live Stream Access)
+            // Visible ONLY when ENABLE_STREAMING=true and match has active stream servers
+            if (AppConstants.enableStreaming && hasActiveStream) ...[
+              const SizedBox(height: AppSpacing.md),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadii.mdRadius,
+                    ),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
+                  label: const Text(
+                    'مشاهدة المباراة',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _openMatchStream(context, match, streamModel);
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -400,31 +453,16 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
       final server = activeServers.first;
       final serverTitle = '${match.homeTeamName} ضد ${match.awayTeamName}';
 
-      switch (server.playerType) {
-        case PlayerType.hls:
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => HlsPlayerScreen(
-                streamUrl: server.streamUrl,
-                serverName: serverTitle,
-              ),
-            ),
-          );
-          break;
-        case PlayerType.embed:
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => EmbedPlayerScreen(
-                streamUrl: server.streamUrl,
-                serverName: serverTitle,
-              ),
-            ),
-          );
-          break;
-        case PlayerType.external:
-          WatchMatchBottomSheet.show(context, matchId: match.matchId, match: match);
-          break;
-      }
+      // Swappable StreamPlayer engine resolution
+      final player = StreamPlayerResolver.resolve(server.playerType);
+      player.launch(
+        context: context,
+        streamUrl: server.streamUrl,
+        serverName: serverTitle,
+        matchId: match.matchId,
+        matchTitle: '${match.homeTeamName} × ${match.awayTeamName}',
+        serverId: server.id,
+      );
     } else {
       WatchMatchBottomSheet.show(context, matchId: match.matchId, match: match);
     }
