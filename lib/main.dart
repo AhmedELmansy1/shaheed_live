@@ -5,6 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'core/config/env_config.dart';
 import 'core/localization/app_strings.dart';
 import 'core/routing/app_router.dart';
@@ -14,6 +16,7 @@ import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/utils/timezone_helper.dart';
+import 'presentation/widgets/animated_app_background.dart';
 import 'firebase_options.dart';
 
 /// Top-level background message handler for FCM
@@ -25,13 +28,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM Background]   - Notification: title="${message.notification?.title}", body="${message.notification?.body}"');
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment variables
-  await EnvConfig.init();
-
-  // Initialize Firebase safely
+Future<void> _initFirebaseSafely() async {
   try {
     try {
       await Firebase.initializeApp(
@@ -45,11 +42,9 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] Firebase initialization fallback/skipped: $e');
   }
+}
 
-  // Initialize timezone rules
-  await TimezoneHelper.init();
-
-  // Initialize Local Notifications
+Future<void> _initNotificationsSafely() async {
   try {
     final notificationService = NotificationService();
     await notificationService.init();
@@ -57,10 +52,19 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] Local notifications init error: $e');
   }
+}
 
-  // Initialize AdMob SDK with test device configuration
-  await MobileAds.instance.initialize();
-  await AdService.initTestDeviceConfig();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Parallelize critical startup initializations
+  await Future.wait([
+    EnvConfig.init(),
+    TimezoneHelper.init(),
+    _initFirebaseSafely(),
+    _initNotificationsSafely(),
+    SharedPreferences.getInstance(),
+  ]);
 
   runApp(const ProviderScope(child: ShootLiveApp()));
 }
@@ -79,8 +83,16 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize FCM foreground listener
+    // Defer non-critical services (AdMob, FCM listener) until after first frame is painted
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 1. Initialize AdMob SDK and test device config
+      MobileAds.instance.initialize().then((_) {
+        AdService.initTestDeviceConfig();
+      }).catchError((e) {
+        debugPrint('[Main] AdMob init deferred error: $e');
+      });
+
+      // 2. Initialize FCM foreground listener
       try {
         ref.read(fcmServiceProvider).init();
       } catch (e) {
@@ -127,7 +139,9 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,
-          child: child ?? const SizedBox.shrink(),
+          child: AnimatedAppBackground(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       routerConfig: ref.watch(appRouterProvider),

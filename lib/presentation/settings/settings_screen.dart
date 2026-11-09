@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/localization/app_strings.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/fcm_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/user_sync_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -31,6 +32,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final onboardingState = ref.watch(onboardingProvider);
     final favoriteCount = onboardingState.selectedTeamIds.length;
+    final leagueCount = onboardingState.selectedLeagueIds.length;
     final isLight = Theme.of(context).brightness == Brightness.light;
 
     final textPrimary = isLight
@@ -42,6 +44,9 @@ class SettingsScreen extends ConsumerWidget {
     final textMuted = isLight
         ? AppColors.lightTextMuted
         : AppColors.darkTextMuted;
+    final borderColor = isLight
+        ? AppColors.lightBorder
+        : AppColors.darkBorder;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -131,7 +136,57 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 2. Favorite Teams Management Section
+          // 2. Followed Leagues Management Section
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              context.push('/settings/leagues');
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                  ),
+                  child: const Icon(
+                    Icons.sports_soccer,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'إدارة الدوريات المتابعة',
+                        style: AppTypography.titleSmall(color: textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'تحديد وتعديل الدوريات التي تظهر في شاشات المباريات (${DateFormatter.toArabicNumerals('$leagueCount')} محددة)',
+                        style: AppTypography.caption(color: textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: textMuted,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // 3. Favorite Teams Management Section
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             margin: EdgeInsets.zero,
@@ -518,9 +573,180 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // 8. Safe FCM Test Mode (Phase 2.5 Diagnostic Verification)
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              final fcm = ref.read(fcmServiceProvider);
+              final isCurrentlyEnabled = await fcm.isTestNotificationTopicEnabled();
+
+              if (!context.mounted) return;
+
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+                ),
+                builder: (ctx) {
+                  bool isEnabled = isCurrentlyEnabled;
+                  bool isLoading = false;
+                  String? lastTokenPreview;
+
+                  return StatefulBuilder(
+                    builder: (modalCtx, setModalState) {
+                      return Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text('🧪', style: TextStyle(fontSize: 22)),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    'فحص إشعارات FCM الحقيقية (Test Mode)',
+                                    style: AppTypography.titleMedium(color: textPrimary),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'للاختبار الآمن دون إزعاج المستخدمين الحقيقيين، يتم توجيه رسائل الاختبار حصرياً إلى قناة مخصصة:',
+                              style: AppTypography.caption(color: textSecondary),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              decoration: BoxDecoration(
+                                color: isLight ? AppColors.lightSurfaceHigh : AppColors.darkSurfaceHigh,
+                                borderRadius: BorderRadius.circular(AppRadii.xs),
+                                border: Border.all(color: borderColor),
+                              ),
+                              child: const SelectableText(
+                                FcmService.testNotificationTopic,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isEnabled ? 'حالة الاشتراك: مفعل ✅' : 'حالة الاشتراك: غير مفعل 🛑',
+                                  style: AppTypography.bodySmall(
+                                    color: isEnabled ? AppColors.live : textSecondary,
+                                  ),
+                                ),
+                                if (isLoading)
+                                  const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                else
+                                  Switch(
+                                    value: isEnabled,
+                                    activeTrackColor: AppColors.primary,
+                                    onChanged: (val) async {
+                                      setModalState(() => isLoading = true);
+                                      if (val) {
+                                        final token = await fcm.enableTestNotificationTopic();
+                                        setModalState(() {
+                                          isEnabled = true;
+                                          isLoading = false;
+                                          if (token != null && token.length > 16) {
+                                            lastTokenPreview = '${token.substring(0, 8)}...${token.substring(token.length - 8)}';
+                                          }
+                                        });
+                                      } else {
+                                        await fcm.disableTestNotificationTopic();
+                                        setModalState(() {
+                                          isEnabled = false;
+                                          isLoading = false;
+                                          lastTokenPreview = null;
+                                        });
+                                      }
+                                    },
+                                  ),
+                              ],
+                            ),
+                            if (lastTokenPreview != null) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'رمز التسجيل (FCM Token جزئي للتشخيص): $lastTokenPreview',
+                                style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                              ),
+                            ],
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              'خطوات التحقق:\n1. قم بتفعيل الخيار أعلاه للاشتراك.\n2. شغّل أمر الإرسال من مجلد Watcher:\n   npm run test:push\n3. سيصلك إشعار فوري حقيقي لتأكيد المسار.',
+                              style: AppTypography.caption(color: textSecondary),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                  ),
+                  child: const Icon(
+                    Icons.cell_tower_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'فحص إشعارات FCM الحقيقية (Test Mode)',
+                        style: AppTypography.titleSmall(color: textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'الاشتراك في قناة الاختبار الآمنة لاستقبال إشعارات تجريبية دون التأثير على المستخدمين',
+                        style: AppTypography.caption(color: textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: textMuted,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: AppSpacing.xl),
 
-          // 8. App Version Footer
+          // 9. App Version Footer
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -567,7 +793,8 @@ class SettingsScreen extends ConsumerWidget {
         },
         child: AnimatedContainer(
           duration: AppMotion.fast,
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          constraints: const BoxConstraints(minHeight: 52),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.15)
@@ -580,6 +807,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,

@@ -208,7 +208,16 @@ final adConfigStreamProvider = StreamProvider<AdConfig>((ref) {
 
 /// Current value accessor provider for [AdConfig].
 /// Defaults to `const AdConfig()` (all ads disabled) when loading or offline.
+///
+/// DEBUG SAFETY: In debug/profile builds (!kReleaseMode), Firestore ad unit IDs
+/// are ignored and Google's official test unit IDs are used for every placement,
+/// preventing accidental impressions or clicks on real ads during development.
+/// Release builds use the real ad unit IDs configured via Firestore.
 final currentAdConfigProvider = Provider<AdConfig>((ref) {
   final asyncVal = ref.watch(adConfigStreamProvider);
-  return asyncVal.value ?? const AdConfig();
+  final config = asyncVal.value ?? const AdConfig();
+  if (!kReleaseMode) {
+    return config.withTestUnitIds();
+  }
+  return config;
 });

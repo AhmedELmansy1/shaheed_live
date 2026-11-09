@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/app_constants.dart';
 import '../../data/models/match_model.dart';
 import 'date_formatter.dart';
 
@@ -22,21 +23,21 @@ class MatchShareHelper {
           ? DateFormatter.toArabicNumerals(match.adminTitle!)
           : 'مباشر';
       shareText =
-          '🔴 مباشر الآن: $home $scoreText $away - الدقيقة $minuteText | $competition | عبر تطبيق شوت لايف';
+          '🔴 مباشر الآن: $home $scoreText $away - الدقيقة $minuteText | $competition | عبر تطبيق ${AppConstants.appName}';
     } else if (match.isFinished) {
       shareText =
-          '⚽ النتيجة النهائية: $home $scoreText $away | $competition | عبر تطبيق شوت لايف';
+          '⚽ النتيجة النهائية: $home $scoreText $away | $competition | عبر تطبيق ${AppConstants.appName}';
     } else {
       final matchTime = match.formattedLocalTime.isNotEmpty
           ? match.formattedLocalTime
           : (match.matchTime ?? '');
       shareText =
-          '⏰ مباراة $home × $away تبدأ $matchTime | $competition | عبر تطبيق شوت لايف';
+          '⏰ مباراة $home × $away تبدأ $matchTime | $competition | عبر تطبيق ${AppConstants.appName}';
     }
 
     try {
       // ignore: deprecated_member_use
-      await Share.share(shareText, subject: 'مباراة $home × $away - شوت لايف');
+      await Share.share(shareText, subject: 'مباراة $home × $away - ${AppConstants.appName}');
     } catch (e) {
       debugPrint('[MatchShareHelper] Error sharing match: $e');
     }
@@ -56,14 +57,14 @@ class MatchShareHelper {
           match.adminTitle != null && match.adminTitle!.isNotEmpty
           ? DateFormatter.toArabicNumerals(match.adminTitle!)
           : 'مباشر';
-      return '🔴 مباشر الآن: $home $scoreText $away - الدقيقة $minuteText | $competition | عبر تطبيق شوت لايف';
+      return '🔴 مباشر الآن: $home $scoreText $away - الدقيقة $minuteText | $competition | عبر تطبيق ${AppConstants.appName}';
     } else if (match.isFinished) {
-      return '⚽ النتيجة النهائية: $home $scoreText $away | $competition | عبر تطبيق شوت لايف';
+      return '⚽ النتيجة النهائية: $home $scoreText $away | $competition | عبر تطبيق ${AppConstants.appName}';
     } else {
       final matchTime = match.formattedLocalTime.isNotEmpty
           ? match.formattedLocalTime
           : (match.matchTime ?? '');
-      return '⏰ مباراة $home × $away تبدأ $matchTime | $competition | عبر تطبيق شوت لايف';
+      return '⏰ مباراة $home × $away تبدأ $matchTime | $competition | عبر تطبيق ${AppConstants.appName}';
     }
   }
 }

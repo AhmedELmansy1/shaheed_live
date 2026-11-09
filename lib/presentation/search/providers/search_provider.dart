@@ -92,13 +92,23 @@ final teamFixturesProvider = FutureProvider.family<List<MatchModel>, String>((
     }
   }
 
-  // Filter matches by team name
+  final onboardingState = ref.watch(onboardingProvider);
+
+  // Filter matches by team name and user league/team preferences
   final teamNameLower = teamName.toLowerCase();
   final filteredMatches = allMatches.where((match) {
     final homeTitle = match.homeTeam.title.toLowerCase();
     final awayTitle = match.awayTeam.title.toLowerCase();
     return homeTitle.contains(teamNameLower) ||
         awayTitle.contains(teamNameLower);
+  }).where((match) {
+    return isMatchInUserLeaguesOrFollowedTeams(
+      match: match,
+      selectedLeagueIds: onboardingState.selectedLeagueIds,
+      selectedTeamIds: onboardingState.selectedTeamIds,
+      allLeagues: onboardingState.leagues,
+      allTeams: onboardingState.filteredTeams,
+    );
   }).toList();
 
   return filteredMatches;

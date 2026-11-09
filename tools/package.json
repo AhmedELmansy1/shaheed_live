@@ -2,7 +2,7 @@
   "name": "shoot-live-tools",
   "version": "1.0.0",
   "private": true,
-  "description": "Administrative and seeding tools for Shoot Live",
+  "description": "Administrative and seeding tools for Match Score",
   "main": "seed_app_settings.js",
   "dependencies": {
     "firebase-admin": "^13.1.0"

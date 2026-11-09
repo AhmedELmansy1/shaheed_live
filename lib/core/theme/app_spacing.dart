@@ -1,6 +1,6 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
 
-/// Design Token Spacing scale for Shoot Live: 4, 8, 12, 16, 24, 32 (plus 40, 48).
+/// Design Token Spacing scale for Live Pulse: 4, 8, 12, 16, 24, 32 (plus 40, 48).
 class AppSpacing {
   static const double xxs = 2.0;
   static const double xs = 4.0;

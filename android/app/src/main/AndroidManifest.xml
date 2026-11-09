@@ -7,9 +7,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
-        android:label="shoot_live"
+        android:label="Shoot Live"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,10 +33,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Google AdMob Application ID (Official Test ID). MUST be replaced with real AdMob App ID from the AdMob Console before production release. -->
+        <!-- Google AdMob Application ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-1570465222301773~5926774708"/>
 
         <!-- Flutter Local Notifications Receivers for Scheduled Notifications and Boot Rescheduling -->
         <receiver

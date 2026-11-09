@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_constants.dart';
 import '../../core/services/update_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -133,7 +134,7 @@ class ForceUpdateScreen extends ConsumerWidget {
 
                 // Subtitle
                 Text(
-                  'تم إطلاق إصدار جديد من "شوت لايف" يتضمن تحسينات وميزات مهمة. يرجى التحديث للمتابعة والاستمتاع بجميع خدمات التطبيق.',
+                  'تم إطلاق إصدار جديد من "${AppConstants.appName}" يتضمن تحسينات وميزات مهمة. يرجى التحديث للمتابعة والاستمتاع بجميع خدمات التطبيق.',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium(
                     color: textSecondary,

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 
 enum EmptyStateType { soccer, star, error, calendar, leagues }
 
-/// Premium empty and error states with custom vector art and action buttons.
+/// Premium empty and error states in the "Paper × Ink × Vermilion" design system.
 class AppEmptyState extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -23,49 +23,58 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final border = AppColors.borderOf(context);
+    final accent = (type == EmptyStateType.error)
+        ? AppColors.primaryOf(context)
+        : (type == EmptyStateType.star
+            ? AppColors.gold
+            : AppColors.primaryOf(context));
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxxl,
-          vertical: AppSpacing.huge,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Custom Line Art Graphic
-            CustomPaint(
-              size: const Size(96, 96),
-              painter: _EmptyStateIllustrationPainter(type: type),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.darkTextPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.darkTextSecondary,
-                  fontSize: 13,
-                  height: 1.4,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xxxl,
+            vertical: AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Custom Line Art Graphic
+              CustomPaint(
+                size: const Size(96, 96),
+                painter: _EmptyStateIllustrationPainter(
+                  type: type,
+                  accentColor: accent,
+                  ringColor: border,
                 ),
               ),
+              const SizedBox(height: AppSpacing.xxl),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: AppTypography.titleMedium(color: textPrimary).copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  subtitle!,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium(color: textSecondary),
+                ),
+              ],
+              if (action != null) ...[
+                const SizedBox(height: AppSpacing.xl),
+                action!,
+              ],
             ],
-            if (action != null) ...[
-              const SizedBox(height: AppSpacing.xl),
-              action!,
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -74,117 +83,107 @@ class AppEmptyState extends StatelessWidget {
 
 class _EmptyStateIllustrationPainter extends CustomPainter {
   final EmptyStateType type;
+  final Color accentColor;
+  final Color ringColor;
 
-  _EmptyStateIllustrationPainter({required this.type});
+  _EmptyStateIllustrationPainter({
+    required this.type,
+    required this.accentColor,
+    required this.ringColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
 
-    // Glowing atmospheric background circle
-    final bgGlowPaint = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              (type == EmptyStateType.error
-                      ? AppColors.livePulse
-                      : (type == EmptyStateType.star
-                            ? AppColors.gold
-                            : AppColors.primary))
-                  .withValues(alpha: 0.18),
-              Colors.transparent,
-            ],
-          ).createShader(
-            Rect.fromCircle(center: center, radius: size.width * 0.45),
-          );
-    canvas.drawCircle(center, size.width * 0.45, bgGlowPaint);
+    final bgSoftPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, size.width * 0.45, bgSoftPaint);
 
     final strokePaint = Paint()
-      ..color =
-          (type == EmptyStateType.error
-                  ? AppColors.livePulse
-                  : (type == EmptyStateType.star
-                        ? AppColors.gold
-                        : AppColors.primary))
-              .withValues(alpha: 0.8)
+      ..color = accentColor
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     final ringPaint = Paint()
-      ..color = AppColors.darkCardBorder
-      ..strokeWidth = 1.2
+      ..color = ringColor
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     canvas.drawCircle(center, size.width * 0.38, ringPaint);
 
     switch (type) {
       case EmptyStateType.soccer:
-        // Soccer ball geometry
-        canvas.drawCircle(center, 24, strokePaint);
+        canvas.drawCircle(center, 22, strokePaint);
         final innerPath = Path();
-        innerPath.moveTo(center.dx, center.dy - 10);
-        innerPath.lineTo(center.dx + 9.5, center.dy - 3);
-        innerPath.lineTo(center.dx + 6, center.dy + 9);
-        innerPath.lineTo(center.dx - 6, center.dy + 9);
-        innerPath.lineTo(center.dx - 9.5, center.dy - 3);
+        innerPath.moveTo(center.dx, center.dy - 9);
+        innerPath.lineTo(center.dx + 8.5, center.dy - 3);
+        innerPath.lineTo(center.dx + 5.5, center.dy + 8);
+        innerPath.lineTo(center.dx - 5.5, center.dy + 8);
+        innerPath.lineTo(center.dx - 8.5, center.dy - 3);
         innerPath.close();
         canvas.drawPath(innerPath, strokePaint);
         break;
 
       case EmptyStateType.star:
-        // Star outline
         final starPath = Path();
         const points = 5;
-        const outerRadius = 22.0;
-        const innerRadius = 10.0;
+        const outerRadius = 20.0;
+        const innerRadius = 9.0;
         for (int i = 0; i < points * 2; i++) {
-          final r = (i.isEven) ? outerRadius : innerRadius;
-          final angle = (i * 3.14159 / points) - 1.57079;
-          final x =
-              center.dx +
-              r * (angle.isNegative ? -1 : 1) * (1 - (angle * angle) / 10);
-          final y = center.dy + r * (angle);
+          final isEven = i % 2 == 0;
+          final r = isEven ? outerRadius : innerRadius;
+          final angle = (i * 3.14159 / points) - (3.14159 / 2);
+          final x = center.dx + r * (angle < 0 ? -1 : 1) * (angle.abs() > 1.57 ? -1 : 1) * 0.8;
+          final y = center.dy + r * 0.8;
           if (i == 0) {
-            starPath.moveTo(center.dx, center.dy - outerRadius);
+            starPath.moveTo(x, y);
           } else {
             starPath.lineTo(x, y);
           }
         }
         starPath.close();
+        canvas.drawCircle(center, 18, strokePaint);
+        break;
+
+      case EmptyStateType.calendar:
+        final rect = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: center, width: 34, height: 32),
+          const Radius.circular(6),
+        );
+        canvas.drawRRect(rect, strokePaint);
+        canvas.drawLine(
+          Offset(center.dx - 17, center.dy - 5),
+          Offset(center.dx + 17, center.dy - 5),
+          strokePaint,
+        );
+        break;
+
+      case EmptyStateType.leagues:
         canvas.drawCircle(center, 20, strokePaint);
         break;
 
       case EmptyStateType.error:
-        // Cloud & cross
-        canvas.drawCircle(center, 20, strokePaint);
+        canvas.drawCircle(center, 22, strokePaint);
         canvas.drawLine(
-          Offset(center.dx - 8, center.dy - 8),
-          Offset(center.dx + 8, center.dy + 8),
-          strokePaint,
+          Offset(center.dx, center.dy - 10),
+          Offset(center.dx, center.dy + 2),
+          strokePaint..strokeWidth = 2.5,
         );
-        canvas.drawLine(
-          Offset(center.dx + 8, center.dy - 8),
-          Offset(center.dx - 8, center.dy + 8),
-          strokePaint,
-        );
-        break;
-
-      case EmptyStateType.calendar:
-      case EmptyStateType.leagues:
-        final rrect = RRect.fromRectAndRadius(
-          Rect.fromCenter(center: center, width: 44, height: 38),
-          AppRadii.smRadius.topLeft,
-        );
-        canvas.drawRRect(rrect, strokePaint);
-        canvas.drawLine(
-          Offset(center.dx - 22, center.dy - 6),
-          Offset(center.dx + 22, center.dy - 6),
-          strokePaint,
+        canvas.drawCircle(
+          Offset(center.dx, center.dy + 8),
+          1.8,
+          Paint()..color = accentColor,
         );
         break;
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _EmptyStateIllustrationPainter oldDelegate) {
+    return oldDelegate.type != type ||
+        oldDelegate.accentColor != accentColor ||
+        oldDelegate.ringColor != ringColor;
+  }
 }

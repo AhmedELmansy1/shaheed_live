@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 // ignore_for_file: unused_local_variable
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shoot_live/core/config/app_constants.dart';
 import 'package:shoot_live/core/theme/theme_provider.dart';
 import 'package:shoot_live/core/utils/match_share_helper.dart';
 import 'package:shoot_live/data/models/match_model.dart';
@@ -55,7 +56,7 @@ void main() {
       expect(text, contains('🔴 مباشر الآن: الأهلي ٢ - ١ الزمالك'));
       expect(text, contains("الدقيقة ٦٧'"));
       expect(text, contains('الدوري المصري'));
-      expect(text, contains('عبر تطبيق شوت لايف'));
+      expect(text, contains('عبر تطبيق ${AppConstants.appName}'));
     });
 
     test('Finished match share text includes final score', () {
@@ -75,7 +76,7 @@ void main() {
       final text = MatchShareHelper.getShareText(match);
       expect(text, contains('⚽ النتيجة النهائية: ريال مدريد ٣ - ٢ برشلونة'));
       expect(text, contains('الدوري الإسباني'));
-      expect(text, contains('عبر تطبيق شوت لايف'));
+      expect(text, contains('عبر تطبيق ${AppConstants.appName}'));
     });
 
     test('Upcoming match share text includes kickoff time', () {
@@ -93,7 +94,7 @@ void main() {
       final text = MatchShareHelper.getShareText(match);
       expect(text, contains('⏰ مباراة ليفربول × مانشستر سيتي'));
       expect(text, contains('الدوري الإنجليزي الممتاز'));
-      expect(text, contains('عبر تطبيق شوت لايف'));
+      expect(text, contains('عبر تطبيق ${AppConstants.appName}'));
     });
   });
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/services/match_reminder_service.dart';
 import '../../../core/services/user_sync_service.dart';
 import '../../../data/models/league_model.dart';
 import '../../../data/models/team_model.dart';
@@ -84,6 +85,7 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         teams = await repository.getTeamsForLeagues(savedLeagues);
       }
 
+      if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
         hasCompletedNotificationSetup: notifSetup,
@@ -100,7 +102,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     } catch (e, st) {
       // ignore: avoid_print
       print('[OnboardingNotifier] ERROR IN init(): $e\n$st');
-      state = state.copyWith(isLoading: false);
+      if (ref.mounted) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 
@@ -122,6 +126,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     // Load teams matching selected leagues
     final teams = await repository.getTeamsForLeagues(state.selectedLeagueIds);
     state = state.copyWith(filteredTeams: teams);
+
+    // Sync updated leagues to Firestore in background
+    _pushToFirestoreAsync();
   }
 
   void toggleTeamSelection(String teamId) {
@@ -140,6 +147,14 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     await prefs.setBool('hasCompletedOnboarding', true);
 
     state = state.copyWith(hasCompletedOnboarding: true);
+
+    // Auto-subscribe chosen clubs to FCM team topics (and unsubscribe removed ones)
+    try {
+      final reminderService = ref.read(matchReminderServiceProvider);
+      await reminderService.syncTeamTopicSubscriptions(state.selectedTeamIds);
+    } catch (e) {
+      debugPrint('[OnboardingNotifier] Error syncing team FCM topics: $e');
+    }
 
     // Fire-and-forget: push selections to Firestore without blocking navigation.
     // This runs asynchronously — if it fails, shared_preferences is still the

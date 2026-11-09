@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shoot_live/core/config/app_constants.dart';
 import 'package:shoot_live/core/network/dio_client.dart';
 import 'package:shoot_live/core/routing/app_router.dart';
 import 'package:shoot_live/core/services/notification_service.dart';
@@ -69,21 +70,21 @@ class TestRemoteConfigService extends RemoteConfigService {
 
 class FakeMatchesRepository implements MatchesRepository {
   @override
-  Future<List<MatchModel>> getMatchesByDate(String date) async => [];
+  Future<List<MatchModel>> getMatchesByDate(String date, {bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesToday() async => [];
+  Future<List<MatchModel>> getMatchesToday({bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesTomorrow() async => [];
+  Future<List<MatchModel>> getMatchesTomorrow({bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesYesterday() async => [];
+  Future<List<MatchModel>> getMatchesYesterday({bool forceRefresh = false}) async => [];
   @override
-  Future<MatchInfoModel?> getMatchInfo(String matchId) async => null;
+  Future<MatchInfoModel?> getMatchInfo(String matchId, {bool forceRefresh = false}) async => null;
   @override
-  Future<MatchStatisticsModel?> getMatchStatistics(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId}) async => null;
+  Future<MatchStatisticsModel?> getMatchStatistics(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId, bool forceRefresh = false}) async => null;
   @override
-  Future<List<MatchEventModel>> getMatchEvents(String matchId) async => [];
+  Future<List<MatchEventModel>> getMatchEvents(String matchId, {bool forceRefresh = false}) async => [];
   @override
-  Future<MatchLineupModel?> getMatchLineup(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId}) async => null;
+  Future<MatchLineupModel?> getMatchLineup(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId, bool forceRefresh = false}) async => null;
 }
 
 void main() {
@@ -148,7 +149,7 @@ void main() {
       // 2. Tap Leagues tab (Index 1)
       await tester.tap(find.text('الدوريات'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('قسم الدوريات قريباً'), findsOneWidget);
+      expect(find.text('الدوريات والبطولات'), findsOneWidget);
 
       // 3. Tap Settings tab (Index 2)
       await tester.tap(find.text('الإعدادات'));
@@ -160,7 +161,7 @@ void main() {
       // 4. Tap Home tab (Index 0)
       await tester.tap(find.text('الرئيسية'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('شوت لايف'), findsOneWidget);
+      expect(find.text(AppConstants.appName), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 300));
       container.dispose();

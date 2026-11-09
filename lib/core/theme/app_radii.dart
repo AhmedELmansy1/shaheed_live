@@ -1,6 +1,6 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
 
-/// Design Token Corner Radii for Shoot Live: 12, 20, 28 (plus 6/8, 32, and full 999).
+/// Design Token Corner Radii for Live Pulse: 12, 20, 28 (plus 6/8, 32, and full 999).
 class AppRadii {
   static const double xs = 6.0;
   static const double sm = 8.0;

@@ -58,7 +58,7 @@ void main() {
     // Verify Projects
     expect(find.textContaining('أبرز المشاريع'), findsWidgets);
     expect(find.textContaining('AI-Powered Digital Forensics System'), findsWidgets);
-    expect(find.textContaining('Shoot Live'), findsWidgets);
+    expect(find.textContaining('Match Score'), findsWidgets);
 
     // Verify Certificates
     expect(find.textContaining('الشهادات والتدريب'), findsWidgets);

@@ -6,7 +6,12 @@ import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 
-/// Premium interactive glassmorphic card component with press-scale feedback.
+/// Clean, tactile Card component in the "Paper × Ink × Vermilion" design system.
+///
+/// Features:
+/// - Crisp 1px border (#E6E1D8 in light, #2A2F3A in dark).
+/// - Gentle, tactile press-down feedback.
+/// - Restrained styling without neon glows or heavy drop shadows.
 class AppCard extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -44,7 +49,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: AppMotion.fast,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.985).animate(
       CurvedAnimation(
         parent: _pressController,
         curve: Curves.easeOutCubic,
@@ -60,7 +65,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   }
 
   void _handleTapDown(TapDownDetails _) {
-    if (widget.onTap != null) {
+    if (widget.onTap != null && !AppMotion.isReducedMotion(context)) {
       _pressController.forward();
     }
   }
@@ -79,49 +84,53 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveRadius = widget.borderRadius ?? AppRadii.lgRadius;
+    final effectiveRadius = widget.borderRadius ?? AppRadii.mdRadius;
 
-    final content = AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(scale: _scaleAnimation.value, child: child);
-      },
-      child: Container(
-        margin:
-            widget.margin ??
-            const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.xs + 2,
-            ),
-        decoration: AppDecorations.glassCard(
-          context: context,
-          isLive: widget.isLive,
-          isFeatured: widget.isFeatured,
-          customBorderColor: widget.borderColor,
+    final cardWidget = Container(
+      margin: widget.margin ??
+          const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xs + 1,
+          ),
+      decoration: AppDecorations.card(
+        context: context,
+        isLive: widget.isLive,
+        isFeatured: widget.isFeatured,
+        customBorderColor: widget.borderColor,
+        borderRadius: effectiveRadius,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: effectiveRadius,
+        child: InkWell(
           borderRadius: effectiveRadius,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: effectiveRadius,
-          child: InkWell(
-            borderRadius: effectiveRadius,
-            onTap: widget.onTap,
-            onTapDown: _handleTapDown,
-            onTapUp: _handleTapUp,
-            onTapCancel: _handleTapCancel,
-            splashColor: widget.isLive
-                ? AppColors.liveGlowColor
-                : Colors.white.withValues(alpha: 0.04),
-            highlightColor: Colors.transparent,
-            child: Padding(
-              padding: widget.padding ?? AppSpacing.cardPadding,
-              child: widget.child,
-            ),
+          onTap: widget.onTap,
+          onTapDown: _handleTapDown,
+          onTapUp: _handleTapUp,
+          onTapCancel: _handleTapCancel,
+          splashColor: AppColors.primaryOf(context).withValues(alpha: 0.08),
+          highlightColor: Colors.transparent,
+          child: Padding(
+            padding: widget.padding ?? AppSpacing.cardPadding,
+            child: widget.child,
           ),
         ),
       ),
     );
 
-    return RepaintBoundary(child: content);
+    if (AppMotion.isReducedMotion(context)) {
+      return cardWidget;
+    }
+
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: cardWidget,
+    );
   }
 }

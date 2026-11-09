@@ -17,25 +17,48 @@ class AdService {
 
   /// Initializes AdMob with test device configuration.
   ///
-  /// NOTE ON TEST DEVICE IDS:
-  /// Test device IDs ensure Google test ad inventory is always served during
-  /// development and testing, preventing AdMob policy violations.
-  /// Replace/remove test configuration before final production release.
-  static Future<void> initTestDeviceConfig() async {
+  /// List of test device IDs registered with AdMob.
+  /// Add your physical device's MD5 hash here once captured from the debug log.
+  static const List<String> testDeviceIds = [
+    // Standard Android emulator
+    'EMULATOR',
+    // Add physical device hash here (from Logcat / debug log)
+  ];
+
+  /// Initializes AdMob with test device configuration.
+  ///
+  /// In debug mode, registers [testDeviceIds] and prints helpful instructions
+  /// to capture the connected device's hashed ID from Logcat.
+  static Future<void> initTestDeviceConfig({
+    List<String>? additionalDeviceIds,
+  }) async {
     try {
+      final devices = <String>{
+        'EMULATOR',
+        ...testDeviceIds,
+        ...?additionalDeviceIds,
+      }.toList();
+
       await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(
-          testDeviceIds: [
-            // Standard Android emulator test device ID
-            'EMULATOR',
-          ],
-        ),
+        RequestConfiguration(testDeviceIds: devices),
       );
-      debugPrint(
-        '[AdService] AdMob RequestConfiguration initialized with test devices.',
-      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '====================================================================\n'
+          '[AdService] 🛡️ AdMob RequestConfiguration initialized.\n'
+          '[AdService] Registered test device IDs: $devices\n'
+          '[AdService] 📱 To register your physical device:\n'
+          '[AdService] Check Logcat for "RequestConfiguration.Builder().setTestDeviceIds"\n'
+          '[AdService] when an ad loads, then add that 32-character hex ID to\n'
+          '[AdService] AdService.testDeviceIds.\n'
+          '====================================================================',
+        );
+      }
     } catch (e) {
-      debugPrint('[AdService] Failed to set test device configuration: $e');
+      if (kDebugMode) {
+        debugPrint('[AdService] Failed to set test device configuration: $e');
+      }
     }
   }
 

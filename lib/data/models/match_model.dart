@@ -1,4 +1,5 @@
 import '../../core/utils/date_formatter.dart';
+import '../api/match_score_api.dart' as api;
 
 /// Enum representing the normalized lifecycle status of a football match.
 enum MatchStatus { notStarted, live, paused, finished, postponed, cancelled }
@@ -112,63 +113,27 @@ class MatchModel {
   }
 
   factory MatchModel.fromMap(Map<String, dynamic> map) {
-    final liveFlag = map['live'] == 1 || map['live'] == '1';
-    final adminBadgeStr = (map['admin_badge'] as String?)?.toLowerCase();
-    final eventStatusStr = (map['event_status'] as String?)?.toLowerCase();
-    final forcedStatusStr = (map['forced_status'] as String?)?.toLowerCase();
     final adminTitleStr = map['admin_title'] as String?;
 
-    MatchStatus parseStatus() {
-      // 1. Ended
-      if (adminBadgeStr == 'ended' ||
-          eventStatusStr == 'ended' ||
-          forcedStatusStr == 'ended' ||
-          adminTitleStr == 'انتهت') {
-        return MatchStatus.finished;
-      }
+    // Delegate to the single authoritative status resolver
+    final apiStatus = api.MatchStatusResolver.resolve(map);
 
-      // 2. Postponed
-      if (adminBadgeStr == 'postponed' || eventStatusStr == 'postponed') {
-        return MatchStatus.postponed;
-      }
-
-      // 3. Cancelled
-      if (adminBadgeStr == 'canceled' ||
-          adminBadgeStr == 'cancelled' ||
-          eventStatusStr == 'canceled' ||
-          eventStatusStr == 'cancelled') {
-        return MatchStatus.cancelled;
-      }
-
-      // 4. Halftime / Paused
-      if (adminTitleStr != null && adminTitleStr.contains('استراحة')) {
-        return MatchStatus.paused;
-      }
-
-      // 5. Explicitly not started / soon
-      if (adminBadgeStr == 'soon' ||
-          forcedStatusStr == 'soon' ||
-          adminTitleStr == 'لم تبدأ' ||
-          eventStatusStr == 'not_ended' &&
-              (adminBadgeStr == 'soon' || forcedStatusStr == 'soon')) {
-        return MatchStatus.notStarted;
-      }
-
-      // 6. Actively Live
-      if (adminBadgeStr == 'live' ||
-          eventStatusStr == 'live' ||
-          forcedStatusStr == 'live' ||
-          (liveFlag &&
-              adminBadgeStr != 'soon' &&
-              forcedStatusStr != 'soon' &&
-              adminTitleStr != 'لم تبدأ')) {
-        return MatchStatus.live;
-      }
-
-      return MatchStatus.notStarted;
+    MatchStatus computedStatus;
+    switch (apiStatus.state) {
+      case api.MatchState.live:
+        computedStatus = MatchStatus.live;
+      case api.MatchState.halfTime:
+        computedStatus = MatchStatus.paused;
+      case api.MatchState.finished:
+        computedStatus = MatchStatus.finished;
+      case api.MatchState.postponed:
+        computedStatus = MatchStatus.postponed;
+      case api.MatchState.cancelled:
+        computedStatus = MatchStatus.cancelled;
+      case api.MatchState.notStarted:
+        computedStatus = MatchStatus.notStarted;
     }
 
-    final computedStatus = parseStatus();
     final isActuallyLive =
         computedStatus == MatchStatus.live ||
         computedStatus == MatchStatus.paused;
@@ -180,8 +145,15 @@ class MatchModel {
       return DateFormatter.toArabicNumerals(str);
     }
 
+    int parseMatchId(dynamic val) {
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val.trim()) ?? 0;
+      return 0;
+    }
+
     return MatchModel(
-      matchId: (map['match_id'] as num?)?.toInt() ?? 0,
+      matchId: parseMatchId(map['match_id'] ?? map['id']),
       matchDate: map['match_date'] as String?,
       matchTime: map['match_time'] as String?,
       isLive: isActuallyLive,
@@ -197,9 +169,9 @@ class MatchModel {
       ),
       homeScore: parseScore(map['home_scores']),
       awayScore: parseScore(map['away_scores']),
-      adminBadge: adminBadgeStr,
+      adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
       adminTitle: adminTitleStr,
-      eventStatus: eventStatusStr,
+      eventStatus: (map['event_status'] as String?)?.toLowerCase(),
     );
   }
 }

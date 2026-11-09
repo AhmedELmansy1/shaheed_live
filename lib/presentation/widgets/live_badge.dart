@@ -4,14 +4,25 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
 
-/// Pulsing Coral Red LIVE status badge with smooth radar ring and elapsed minute display.
+/// Refined, editorial Live Status Badge in the "Paper × Ink × Vermilion" design system.
+///
+/// Features:
+/// - Striking vermilion hue (#E5482D light, #FF5A3C dark) without garish neon glow.
+/// - Calm, rhythmic pulse dot (disabled gracefully under reduced-motion settings).
+/// - Tabular Arabic numerals for live elapsed minute.
+/// - Screen-reader accessibility semantics.
 class LiveBadge extends StatefulWidget {
   final String? minuteText;
   final bool isLarge;
 
-  const LiveBadge({super.key, this.minuteText, this.isLarge = false});
+  const LiveBadge({
+    super.key,
+    this.minuteText,
+    this.isLarge = false,
+  });
 
   @override
   State<LiveBadge> createState() => _LiveBadgeState();
@@ -20,81 +31,26 @@ class LiveBadge extends StatefulWidget {
 class _LiveBadgeState extends State<LiveBadge>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _alphaAnimation;
+  late final Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 1600,
-      ), // Slightly longer for the heartbeat rhythm
+      duration: const Duration(milliseconds: 1400),
     );
 
-    // Double-beat heartbeat scale sequence
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 0.9,
-          end: 1.15,
-        ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 12,
+    _opacityAnimation = Tween<double>(begin: 0.35, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _pulseController,
+        curve: Curves.easeInOutSine,
       ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 1.15,
-          end: 0.9,
-        ).chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 12,
-      ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 0.9,
-          end: 1.5,
-        ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(0.9),
-        weight: 51,
-      ), // Rest period
-    ]).animate(_pulseController);
+    );
 
-    // Alpha sequence perfectly timed with scale
-    _alphaAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 0.6,
-          end: 0.2,
-        ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 12,
-      ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 0.2,
-          end: 0.6,
-        ).chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 12,
-      ),
-      TweenSequenceItem(
-        tween: Tween(
-          begin: 0.6,
-          end: 0.0,
-        ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(0.0),
-        weight: 51,
-      ), // Stay transparent during rest
-    ]).animate(_pulseController);
-
-    // Only start repeating if not in reduced motion
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !AppMotion.isReducedMotion(context)) {
-        _pulseController.repeat(); // Loop forward continuously
+        _pulseController.repeat(reverse: true);
       }
     });
   }
@@ -107,83 +63,80 @@ class _LiveBadgeState extends State<LiveBadge>
 
   @override
   Widget build(BuildContext context) {
-    final text = widget.minuteText != null && widget.minuteText!.isNotEmpty
-        ? DateFormatter.toArabicNumerals(widget.minuteText!)
-        : 'مباشر';
+    final vermilion = AppColors.primaryOf(context);
+    final vermilionText = AppColors.vermilionTextOf(context);
+    final isReducedMotion = AppMotion.isReducedMotion(context);
 
-    final dotSize = widget.isLarge ? 8.0 : 6.0;
+    final rawMinute = widget.minuteText?.trim();
+    final hasMinute = rawMinute != null &&
+        rawMinute.isNotEmpty &&
+        rawMinute != 'لم تبدأ' &&
+        rawMinute != 'انتهت';
 
-    return Container(
+    final displayText =
+        hasMinute ? DateFormatter.toArabicNumerals(rawMinute) : 'مباشر';
+
+    final fontSize = widget.isLarge ? 12.0 : 10.5;
+    final dotSize = widget.isLarge ? 7.0 : 5.5;
+
+    final badgeContent = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: widget.isLarge ? AppSpacing.md : AppSpacing.sm,
-        vertical: widget.isLarge ? AppSpacing.xs + 1 : AppSpacing.xxs + 1,
+        horizontal: widget.isLarge ? AppSpacing.sm : AppSpacing.xs + 2,
+        vertical: widget.isLarge ? AppSpacing.xs : AppSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.live.withValues(alpha: 0.15),
+        color: vermilion.withValues(alpha: 0.12),
         borderRadius: AppRadii.fullRadius,
         border: Border.all(
-          color: AppColors.live.withValues(alpha: 0.8),
-          width: 1.1,
+          color: vermilion.withValues(alpha: 0.35),
+          width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.liveGlowColor,
-            blurRadius: 8,
-            spreadRadius: 0,
-          ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          RepaintBoundary(
-            child: AnimatedBuilder(
-              animation: _pulseController,
+          // Pulse dot
+          if (isReducedMotion)
+            Container(
+              width: dotSize,
+              height: dotSize,
+              decoration: BoxDecoration(
+                color: vermilion,
+                shape: BoxShape.circle,
+              ),
+            )
+          else
+            AnimatedBuilder(
+              animation: _opacityAnimation,
               builder: (context, child) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Outer expanding radar halo
-                    Transform.scale(
-                      scale: _scaleAnimation.value,
-                      child: Container(
-                        width: dotSize + 6,
-                        height: dotSize + 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.live.withValues(
-                            alpha: _alphaAnimation.value,
-                          ),
-                        ),
-                      ),
+                return Container(
+                  width: dotSize,
+                  height: dotSize,
+                  decoration: BoxDecoration(
+                    color: vermilion.withValues(
+                      alpha: _opacityAnimation.value,
                     ),
-                    // Solid central coral core
-                    Container(
-                      width: dotSize,
-                      height: dotSize,
-                      decoration: const BoxDecoration(
-                        color: AppColors.live,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
+                    shape: BoxShape.circle,
+                  ),
                 );
               },
             ),
-          ),
-          SizedBox(width: widget.isLarge ? AppSpacing.xs + 2 : AppSpacing.xs),
+          const SizedBox(width: AppSpacing.xs),
           Text(
-            text,
-            style: TextStyle(
-              color: AppColors.live,
-              fontSize: widget.isLarge ? 12.0 : 11.0,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.0,
-              height: 1.15,
+            displayText,
+            style: AppTypography.labelSmall(color: vermilionText).copyWith(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
+    );
+
+    return Semantics(
+      label: 'مباراة جارية الآن: $displayText',
+      child: badgeContent,
     );
   }
 }

@@ -208,22 +208,28 @@ class _TeamSearchScreenState extends ConsumerState<TeamSearchScreen> {
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: surfaceHigh,
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.full,
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              context.push('/league/${team.leagueId}');
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: 3,
                               ),
-                              border: Border.all(color: border),
-                            ),
-                            child: Text(
-                              team.leagueId,
-                              style: AppTypography.caption(
-                                color: textSecondary,
+                              decoration: BoxDecoration(
+                                color: surfaceHigh,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.full,
+                                ),
+                                border: Border.all(color: border),
+                              ),
+                              child: Text(
+                                team.leagueId,
+                                style: AppTypography.caption(
+                                  color: textSecondary,
+                                ),
                               ),
                             ),
                           ),

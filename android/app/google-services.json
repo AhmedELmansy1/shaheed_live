@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:463115339836:android:9e54378647b1122c1b1b39",
+        "mobilesdk_app_id": "1:463115339836:android:fd11098a9eb8f7141b1b39",
         "android_client_info": {
-          "package_name": "com.f0otball.c"
+          "package_name": "com.livepulse.scores"
         }
       },
       "oauth_client": [],

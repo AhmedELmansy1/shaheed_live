@@ -6,7 +6,12 @@ import '../../core/theme/app_colors.dart';
 import 'providers/onboarding_provider.dart';
 
 class LeagueSelectionScreen extends ConsumerWidget {
-  const LeagueSelectionScreen({super.key});
+  final bool isEditing;
+
+  const LeagueSelectionScreen({
+    super.key,
+    this.isEditing = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -15,16 +20,26 @@ class LeagueSelectionScreen extends ConsumerWidget {
 
     // ignore: avoid_print
     print(
-      '[LeagueSelectionScreen] build() - isLoading: ${state.isLoading}, leagues.length: ${state.leagues.length}, selectedLeagueIds.length: ${state.selectedLeagueIds.length}',
+      '[LeagueSelectionScreen] build() - isLoading: ${state.isLoading}, leagues.length: ${state.leagues.length}, selectedLeagueIds.length: ${state.selectedLeagueIds.length}, isEditing: $isEditing',
     );
 
     final canContinue = state.selectedLeagueIds.isNotEmpty;
 
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('اختيار الدوريات'),
-        automaticallyImplyLeading: false,
+        backgroundColor: surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          isEditing ? 'إدارة الدوريات' : 'اختيار الدوريات',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
+        automaticallyImplyLeading: isEditing,
       ),
       body: SafeArea(
         child: state.isLoading
@@ -192,7 +207,11 @@ class LeagueSelectionScreen extends ConsumerWidget {
                             ? () async {
                                 await notifier.saveSelectedLeagues();
                                 if (context.mounted) {
-                                  context.go('/onboarding/teams');
+                                  if (isEditing) {
+                                    context.pop();
+                                  } else {
+                                    context.go('/onboarding/teams');
+                                  }
                                 }
                               }
                             : null,
@@ -206,7 +225,11 @@ class LeagueSelectionScreen extends ConsumerWidget {
                           ),
                         ),
                         child: Text(
-                          canContinue ? 'متابعة' : 'اختر دوري واحد على الأقل',
+                          isEditing
+                              ? 'حفظ التعديلات'
+                              : (canContinue
+                                  ? 'متابعة'
+                                  : 'اختر دوري واحد على الأقل'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

@@ -1,22 +1,52 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/league_resolver_service.dart';
+import '../../../core/services/team_resolver_service.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../../data/models/league_model.dart';
+import '../../../core/utils/match_filter_helper.dart';
+import '../../../data/cache/matches_cache_service.dart';
 import '../../../data/models/match_model.dart';
-import '../../../data/models/team_model.dart';
 import '../../../data/repositories/matches_repository.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
+
+export '../../../core/utils/match_filter_helper.dart';
 
 final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient();
 });
 
+final matchesCacheServiceProvider = Provider<MatchesCacheService?>((ref) {
+  return MatchesCacheService.currentInstance;
+});
+
 final matchesRepositoryProvider = Provider<MatchesRepository>((ref) {
   final dioClient = ref.watch(dioClientProvider);
-  return ApiMatchesRepository(dioClient: dioClient);
+  final cacheService = ref.watch(matchesCacheServiceProvider);
+  return ApiMatchesRepository(dioClient: dioClient, cacheService: cacheService);
+});
+
+/// Indicator whether current displayed matches are loaded from stale/offline cache
+class OfflineFallbackNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setOffline(bool value) => state = value;
+}
+
+final offlineFallbackProvider =
+    NotifierProvider<OfflineFallbackNotifier, bool>(() {
+  return OfflineFallbackNotifier();
+});
+
+/// Generic date-based matches provider for looking up fixtures by YYYY-MM-DD.
+final matchesByDateProvider =
+    FutureProvider.family<List<MatchModel>, String>((ref, dateStr) async {
+  final repo = ref.watch(matchesRepositoryProvider);
+  return repo.getMatchesByDate(dateStr);
 });
 
 enum HomeTab { yesterday, today, tomorrow, customDate }
@@ -48,7 +78,7 @@ final selectedCustomDateProvider =
       return SelectedCustomDateNotifier();
     });
 
-enum MatchFilterType { upcoming, live, favorites, all }
+enum MatchFilterType { upcoming, live, finished, favorites, all }
 
 class MatchFilterNotifier extends Notifier<MatchFilterType> {
   @override
@@ -64,28 +94,16 @@ final matchFilterProvider =
       return MatchFilterNotifier();
     });
 
-/// State notifier managing matches fetching, error handling, and 30-second auto-polling for live matches.
+/// State notifier managing matches fetching, error handling, Stale-While-Revalidate caching,
+/// and 30-second auto-polling for live matches.
 class MatchesNotifier extends AsyncNotifier<List<MatchModel>> {
   Timer? _pollingTimer;
 
-  @override
-  FutureOr<List<MatchModel>> build() async {
-    ref.onDispose(() {
-      _pollingTimer?.cancel();
-    });
-
-    return fetchMatches();
-  }
-
-  Future<List<MatchModel>> fetchMatches() async {
-    final repository = ref.read(matchesRepositoryProvider);
-    final activeTab = ref.read(activeTabProvider);
-    final customDate = ref.read(selectedCustomDateProvider);
-
+  String _getDateStr(HomeTab tab, DateTime? customDate) {
     final now = DateTime.now();
     late DateTime targetDate;
 
-    switch (activeTab) {
+    switch (tab) {
       case HomeTab.yesterday:
         targetDate = now.subtract(const Duration(days: 1));
         break;
@@ -99,10 +117,87 @@ class MatchesNotifier extends AsyncNotifier<List<MatchModel>> {
         targetDate = customDate ?? now;
         break;
     }
+    return DateFormatter.toApiDateString(targetDate);
+  }
 
-    final dateStr = DateFormatter.toApiDateString(targetDate);
-    final matches = await repository.getMatchesByDate(dateStr);
+  Future<void> _processMatches(List<MatchModel> matches) async {
+    final onboardingState = ref.read(onboardingProvider);
+    final allTeams = onboardingState.filteredTeams.isNotEmpty
+        ? onboardingState.filteredTeams
+        : ref.read(onboardingRepositoryProvider).getPopularTeams();
+    TeamResolverService.updateMappingsFromMatches(matches, allTeams);
+    final allLeagues = onboardingState.leagues.isNotEmpty
+        ? onboardingState.leagues
+        : await ref.read(onboardingRepositoryProvider).getPopularLeagues();
+    LeagueResolverService.updateMappingsFromMatches(
+      matches,
+      allLeagues,
+    );
 
+    assert(() {
+      for (var i = 0; i < matches.length && i < 3; i++) {
+        final m = matches[i];
+        DateFormatter.debugLogKickoff(m.id, m.matchDate, m.matchTime);
+      }
+      return true;
+    }());
+  }
+
+  @override
+  FutureOr<List<MatchModel>> build() async {
+    ref.onDispose(() {
+      _pollingTimer?.cancel();
+    });
+
+    final activeTab = ref.watch(activeTabProvider);
+    final customDate = ref.watch(selectedCustomDateProvider);
+    final dateStr = _getDateStr(activeTab, customDate);
+
+    // Stale-While-Revalidate step 1: Check if local cache exists
+    final cacheService = await MatchesCacheService.getInstance();
+    final cached = cacheService.getCachedMatches(dateStr);
+
+    if (cached != null) {
+      await _processMatches(cached.matches);
+      _checkAndSchedulePolling(cached.matches);
+
+      // Revalidate in background if cache is expired or if matches are currently live
+      final hasLive = cached.matches.any((m) => m.isLive);
+      if (cached.isExpired || hasLive) {
+        Future.microtask(() => _revalidate(dateStr, cacheService));
+      }
+
+      // Return instantly without blocking UI or showing skeleton!
+      return cached.matches;
+    }
+
+    // No cache found: fetch fresh
+    return fetchMatches(forceRefresh: false);
+  }
+
+  Future<void> _revalidate(String dateStr, MatchesCacheService cacheService) async {
+    try {
+      final repository = ref.read(matchesRepositoryProvider);
+      final freshMatches = await repository.getMatchesByDate(dateStr, forceRefresh: true);
+      await _processMatches(freshMatches);
+      ref.read(offlineFallbackProvider.notifier).setOffline(false);
+      state = AsyncData(freshMatches);
+      _checkAndSchedulePolling(freshMatches);
+    } catch (e) {
+      debugPrint('[MatchesNotifier] Background revalidate offline/failed: $e');
+      ref.read(offlineFallbackProvider.notifier).setOffline(true);
+    }
+  }
+
+  Future<List<MatchModel>> fetchMatches({bool forceRefresh = false}) async {
+    final repository = ref.read(matchesRepositoryProvider);
+    final activeTab = ref.read(activeTabProvider);
+    final customDate = ref.read(selectedCustomDateProvider);
+    final dateStr = _getDateStr(activeTab, customDate);
+
+    final matches = await repository.getMatchesByDate(dateStr, forceRefresh: forceRefresh);
+    await _processMatches(matches);
+    ref.read(offlineFallbackProvider.notifier).setOffline(false);
     _checkAndSchedulePolling(matches);
 
     return matches;
@@ -114,15 +209,40 @@ class MatchesNotifier extends AsyncNotifier<List<MatchModel>> {
     final hasLiveMatches = matches.any((m) => m.isLive);
     if (hasLiveMatches) {
       _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-        final updatedMatches = await fetchMatches();
-        state = AsyncData(updatedMatches);
+        try {
+          final updatedMatches = await fetchMatches(forceRefresh: true);
+          state = AsyncData(updatedMatches);
+        } catch (_) {}
       });
     }
   }
 
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => fetchMatches());
+  Future<void> refresh({bool forceRefresh = true}) async {
+    final activeTab = ref.read(activeTabProvider);
+    final customDate = ref.read(selectedCustomDateProvider);
+    final dateStr = _getDateStr(activeTab, customDate);
+
+    if (forceRefresh) {
+      final cacheService = await MatchesCacheService.getInstance();
+      await cacheService.invalidateMatches(dateStr);
+    }
+
+    // Only transition to AsyncLoading if there is no existing data
+    if (!state.hasValue) {
+      state = const AsyncLoading();
+    }
+
+    try {
+      final matches = await fetchMatches(forceRefresh: forceRefresh);
+      state = AsyncData(matches);
+    } catch (e, st) {
+      // If we already had cached data displayed, preserve it and flag offline
+      if (state.hasValue && state.value!.isNotEmpty) {
+        ref.read(offlineFallbackProvider.notifier).setOffline(true);
+      } else {
+        state = AsyncError(e, st);
+      }
+    }
   }
 }
 
@@ -131,216 +251,8 @@ final matchesProvider =
       return MatchesNotifier();
     });
 
-/// Checks if a match involves one of the user's favorite teams.
-bool isFavoriteTeamMatch(
-  MatchModel m,
-  List<String> selectedTeamIds,
-  List<TeamModel> allTeams,
-) {
-  if (selectedTeamIds.isEmpty) return false;
-
-  final homeId = m.homeTeam.rowId?.toString() ?? '';
-  final awayId = m.awayTeam.rowId?.toString() ?? '';
-  final homeTitle = m.homeTeam.title.trim().toLowerCase();
-  final awayTitle = m.awayTeam.title.trim().toLowerCase();
-
-  // 1. Direct ID match
-  if (selectedTeamIds.contains(homeId) || selectedTeamIds.contains(awayId)) {
-    return true;
-  }
-
-  // 2. Arabic & English name match
-  final selectedTeams = allTeams
-      .where((t) => selectedTeamIds.contains(t.id))
-      .toList();
-
-  for (final team in selectedTeams) {
-    final name = team.name.trim().toLowerCase();
-    final nameEn = team.nameEn.trim().toLowerCase();
-    if (name.isNotEmpty &&
-        (homeTitle.contains(name) ||
-            name.contains(homeTitle) ||
-            awayTitle.contains(name) ||
-            name.contains(awayTitle))) {
-      return true;
-    }
-    if (nameEn.isNotEmpty &&
-        (homeTitle.contains(nameEn) || awayTitle.contains(nameEn))) {
-      return true;
-    }
-  }
-
-  // 3. Fallback check on raw selectedTeamIds (e.g. 'ahly', 'liverpool', 'barcelona')
-  for (final id in selectedTeamIds) {
-    final idLower = id.toLowerCase().replaceAll('_', ' ');
-    if (idLower.isNotEmpty &&
-        (homeTitle.contains(idLower) || awayTitle.contains(idLower))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/// Checks if a match belongs to one of the user's favorite leagues.
-bool isFavoriteLeagueMatch(
-  MatchModel m,
-  List<String> selectedLeagueIds,
-  List<LeagueModel> allLeagues,
-) {
-  if (selectedLeagueIds.isEmpty) return false;
-
-  final champId = m.championship.id?.toString().trim().toLowerCase() ?? '';
-  final champTitle = m.championship.title.trim().toLowerCase();
-
-  // 1. Direct ID match
-  if (champId.isNotEmpty &&
-      selectedLeagueIds.any((id) => id.toLowerCase() == champId)) {
-    return true;
-  }
-
-  // 2. Arabic & English name match from Onboarding leagues
-  final selectedLeagues = allLeagues
-      .where((l) => selectedLeagueIds.contains(l.id))
-      .toList();
-
-  for (final league in selectedLeagues) {
-    final name = league.name.trim().toLowerCase();
-    final nameEn = league.nameEn.trim().toLowerCase();
-
-    if (name.isNotEmpty &&
-        (champTitle.contains(name) || name.contains(champTitle))) {
-      return true;
-    }
-
-    if (nameEn.isNotEmpty &&
-        (champTitle.contains(nameEn) || nameEn.contains(champTitle))) {
-      return true;
-    }
-
-    final nameRoots = name
-        .replaceAll('الممتاز', '')
-        .replaceAll('للمحترفين', '')
-        .trim();
-    if (nameRoots.length >= 5 && champTitle.contains(nameRoots)) {
-      return true;
-    }
-  }
-
-  // 3. Fallback on common league identifiers in selectedLeagueIds
-  for (final id in selectedLeagueIds) {
-    final idLower = id.toLowerCase();
-    if (idLower == 'eng_1' &&
-        (champTitle.contains('إنجليزي') || champTitle.contains('premier'))) {
-      return true;
-    }
-    if (idLower == 'esp_1' &&
-        (champTitle.contains('إسباني') ||
-            champTitle.contains('la liga') ||
-            champTitle.contains('laliga'))) {
-      return true;
-    }
-    if (idLower == 'ita_1' &&
-        (champTitle.contains('إيطالي') || champTitle.contains('serie a'))) {
-      return true;
-    }
-    if (idLower == 'ger_1' &&
-        (champTitle.contains('ألماني') || champTitle.contains('bundesliga'))) {
-      return true;
-    }
-    if (idLower == 'fra_1' &&
-        (champTitle.contains('فرنسي') || champTitle.contains('ligue 1'))) {
-      return true;
-    }
-    if (idLower == 'egy_1' &&
-        (champTitle.contains('مصري') || champTitle.contains('egypt'))) {
-      return true;
-    }
-    if (idLower == 'sau_1' &&
-        (champTitle.contains('روشن') ||
-            champTitle.contains('سعودي') ||
-            champTitle.contains('saudi'))) {
-      return true;
-    }
-    if (idLower == 'ucl' &&
-        (champTitle.contains('أبطال أوروبا') ||
-            champTitle.contains('champions league'))) {
-      return true;
-    }
-    if (idLower == 'caf_cl' &&
-        (champTitle.contains('أبطال إفريقيا') || champTitle.contains('caf'))) {
-      return true;
-    }
-    if (idLower == 'uel' &&
-        (champTitle.contains('الدوري الأوروبي') ||
-            champTitle.contains('europa league'))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/// Applies automatic match prioritization:
-/// Priority 1 (Top): Favorite Teams (Live first, then non-live)
-/// Priority 2: Favorite Leagues (Live first, then non-live)
-/// Priority 3: Other Matches (Live first, then non-live)
-///
-/// If neither favorite teams nor favorite leagues are selected, natural order is preserved.
-List<MatchModel> prioritizeMatches({
-  required List<MatchModel> matches,
-  required List<String> selectedTeamIds,
-  required List<String> selectedLeagueIds,
-  required List<TeamModel> allTeams,
-  required List<LeagueModel> allLeagues,
-}) {
-  if (selectedTeamIds.isEmpty && selectedLeagueIds.isEmpty) {
-    return matches;
-  }
-
-  final liveFavTeams = <MatchModel>[];
-  final liveFavLeagues = <MatchModel>[];
-  final liveOther = <MatchModel>[];
-
-  final nonLiveFavTeams = <MatchModel>[];
-  final nonLiveFavLeagues = <MatchModel>[];
-  final nonLiveOther = <MatchModel>[];
-
-  for (final match in matches) {
-    final isTeamFav = isFavoriteTeamMatch(match, selectedTeamIds, allTeams);
-    final isLeagueFav = !isTeamFav &&
-        isFavoriteLeagueMatch(match, selectedLeagueIds, allLeagues);
-
-    if (match.isLive) {
-      if (isTeamFav) {
-        liveFavTeams.add(match);
-      } else if (isLeagueFav) {
-        liveFavLeagues.add(match);
-      } else {
-        liveOther.add(match);
-      }
-    } else {
-      if (isTeamFav) {
-        nonLiveFavTeams.add(match);
-      } else if (isLeagueFav) {
-        nonLiveFavLeagues.add(match);
-      } else {
-        nonLiveOther.add(match);
-      }
-    }
-  }
-
-  return [
-    ...liveFavTeams,
-    ...liveFavLeagues,
-    ...liveOther,
-    ...nonLiveFavTeams,
-    ...nonLiveFavLeagues,
-    ...nonLiveOther,
-  ];
-}
-
 /// Provider that returns matches filtered by the active [MatchFilterType]
+/// and strictly constrained to user's selected leagues (with team selection winning),
 /// with automatic priority for favorite teams and leagues.
 final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
   final rawAsync = ref.watch(matchesProvider);
@@ -352,22 +264,41 @@ final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
   final allLeagues = onboardingState.leagues;
 
   return rawAsync.whenData((matches) {
+    // 1. Central Leagues-Only Filter:
+    // Only matches belonging to user's chosen leagues are retained.
+    // Edge case: if a followed team plays in a non-selected league, that match
+    // is still retained (team selection wins!).
+    // Edge case: if user selected no leagues (legacy), all matches are retained.
+    final leaguesOnlyMatches = matches.where((m) {
+      return isMatchInUserLeaguesOrFollowedTeams(
+        match: m,
+        selectedLeagueIds: selectedLeagueIds,
+        selectedTeamIds: selectedTeamIds,
+        allLeagues: allLeagues,
+        allTeams: allTeams,
+      );
+    }).toList();
+
     List<MatchModel> result;
     switch (filter) {
       case MatchFilterType.all:
-        result = matches;
+        result = leaguesOnlyMatches;
         break;
       case MatchFilterType.live:
-        result = matches.where((m) => m.isLive).toList();
+        result = leaguesOnlyMatches.where((m) => m.isLive).toList();
         break;
       case MatchFilterType.upcoming:
-        result = matches.where((m) => !m.isLive && !m.isFinished).toList();
+        result =
+            leaguesOnlyMatches.where((m) => !m.isLive && !m.isFinished).toList();
+        break;
+      case MatchFilterType.finished:
+        result = leaguesOnlyMatches.where((m) => m.isFinished).toList();
         break;
       case MatchFilterType.favorites:
         if (selectedTeamIds.isEmpty && selectedLeagueIds.isEmpty) {
           return [];
         }
-        final favMatches = matches.where((m) {
+        final favMatches = leaguesOnlyMatches.where((m) {
           return isFavoriteTeamMatch(m, selectedTeamIds, allTeams) ||
               isFavoriteLeagueMatch(m, selectedLeagueIds, allLeagues);
         }).toList();
@@ -423,77 +354,6 @@ class HomeSectionData {
   });
 
   bool get isEmpty => allFilteredMatches.isEmpty;
-}
-
-/// Helper that selects the featured / hero match according to the 4-tier hierarchy:
-/// (a) Live match involving a favorite team
-/// (b) Any live match
-/// (c) Next upcoming match involving a favorite team (earliest kickoff)
-/// (d) Next upcoming match overall (earliest kickoff)
-/// (e) Fallback to first match
-MatchModel? selectHeroMatch({
-  required List<MatchModel> matches,
-  required List<String> selectedTeamIds,
-  required List<String> selectedLeagueIds,
-  required List<TeamModel> allTeams,
-  required List<LeagueModel> allLeagues,
-}) {
-  if (matches.isEmpty) return null;
-
-  // (a) Live match involving a favorite team
-  final liveFavTeamMatches = matches.where(
-    (m) => m.isLive && isFavoriteTeamMatch(m, selectedTeamIds, allTeams),
-  );
-  if (liveFavTeamMatches.isNotEmpty) return liveFavTeamMatches.first;
-
-  // (b) Any live match (prefer followed league if available)
-  final liveMatches = matches.where((m) => m.isLive).toList();
-  if (liveMatches.isNotEmpty) {
-    final liveFavLeague = liveMatches.where(
-      (m) => isFavoriteLeagueMatch(m, selectedLeagueIds, allLeagues),
-    );
-    if (liveFavLeague.isNotEmpty) return liveFavLeague.first;
-    return liveMatches.first;
-  }
-
-  // (c) Next upcoming match involving a favorite team (earliest kickoff)
-  final upcomingFavTeamMatches = matches.where(
-    (m) => !m.isLive && !m.isFinished && isFavoriteTeamMatch(m, selectedTeamIds, allTeams),
-  ).toList();
-  if (upcomingFavTeamMatches.isNotEmpty) {
-    upcomingFavTeamMatches.sort((a, b) {
-      final aTime = a.kickoffDateTime ?? DateTime(2099);
-      final bTime = b.kickoffDateTime ?? DateTime(2099);
-      return aTime.compareTo(bTime);
-    });
-    return upcomingFavTeamMatches.first;
-  }
-
-  // (d) Next upcoming match overall (earliest kickoff, preferring followed league)
-  final upcomingMatches = matches.where((m) => !m.isLive && !m.isFinished).toList();
-  if (upcomingMatches.isNotEmpty) {
-    final upcomingFavLeague = upcomingMatches.where(
-      (m) => isFavoriteLeagueMatch(m, selectedLeagueIds, allLeagues),
-    ).toList();
-    if (upcomingFavLeague.isNotEmpty) {
-      upcomingFavLeague.sort((a, b) {
-        final aTime = a.kickoffDateTime ?? DateTime(2099);
-        final bTime = b.kickoffDateTime ?? DateTime(2099);
-        return aTime.compareTo(bTime);
-      });
-      return upcomingFavLeague.first;
-    }
-
-    upcomingMatches.sort((a, b) {
-      final aTime = a.kickoffDateTime ?? DateTime(2099);
-      final bTime = b.kickoffDateTime ?? DateTime(2099);
-      return aTime.compareTo(bTime);
-    });
-    return upcomingMatches.first;
-  }
-
-  // (e) Fallback to first match
-  return matches.first;
 }
 
 /// Provider that computes and memoizes structured sections for the Home screen:

@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/config/app_constants.dart';
 import '../../core/services/fcm_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 import '../widgets/app_logo.dart';
 import 'providers/onboarding_provider.dart';
 
@@ -92,10 +94,10 @@ class _NotificationPermissionScreenState
               fontSize: 18,
             ),
           ),
-          content: const Text(
-            'تطبيق شوت لايف يعتمد بشكل أساسي على الإشعارات المباشرة لتنبيهك بالأهداف وأحداث المباريات والتشكيلة. يرجى تفعيل الإشعارات من إعدادات النظام للمتابعة.',
+          content: Text(
+            'تطبيق ${AppConstants.appName} يعتمد بشكل أساسي على الإشعارات المباشرة لتنبيهك بالأهداف وأحداث المباريات والتشكيلة. يرجى تفعيل الإشعارات من إعدادات النظام للمتابعة.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
               height: 1.5,
@@ -137,8 +139,14 @@ class _NotificationPermissionScreenState
 
   @override
   Widget build(BuildContext context) {
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final primary = AppColors.primaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
@@ -146,74 +154,72 @@ class _NotificationPermissionScreenState
             children: [
               const Spacer(),
               const AppLogo(size: 90, showSubtitle: true),
-              const SizedBox(height: 40),
+              const SizedBox(height: 36),
               Container(
-                width: 100,
-                height: 100,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: surface,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.5),
+                    color: primary.withValues(alpha: 0.35),
                     width: 2,
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_active_rounded,
-                  size: 48,
-                  color: AppColors.primary,
+                  size: 46,
+                  color: primary,
                 ),
               ),
-              const SizedBox(height: 32),
-              const Text(
+              const SizedBox(height: 28),
+              Text(
                 'تفعيل إشعارات المباريات المباشرة',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.titleLarge(color: textPrimary).copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 21,
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              const SizedBox(height: 12),
+              Text(
                 'احصل على تنبيهات لحظية بالأهداف، بداية ونهاية المباريات، وتشكيلة الفرق المفضلة لديك فور إعلانها حتى أثناء إغلاق التطبيق.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 15,
+                style: AppTypography.bodyMedium(color: textSecondary).copyWith(
                   height: 1.6,
                 ),
               ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: _isProcessing
                       ? null
                       : _requestNotificationPermission,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 4,
+                    elevation: 0,
                   ),
                   child: _isProcessing
                       ? const SizedBox(
-                          width: 24,
-                          height: 24,
+                          width: 22,
+                          height: 22,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.black,
+                            strokeWidth: 2.2,
+                            color: Colors.white,
                           ),
                         )
                       : const Text(
                           'تفعيل الإشعارات',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
                           ),
                         ),
                 ),

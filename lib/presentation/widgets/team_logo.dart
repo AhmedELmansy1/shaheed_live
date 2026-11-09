@@ -1,10 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 
-/// Reusable Team Logo widget with circular soft ring, Hero animation tag support, and graceful initials fallback.
+/// Reusable Team Logo widget in "Paper × Ink × Vermilion" design system.
+///
+/// Features:
+/// - Circular soft paper/ink frame with crisp 1px border.
+/// - Downsampled GPU memory cache (memCacheWidth & memCacheHeight).
+/// - Elegant fallback initials in Cairo bold.
+/// - Hero animation support.
 class TeamLogo extends StatelessWidget {
   final String? logoUrl;
   final String teamName;
@@ -33,11 +39,11 @@ class TeamLogo extends StatelessWidget {
     return Center(
       child: Text(
         _fallbackInitials,
-        style: GoogleFonts.cairo(
+        style: AppTypography.labelLarge(
           color: AppColors.textSecondaryOf(context),
+        ).copyWith(
           fontSize: (size * 0.35).clamp(9.0, 16.0),
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.0,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -45,7 +51,7 @@ class TeamLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
+    final cacheDim = (size * 2).round().clamp(48, 160);
     Widget imageContent;
 
     if (logoUrl != null && logoUrl!.isNotEmpty) {
@@ -54,6 +60,10 @@ class TeamLogo extends StatelessWidget {
         width: size * 0.72,
         height: size * 0.72,
         fit: BoxFit.contain,
+        memCacheWidth: cacheDim,
+        memCacheHeight: cacheDim,
+        maxWidthDiskCache: 200,
+        maxHeightDiskCache: 200,
         placeholder: (context, url) => _buildFallback(context),
         errorWidget: (context, url, error) => _buildFallback(context),
       );
@@ -65,10 +75,10 @@ class TeamLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isLight ? AppColors.lightSurfaceHigh : AppColors.darkSurfaceHigh,
+        color: AppColors.surfaceElevatedOf(context),
         shape: BoxShape.circle,
         border: Border.all(
-          color: isLight ? AppColors.lightBorder : AppColors.darkBorder,
+          color: AppColors.borderOf(context),
           width: 1.0,
         ),
       ),

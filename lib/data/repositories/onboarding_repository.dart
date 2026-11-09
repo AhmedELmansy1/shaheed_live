@@ -5,6 +5,7 @@ import '../models/team_model.dart';
 abstract class OnboardingRepository {
   Future<List<LeagueModel>> getPopularLeagues();
   Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds);
+  List<TeamModel> getPopularTeams();
 }
 
 /// Local mock implementation of [OnboardingRepository] with realistic Arabic names.
@@ -104,6 +105,30 @@ class MockOnboardingRepository implements OnboardingRepository {
       id: 'afcon',
       name: 'كأس الأمم الإفريقية',
       nameEn: 'Africa Cup of Nations',
+      country: 'إفريقيا',
+    ),
+    LeagueModel(
+      id: 'tur_1',
+      name: 'الدوري التركي',
+      nameEn: 'Süper Lig',
+      country: 'تركيا',
+    ),
+    LeagueModel(
+      id: 'bra_1',
+      name: 'الدوري البرازيلي',
+      nameEn: 'Brasileirão',
+      country: 'البرازيل',
+    ),
+    LeagueModel(
+      id: 'por_1',
+      name: 'الدوري البرتغالي الممتاز',
+      nameEn: 'Primeira Liga',
+      country: 'البرتغال',
+    ),
+    LeagueModel(
+      id: 'caf_cc',
+      name: 'كأس الكونفيدرالية',
+      nameEn: 'CAF Confederation Cup',
       country: 'إفريقيا',
     ),
   ];
@@ -414,4 +439,7 @@ class MockOnboardingRepository implements OnboardingRepository {
         .where((team) => leagueIds.contains(team.leagueId))
         .toList();
   }
+
+  @override
+  List<TeamModel> getPopularTeams() => _mockTeams;
 }

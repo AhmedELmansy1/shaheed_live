@@ -2,9 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../data/models/match_event_model.dart';
+import '../../widgets/app_empty_state.dart';
+import '../../widgets/app_error_state.dart';
+import '../../widgets/matches_skeleton.dart';
 import '../providers/match_details_providers.dart';
 
+/// Clean, editorial Events Timeline in "Paper × Ink × Vermilion".
+///
+/// Features:
+/// - Vertical timeline axis with minute markers in tabular figures.
+/// - RTL-correct alignment: Home events on right, Away events on left.
+/// - Distinct semantic icons: Goal (vermilion), Cards (yellow/red), Subs, VAR.
+/// - Graceful handling of period markers and empty event feeds.
 class EventsTab extends ConsumerWidget {
   final MatchDetailsParams params;
   final dynamic homeTeamId;
@@ -22,232 +35,278 @@ class EventsTab extends ConsumerWidget {
     final eventsAsync = ref.watch(matchEventsProvider(params));
 
     return eventsAsync.when(
+      loading: () => const MatchesSkeleton(),
+      error: (err, stack) => AppErrorState(
+        title: 'تعذر تحميل أحداث المباراة',
+        subtitle: 'يرجى التحقق من اتصالك بالإنترنت وإعادة المحاولة.',
+        onRetry: () => ref.invalidate(matchEventsProvider(params)),
+      ),
       data: (events) {
         if (events.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                'لا توجد أحداث مسجلة لهذه المباراة حتى الآن',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-            ),
+          return const AppEmptyState(
+            type: EmptyStateType.soccer,
+            title: 'لا توجد أحداث مسجلة لهذه المباراة حتى الآن',
+            subtitle: 'سيتم تسجيل الأهداف والبطاقات والتبديلات فور حدوثها في أرضية الميدان.',
           );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.lg,
+          ),
           itemCount: events.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final event = events[index];
             if (event.eventType == MatchEventType.periodMarker) {
-              return _buildPeriodMarker(event);
+              return _buildPeriodMarker(context, event);
             }
+
             final isHome = event.teamId.toString() == homeTeamId.toString();
-            return _buildEventItem(context, event, isHome: isHome);
+            return _buildTimelineItem(context, event, isHome: isHome);
           },
         );
       },
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
-      error: (err, stack) => Center(
-        child: Text(
-          'خطأ في تحميل الأحداث: $err',
-          style: const TextStyle(color: AppColors.livePulse),
-        ),
-      ),
     );
   }
 
-  Widget _buildPeriodMarker(MatchEventModel event) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Center(
-        child: Text(
-          event.statusName.isNotEmpty
-              ? event.statusName
-              : event.formattedMinute,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
+  Widget _buildPeriodMarker(BuildContext context, MatchEventModel event) {
+    final surfaceElevated = AppColors.surfaceElevatedOf(context);
+    final border = AppColors.borderOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+
+    final title = event.statusName.isNotEmpty
+        ? event.statusName
+        : event.formattedMinute;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: border, height: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: surfaceElevated,
+                borderRadius: AppRadii.fullRadius,
+                border: Border.all(color: border, width: 1.0),
+              ),
+              child: Text(
+                title,
+                style: AppTypography.labelSmall(color: textSecondary).copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
-        ),
+          Expanded(child: Divider(color: border, height: 1)),
+        ],
       ),
     );
   }
 
-  Widget _buildEventItem(
+  Widget _buildTimelineItem(
     BuildContext context,
     MatchEventModel event, {
     required bool isHome,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Home side (if isHome, display content; else spacer)
-        Expanded(
-          child: isHome
-              ? _buildEventContent(
-                  event,
-                  Alignment.centerRight,
-                  CrossAxisAlignment.end,
-                )
-              : const SizedBox.shrink(),
-        ),
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final border = AppColors.borderOf(context);
 
-        // Timeline Minute Badge
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _getEventBgColor(event.eventType),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _getEventBorderColor(event.eventType),
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            event.formattedMinute,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+    final eventBadge = _buildEventIcon(context, event);
 
-        // Away side (if !isHome, display content; else spacer)
-        Expanded(
-          child: !isHome
-              ? _buildEventContent(
-                  event,
-                  Alignment.centerLeft,
-                  CrossAxisAlignment.start,
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEventContent(
-    MatchEventModel event,
-    Alignment alignment,
-    CrossAxisAlignment crossAxis,
-  ) {
-    return Column(
-      crossAxisAlignment: crossAxis,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildEventIcon(event.eventType),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                event.playerName ?? event.statusName,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+    final contentWidget = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: AppRadii.mdRadius,
+        border: Border.all(color: border, width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isHome ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isHome) ...[
+                eventBadge,
+                const SizedBox(width: AppSpacing.xs + 2),
+              ],
+              Flexible(
+                child: Text(
+                  event.statusName,
+                  style: AppTypography.labelMedium(color: textPrimary).copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
-        ),
-        if (event.assistPlayerName != null &&
-            event.assistPlayerName!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              event.eventType == MatchEventType.substitution
-                  ? 'خروج: ${event.assistPlayerName}'
-                  : 'تمريرة حاسمة: ${event.assistPlayerName}',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
+              if (!isHome) ...[
+                const SizedBox(width: AppSpacing.xs + 2),
+                eventBadge,
+              ],
+            ],
+          ),
+          if (event.playerName != null && event.playerName!.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              event.playerName!,
+              style: AppTypography.bodySmall(color: textPrimary).copyWith(
+                fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+          ],
+          if (event.assistPlayerName != null &&
+              event.assistPlayerName!.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'صناعة: ${event.assistPlayerName!}',
+              style: AppTypography.labelSmall(color: textSecondary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    // Minute Indicator (Middle Axis)
+    final minuteWidget = Container(
+      width: 44,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevatedOf(context),
+        borderRadius: AppRadii.fullRadius,
+        border: Border.all(color: border, width: 1.0),
+      ),
+      child: Text(
+        event.formattedMinute,
+        style: AppTypography.scoreHeadline(color: textPrimary).copyWith(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Home Side (Right side in RTL)
+          Expanded(
+            child: isHome ? contentWidget : const SizedBox.shrink(),
           ),
-      ],
+
+          // Central Minute Axis
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: minuteWidget,
+          ),
+
+          // Away Side (Left side in RTL)
+          Expanded(
+            child: !isHome ? contentWidget : const SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildEventIcon(MatchEventType type) {
-    switch (type) {
+  Widget _buildEventIcon(BuildContext context, MatchEventModel event) {
+    switch (event.eventType) {
       case MatchEventType.goal:
+      case MatchEventType.penaltyScored:
         return const Icon(
-          Icons.sports_soccer,
-          color: AppColors.primary,
-          size: 18,
-        );
-      case MatchEventType.yellowCard:
-        return Container(
-          width: 12,
-          height: 16,
-          decoration: BoxDecoration(
-            color: Colors.amber,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        );
-      case MatchEventType.redCard:
-        return Container(
-          width: 12,
-          height: 16,
-          decoration: BoxDecoration(
-            color: AppColors.livePulse,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        );
-      case MatchEventType.substitution:
-        return const Icon(Icons.swap_horiz, color: AppColors.secondary, size: 18);
-      default:
-        return const Icon(
-          Icons.info_outline,
-          color: AppColors.textSecondary,
+          Icons.sports_soccer_rounded,
+          color: AppColors.vermilion,
           size: 16,
         );
-    }
-  }
-
-  Color _getEventBgColor(MatchEventType type) {
-    switch (type) {
-      case MatchEventType.goal:
-        return AppColors.primary.withValues(alpha: 0.18);
+      case MatchEventType.ownGoal:
+        return Icon(
+          Icons.sports_soccer_rounded,
+          color: AppColors.finishedOf(context),
+          size: 16,
+        );
+      case MatchEventType.penaltyMissed:
+        return const Icon(
+          Icons.highlight_off_rounded,
+          color: Color(0xFFDC2626),
+          size: 16,
+        );
       case MatchEventType.yellowCard:
-        return Colors.amber.withValues(alpha: 0.2);
+        return Container(
+          width: 10,
+          height: 14,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAB308),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
       case MatchEventType.redCard:
-        return AppColors.livePulse.withValues(alpha: 0.2);
+        return Container(
+          width: 10,
+          height: 14,
+          decoration: BoxDecoration(
+            color: const Color(0xFFDC2626),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      case MatchEventType.secondYellow:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 9,
+              height: 13,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAB308),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 2),
+            Container(
+              width: 9,
+              height: 13,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        );
+      case MatchEventType.substitution:
+        return const Icon(
+          Icons.swap_horiz_rounded,
+          color: Color(0xFF3B5BDB),
+          size: 17,
+        );
+      case MatchEventType.varDisallowed:
+        return const Icon(
+          Icons.tv_rounded,
+          color: Color(0xFF3B5BDB),
+          size: 16,
+        );
       default:
-        return AppColors.surface;
-    }
-  }
-
-  Color _getEventBorderColor(MatchEventType type) {
-    switch (type) {
-      case MatchEventType.goal:
-        return AppColors.primary;
-      case MatchEventType.yellowCard:
-        return Colors.amber;
-      case MatchEventType.redCard:
-        return AppColors.livePulse;
-      default:
-        return AppColors.cardBorder;
+        return Icon(
+          Icons.info_outline_rounded,
+          color: AppColors.textSecondaryOf(context),
+          size: 15,
+        );
     }
   }
 }

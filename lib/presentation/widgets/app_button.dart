@@ -5,10 +5,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 
 enum AppButtonVariant { primary, secondary, danger, ghost }
 
-/// Design system button with tactile haptics, brand gradient, glow, and press-scale animation.
+/// Design system button in "Paper × Ink × Vermilion" with tactile feedback.
 class AppButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -16,6 +17,7 @@ class AppButton extends StatefulWidget {
   final AppButtonVariant variant;
   final bool isLoading;
   final double? width;
+  final EdgeInsetsGeometry? padding;
 
   const AppButton({
     super.key,
@@ -25,6 +27,7 @@ class AppButton extends StatefulWidget {
     this.variant = AppButtonVariant.primary,
     this.isLoading = false,
     this.width,
+    this.padding,
   });
 
   @override
@@ -43,8 +46,8 @@ class _AppButtonState extends State<AppButton>
       vsync: this,
       duration: AppMotion.fast,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _pressController, curve: AppMotion.easeOutCubic),
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _pressController, curve: Curves.easeOutCubic),
     );
   }
 
@@ -55,7 +58,9 @@ class _AppButtonState extends State<AppButton>
   }
 
   void _handleTapDown(TapDownDetails _) {
-    if (widget.onPressed != null && !widget.isLoading) {
+    if (widget.onPressed != null &&
+        !widget.isLoading &&
+        !AppMotion.isReducedMotion(context)) {
       _pressController.forward();
       HapticFeedback.lightImpact();
     }
@@ -75,112 +80,100 @@ class _AppButtonState extends State<AppButton>
 
   @override
   Widget build(BuildContext context) {
-    Color? bg;
-    Gradient? gradient;
+    Color bg;
     Color fg;
     Color? borderColor;
-    List<BoxShadow>? shadows;
+
+    final vermilion = AppColors.primaryOf(context);
 
     switch (widget.variant) {
       case AppButtonVariant.primary:
-        gradient = AppColors.brandGradient;
-        fg = const Color(0xFF070B10); // Deep dark contrast on neon gradient
-        shadows = [
-          const BoxShadow(
-            color: AppColors.primaryGlow,
-            blurRadius: 14,
-            offset: Offset(0, 4),
-          ),
-        ];
+        bg = vermilion;
+        fg = Colors.white;
         break;
       case AppButtonVariant.secondary:
-        bg = AppColors.darkSurfaceHigh;
-        fg = AppColors.darkTextPrimary;
-        borderColor = AppColors.darkBorder;
+        bg = AppColors.surfaceElevatedOf(context);
+        fg = AppColors.textPrimaryOf(context);
+        borderColor = AppColors.borderOf(context);
         break;
       case AppButtonVariant.danger:
-        bg = AppColors.live;
+        bg = vermilion;
         fg = Colors.white;
-        shadows = [
-          const BoxShadow(
-            color: AppColors.liveGlowColor,
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ];
         break;
       case AppButtonVariant.ghost:
         bg = Colors.transparent;
-        fg = AppColors.primary;
+        fg = vermilion;
         break;
     }
 
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) =>
-          Transform.scale(scale: _scaleAnimation.value, child: child),
-      child: Container(
-        width: widget.width,
-        decoration: BoxDecoration(
-          color: bg,
-          gradient: gradient,
-          borderRadius: AppRadii.mdRadius,
-          border: borderColor != null ? Border.all(color: borderColor) : null,
-          boxShadow: shadows,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: AppRadii.mdRadius,
-          child: InkWell(
-            borderRadius: AppRadii.mdRadius,
-            onTap: widget.isLoading ? null : widget.onPressed,
-            onTapDown: _handleTapDown,
-            onTapUp: _handleTapUp,
-            onTapCancel: _handleTapCancel,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.isLoading)
-                    SizedBox(
-                      width: 18,
-                      height: 18,
+    final buttonWidget = Container(
+      width: widget.width,
+      height: 48,
+      decoration: BoxDecoration(
+        color: widget.onPressed != null ? bg : bg.withValues(alpha: 0.4),
+        borderRadius: AppRadii.fullRadius,
+        border: borderColor != null
+            ? Border.all(color: borderColor, width: 1.0)
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadii.fullRadius,
+        child: InkWell(
+          borderRadius: AppRadii.fullRadius,
+          onTap: widget.isLoading ? null : widget.onPressed,
+          onTapDown: _handleTapDown,
+          onTapUp: _handleTapUp,
+          onTapCancel: _handleTapCancel,
+          child: Padding(
+            padding: widget.padding ??
+                const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Center(
+              child: widget.isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: fg,
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(fg),
                       ),
                     )
-                  else ...[
-                    if (widget.icon != null) ...[
-                      Icon(widget.icon, size: 18, color: fg),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          widget.label,
-                          maxLines: 1,
-                          style: TextStyle(
-                            color: fg,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.icon != null) ...[
+                          Icon(widget.icon, size: 18, color: fg),
+                          const SizedBox(width: AppSpacing.xs + 2),
+                        ],
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelLarge(color: fg).copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
           ),
         ),
       ),
+    );
+
+    if (AppMotion.isReducedMotion(context)) {
+      return buttonWidget;
+    }
+
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
+      },
+      child: buttonWidget,
     );
   }
 }

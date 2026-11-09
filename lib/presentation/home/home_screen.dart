@@ -5,22 +5,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/config/app_constants.dart';
+import '../../core/network/app_exception.dart';
 import '../../core/services/battery_optimization_service.dart';
+import '../../core/services/league_resolver_service.dart';
 import '../../core/services/remote_config_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../update/widgets/soft_update_banner.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_chip.dart';
 import '../widgets/app_empty_state.dart';
+import '../widgets/app_error_state.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/battery_guidance_dialog.dart';
+import '../widgets/day_selector.dart';
 import '../widgets/hero_match_card.dart';
 import '../widgets/live_badge.dart';
 import '../widgets/match_card.dart';
@@ -29,6 +34,14 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
+/// Premium Home Screen in the "Paper × Ink × Vermilion" design system.
+///
+/// Editorial, tactile sports feed:
+/// - Quick DaySelector (Yesterday, Today, Tomorrow, Calendar)
+/// - League grouping with tactile SectionHeaders
+/// - High-contrast MatchCards and lightweight HeroMatchCard
+/// - Restyled offline cache banner and robust error/empty states
+/// - Staggered entrance respecting reduced-motion accessibility
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -59,12 +72,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final customDate = ref.watch(selectedCustomDateProvider);
     final activeFilter = ref.watch(matchFilterProvider);
     final sectionDataAsync = ref.watch(homeSectionDataProvider);
+    final isOffline = ref.watch(offlineFallbackProvider);
+
     final bg = AppColors.backgroundOf(context);
     final surface = AppColors.surfaceOf(context);
-    final surfaceHigh = AppColors.surfaceHighOf(context);
     final border = AppColors.borderOf(context);
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
+    final vermilion = AppColors.primaryOf(context);
 
     return Scaffold(
       backgroundColor: bg,
@@ -72,43 +87,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        toolbarHeight: 70,
+        toolbarHeight: 68,
         titleSpacing: AppSpacing.lg,
+        shape: Border(bottom: BorderSide(color: border, width: 1.0)),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'شوت لايف',
-              style: GoogleFonts.cairo(
-                fontSize: 22,
+              AppConstants.appName,
+              style: AppTypography.displayMedium(color: textPrimary).copyWith(
+                fontSize: 21,
                 fontWeight: FontWeight.w900,
-                color: textPrimary,
-                letterSpacing: 0.0,
+                letterSpacing: -0.2,
                 height: 1.15,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 5,
-                  height: 5,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: vermilion,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Text(
-                  'كرة القدم في متناول يدك',
-                  style: GoogleFonts.cairo(
-                    fontSize: 11,
+                  'كل نتيجة، لحظة بلحظة',
+                  style: AppTypography.labelSmall(color: textSecondary).copyWith(
                     fontWeight: FontWeight.w600,
-                    color: textSecondary,
-                    letterSpacing: 0.0,
-                    height: 1.15,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ],
@@ -117,45 +130,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         centerTitle: false,
         actions: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: surfaceHigh,
-              shape: BoxShape.circle,
-              border: Border.all(color: border),
-            ),
-            child: IconButton(
-              icon: Icon(Icons.search_rounded, color: textPrimary, size: 20),
-              tooltip: 'البحث عن فريق',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                context.push('/search');
-              },
+          Semantics(
+            button: true,
+            label: 'البحث عن الفرق والمباريات',
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: border, width: 1.0),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.search_rounded, color: textPrimary, size: 20),
+                tooltip: 'البحث عن فريق',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/search');
+                },
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: surfaceHigh,
-              shape: BoxShape.circle,
-              border: Border.all(color: border),
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.person_outline_rounded,
-                color: textSecondary,
-                size: 20,
+          Semantics(
+            button: true,
+            label: 'إعدادات التطبيق',
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: border, width: 1.0),
               ),
-              tooltip: 'الإعدادات',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                context.go('/settings');
-              },
+              child: IconButton(
+                icon: Icon(
+                  Icons.person_outline_rounded,
+                  color: textSecondary,
+                  size: 20,
+                ),
+                tooltip: 'الإعدادات',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  context.go('/settings');
+                },
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -164,19 +185,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Sticky Date Selector Bar with Animated Pill
-            _buildDateHeader(context, activeTab, customDate),
+            // 1. Day Selector (Yesterday / Today / Tomorrow / Calendar)
+            DaySelector(
+              activeTab: activeTab,
+              customDate: customDate,
+              onTabSelected: (tab) {
+                ref.read(selectedCustomDateProvider.notifier).setDate(null);
+                ref.read(activeTabProvider.notifier).setTab(tab);
+                ref.read(matchesProvider.notifier).refresh();
+              },
+              onCustomDateSelected: (date) {
+                ref.read(selectedCustomDateProvider.notifier).setDate(date);
+                ref.read(activeTabProvider.notifier).setTab(HomeTab.customDate);
+                ref.read(matchesProvider.notifier).refresh();
+              },
+            ),
 
-            // Modern Horizontal Filter Chips Row
+            // 2. Filter Chips Row (All, Live, Upcoming, Favorites)
             _buildFilterChipsRow(context, activeFilter),
 
-            // In-session Soft Update Notification Banner
+            // 3. In-session Soft Update Notification Banner
             const SoftUpdateBanner(),
 
-            // Matches Scrollable Content Area
+            // 4. Restyled Offline Cache Fallback Banner
+            if (isOffline) _buildOfflineBanner(context),
+
+            // 5. Matches Scrollable Content Area with Pull-to-Refresh
             Expanded(
               child: RefreshIndicator(
-                color: AppColors.primary,
+                color: vermilion,
                 backgroundColor: surface,
                 onRefresh: () async {
                   HapticFeedback.lightImpact();
@@ -195,7 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-            // Persistent Bottom Banner Ad (Home Placement)
+            // 6. Persistent Bottom Banner Ad (Home Placement)
             const BannerAdWidget(placement: BannerPlacement.home),
           ],
         ),
@@ -203,152 +240,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildDateHeader(
-    BuildContext context,
-    HomeTab activeTab,
-    DateTime? customDate,
-  ) {
-    final bg = AppColors.backgroundOf(context);
-    final surface = AppColors.surfaceOf(context);
-    final surfaceHigh = AppColors.surfaceHighOf(context);
-    final border = AppColors.borderOf(context);
-    final textPrimary = AppColors.textPrimaryOf(context);
-    final textMuted = AppColors.textMutedOf(context);
+  /// Restyled Offline Cache Banner in Paper × Ink style
+  Widget _buildOfflineBanner(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final amberColor = isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309);
+    final bgColor = isDark
+        ? const Color(0xFF262016)
+        : const Color(0xFFFEF3C7);
+    final borderColor = isDark
+        ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
+        : const Color(0xFFF59E0B).withValues(alpha: 0.4);
+    final textColor = isDark ? const Color(0xFFFCD34D) : const Color(0xFF92400E);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      margin: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
+        vertical: AppSpacing.xs,
       ),
-      decoration: BoxDecoration(color: surface),
-      child: Column(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: AppRadii.mdRadius,
+        border: Border.all(color: borderColor, width: 1.0),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: AppRadii.mdRadius,
-                    border: Border.all(color: border),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildTabItem(
-                        context,
-                        label: 'أمس',
-                        tab: HomeTab.yesterday,
-                        isActive: activeTab == HomeTab.yesterday,
-                      ),
-                      _buildTabItem(
-                        context,
-                        label: 'اليوم',
-                        tab: HomeTab.today,
-                        isActive: activeTab == HomeTab.today,
-                      ),
-                      _buildTabItem(
-                        context,
-                        label: 'غداً',
-                        tab: HomeTab.tomorrow,
-                        isActive: activeTab == HomeTab.tomorrow,
-                      ),
-                    ],
-                  ),
-                ),
+          Icon(Icons.wifi_off_rounded, size: 16, color: amberColor),
+          const SizedBox(width: AppSpacing.sm),
+          Flexible(
+            child: Text(
+              'أنت تشاهد بيانات محفوظة (غير متصل بالإنترنت)',
+              style: AppTypography.labelMedium(color: textColor).copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(width: AppSpacing.sm + 2),
-              GestureDetector(
-                onTap: () => _pickCustomDate(context),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: activeTab == HomeTab.customDate
-                        ? AppColors.primary
-                        : bg,
-                    borderRadius: AppRadii.mdRadius,
-                    border: Border.all(
-                      color: activeTab == HomeTab.customDate
-                          ? AppColors.primary
-                          : border,
-                    ),
-                    boxShadow: activeTab == HomeTab.customDate
-                        ? [
-                            const BoxShadow(
-                              color: AppColors.primaryGlow,
-                              blurRadius: 10,
-                              offset: Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Icon(
-                    Icons.calendar_month_rounded,
-                    color: activeTab == HomeTab.customDate
-                        ? Colors.black
-                        : AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (activeTab == HomeTab.customDate && customDate != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: surfaceHigh,
-                borderRadius: AppRadii.fullRadius,
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.event_note_rounded,
-                    size: 15,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.xs + 2),
-                  Text(
-                    DateFormatter.formatDisplayDate(customDate),
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  InkWell(
-                    borderRadius: AppRadii.fullRadius,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      ref
-                          .read(selectedCustomDateProvider.notifier)
-                          .setDate(null);
-                      ref
-                          .read(activeTabProvider.notifier)
-                          .setTab(HomeTab.today);
-                      ref.read(matchesProvider.notifier).refresh();
-                    },
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 16,
-                      color: textMuted,
-                    ),
-                  ),
-                ],
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -360,19 +292,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final surface = AppColors.surfaceOf(context);
     final border = AppColors.borderOf(context);
+    final liveColor = AppColors.primaryOf(context);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
+        vertical: AppSpacing.xs + 2,
       ),
       decoration: BoxDecoration(
         color: surface,
-        border: Border(bottom: BorderSide(color: border, width: 1)),
+        border: Border(bottom: BorderSide(color: border, width: 1.0)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
             AppChip(
@@ -389,7 +323,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             AppChip(
               label: 'مباشر',
               icon: Icons.fiber_manual_record_rounded,
-              iconColor: AppColors.live,
+              iconColor: liveColor,
               isSelected: activeFilter == MatchFilterType.live,
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -428,91 +362,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTabItem(
-    BuildContext context, {
-    required String label,
-    required HomeTab tab,
-    required bool isActive,
-  }) {
-    final textSecondary = AppColors.textSecondaryOf(context);
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          ref.read(selectedCustomDateProvider.notifier).setDate(null);
-          ref.read(activeTabProvider.notifier).setTab(tab);
-          ref.read(matchesProvider.notifier).refresh();
-        },
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          curve: AppMotion.standardCurve,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : Colors.transparent,
-            borderRadius: AppRadii.smRadius,
-            boxShadow: isActive
-                ? [
-                    const BoxShadow(
-                      color: AppColors.primaryGlow,
-                      blurRadius: 8,
-                      offset: Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.black : textSecondary,
-              fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickCustomDate(BuildContext context) async {
-    final now = DateTime.now();
-    final isLight = AppColors.isLight(context);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: ref.read(selectedCustomDateProvider) ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 1),
-      builder: (context, child) {
-        return Theme(
-          data: isLight
-              ? ThemeData.light().copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.primary,
-                    onPrimary: Colors.black,
-                    surface: AppColors.lightSurface,
-                    onSurface: AppColors.lightTextPrimary,
-                  ),
-                )
-              : ThemeData.dark().copyWith(
-                  colorScheme: const ColorScheme.dark(
-                    primary: AppColors.primary,
-                    onPrimary: Colors.black,
-                    surface: AppColors.darkSurface,
-                    onSurface: AppColors.darkTextPrimary,
-                  ),
-                ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      ref.read(selectedCustomDateProvider.notifier).setDate(picked);
-      ref.read(activeTabProvider.notifier).setTab(HomeTab.customDate);
-      ref.read(matchesProvider.notifier).refresh();
-    }
-  }
-
   Widget _buildHomeContent(
     BuildContext context,
     HomeSectionData sectionData,
@@ -523,6 +372,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final favoriteMatches = sectionData.favoriteMatches;
     final liveMatches = sectionData.liveMatches;
     final leagueGroups = sectionData.leagueGroups;
+    final onboardingState = ref.watch(onboardingProvider);
+    final isReducedMotion = AppMotion.isReducedMotion(context);
 
     final adConfig = ref.watch(currentAdConfigProvider);
     final nativeConfig = adConfig.nativeMatchList;
@@ -530,10 +381,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     int matchCounter = 0;
 
+    Widget animateItem(Widget child, int index) {
+      if (isReducedMotion) return child;
+      return child
+          .animate()
+          .fadeIn(
+            duration: 180.ms,
+            delay: (math.min(index, 6) * 30).ms,
+          )
+          .slideY(
+            begin: 0.04,
+            end: 0,
+            curve: Curves.easeOutCubic,
+          );
+    }
+
     return ListView(
       padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 120),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       children: [
-        // 1. Featured / Hero Match Card with smooth entrance
+        // 1. Featured / Hero Match Card
         if (featuredMatch != null) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
@@ -546,24 +415,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: AppSpacing.xs + 2),
                 Text(
                   'المباراة المميزة',
-                  style: GoogleFonts.cairo(
-                    color: textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.0,
+                  style: AppTypography.titleSmall(color: textPrimary).copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
             ),
           ),
-          HeroMatchCard(match: featuredMatch)
-              .animate()
-              .fadeIn(duration: 280.ms)
-              .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
+          animateItem(HeroMatchCard(match: featuredMatch), 0),
           const SizedBox(height: AppSpacing.sm),
         ],
 
-        // 2. FAVORITES SECTION ("مبارياتك") — Surfaced FIRST if user has favorite team matches
+        // 2. Favorites Section ("مبارياتك")
         if (favoriteMatches.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
@@ -578,23 +441,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: AppColors.gold.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.5),
+                      color: AppColors.gold.withValues(alpha: 0.4),
                     ),
                   ),
                   child: const Icon(
                     Icons.star_rounded,
-                    size: 15,
+                    size: 14,
                     color: AppColors.gold,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   'مبارياتك',
-                  style: GoogleFonts.cairo(
-                    color: textPrimary,
-                    fontSize: 15,
+                  style: AppTypography.titleMedium(color: textPrimary).copyWith(
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.0,
                   ),
                 ),
                 const Spacer(),
@@ -607,15 +467,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: AppColors.gold.withValues(alpha: 0.12),
                     borderRadius: AppRadii.fullRadius,
                     border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.4),
+                      color: AppColors.gold.withValues(alpha: 0.35),
                     ),
                   ),
                   child: Text(
                     '${DateFormatter.toArabicNumerals(favoriteMatches.length.toString())} مباريات',
-                    style: const TextStyle(
-                      color: AppColors.gold,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.labelSmall(color: AppColors.gold).copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -625,13 +483,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ...favoriteMatches.asMap().entries.map((entry) {
             final idx = entry.key;
             final m = entry.value;
-            final card = MatchCard(match: m)
-                .animate()
-                .fadeIn(
-                  duration: 240.ms,
-                  delay: (math.min(idx, 8) * 35).ms,
-                )
-                .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
+            final card = animateItem(MatchCard(match: m), idx);
 
             matchCounter++;
             if (nativeConfig.enabled &&
@@ -647,7 +499,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: AppSpacing.md),
         ],
 
-        // 3. Live Now Horizontal Section (if there are live matches and not filtered by live)
+        // 3. Live Now Section (if there are live matches and not filtered by live)
         if (liveMatches.isNotEmpty && activeFilter != MatchFilterType.live) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
@@ -664,20 +516,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.live.withValues(alpha: 0.15),
+                    color: AppColors.primaryOf(context).withValues(alpha: 0.12),
                     borderRadius: AppRadii.fullRadius,
                     border: Border.all(
-                      color: AppColors.live.withValues(alpha: 0.5),
+                      color: AppColors.primaryOf(context).withValues(alpha: 0.35),
                     ),
                   ),
                   child: Text(
                     DateFormatter.toArabicNumerals(
                       liveMatches.length.toString(),
                     ),
-                    style: const TextStyle(
-                      color: AppColors.live,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.labelSmall(
+                      color: AppColors.vermilionTextOf(context),
+                    ).copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -687,12 +539,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ...liveMatches.asMap().entries.map((entry) {
             final idx = entry.key;
             final m = entry.value;
-            return MatchCard(match: m)
-                .animate()
-                .fadeIn(duration: 240.ms, delay: (math.min(idx, 10) * 40).ms)
-                .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic);
+            return animateItem(MatchCard(match: m), idx);
           }),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
         ],
 
         // 4. League Sections (Pre-sorted: Followed Leagues FIRST!)
@@ -704,28 +553,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           final List<Widget> items = [];
 
-          // Competition Header with SectionHeader (includes isFollowed indicator)
+          final resolvedLeagueId = LeagueResolverService.resolveToOnboardingLeagueId(
+            champTitle: title,
+            allLeagues: onboardingState.leagues,
+          );
+
+          // Competition Header with SectionHeader
           items.add(
             SectionHeader(
               title: title,
               logoUrl: champLogo,
               count: champMatches.length,
               isFollowed: isFollowed,
+              onTap: resolvedLeagueId != null
+                  ? () {
+                      HapticFeedback.lightImpact();
+                      context.push('/league/$resolvedLeagueId');
+                    }
+                  : null,
             ),
           );
 
           // Match Cards with Staggered Entrance & Native Ad insertion
           for (final m in champMatches) {
             final itemIndex = matchCounter;
-            items.add(
-              MatchCard(match: m)
-                  .animate()
-                  .fadeIn(
-                    duration: 240.ms,
-                    delay: (math.min(itemIndex, 12) * 40).ms,
-                  )
-                  .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
-            );
+            items.add(animateItem(MatchCard(match: m), itemIndex));
             matchCounter++;
 
             if (nativeConfig.enabled &&
@@ -745,8 +597,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildEmptyView(BuildContext context, MatchFilterType activeFilter) {
+    final onboardingState = ref.watch(onboardingProvider);
+
     if (activeFilter == MatchFilterType.favorites) {
-      final onboardingState = ref.watch(onboardingProvider);
       final hasFavorites = onboardingState.selectedTeamIds.isNotEmpty;
 
       return AppEmptyState(
@@ -765,20 +618,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return const AppEmptyState(
+    final hasSelectedLeagues = onboardingState.selectedLeagueIds.isNotEmpty;
+    if (hasSelectedLeagues) {
+      return AppEmptyState(
+        type: EmptyStateType.soccer,
+        title: 'لا توجد مباريات في دورياتك اليوم',
+        subtitle:
+            'يمكنك تعديل قائمة الدوريات التي تتابعها لعرض المزيد من المباريات',
+        action: AppButton(
+          label: 'إدارة الدوريات',
+          icon: Icons.sports_soccer,
+          onPressed: () => context.push('/settings/leagues'),
+        ),
+      );
+    }
+
+    return AppEmptyState(
       type: EmptyStateType.soccer,
       title: 'لا توجد مباريات متوفرة لهذا الفلتر',
-      subtitle: 'يرجى اختيار فلتر آخر أو تفقّد جدول يوم مختلف',
-    );
-  }
-
-  Widget _buildErrorView(BuildContext context, Object error) {
-    return AppEmptyState(
-      type: EmptyStateType.error,
-      title: 'عذراً، حدث خطأ أثناء جلب البيانات',
-      subtitle: error.toString(),
+      subtitle: 'يرجى اختيار فلتر آخر أو تفقّد جدول يوم مختلف.',
       action: AppButton(
-        label: 'إعادة المحاولة',
+        label: 'تحديث الجدول',
         icon: Icons.refresh_rounded,
         onPressed: () {
           ref.read(matchesProvider.notifier).refresh();
@@ -786,4 +646,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  Widget _buildErrorView(BuildContext context, Object error) {
+    String title = 'عذراً، تعذر تحميل المباريات';
+    String subtitle = 'يرجى التحقق من الاتصال وإعادة المحاولة.';
+
+    if (error is NetworkException) {
+      title = 'لا يوجد اتصال بالإنترنت';
+      subtitle = 'يرجى التحقق من شبكة الواي فاي أو بيانات الهاتف والمحاولة مجدداً.';
+    } else if (error is TimeoutException) {
+      title = 'انتهت مهلة الاتصال بالخادم';
+      subtitle = 'استغرق الخادم وقتاً أطول من المعتاد للاستجابة. يرجى إعادة المحاولة.';
+    } else if (error is ServerException) {
+      if (error.statusCode == 404) {
+        title = 'لم يتم العثور على المباريات';
+        subtitle = 'لم يتم العثور على جدول مباريات للتاريخ المحدد (رمز 404).';
+      } else {
+        title = 'خطأ في خادم المباريات';
+        subtitle = error.message;
+      }
+    } else if (error is ParseException) {
+      title = 'خطأ في معالجة البيانات';
+      subtitle = 'حدث خطأ أثناء قراءة بيانات المباريات. يرجى إعادة المحاولة.';
+    } else if (error is AppException) {
+      subtitle = error.message;
+    }
+
+    return AppErrorState(
+      title: title,
+      subtitle: subtitle,
+      onRetry: () {
+        ref.read(matchesProvider.notifier).refresh();
+      },
+    );
+  }
 }
+

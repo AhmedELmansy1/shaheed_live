@@ -1,10 +1,12 @@
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 
-/// Design Token Motion, Durations, and Curves for Shoot Live.
+/// Design Token Motion, Durations, and Curves for Live Pulse.
 class AppMotion {
   // Durations: 150 / 250 / 400ms
   static const Duration fast = Duration(milliseconds: 150);
   static const Duration standard = Duration(milliseconds: 250);
+  static const Duration medium = Duration(milliseconds: 300);
   static const Duration emphasized = Duration(milliseconds: 400);
   static const Duration slow = Duration(milliseconds: 600);
   static const Duration splash = Duration(milliseconds: 1200);
@@ -20,6 +22,9 @@ class AppMotion {
 
   /// Helper to check if animations should be skipped or shortened
   static bool isReducedMotion(BuildContext context) {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      return true;
+    }
     return MediaQuery.maybeOf(context)?.disableAnimations ?? false;
   }
 

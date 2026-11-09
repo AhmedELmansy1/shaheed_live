@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
 import '../../presentation/about/about_developer_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
-import '../../presentation/leagues/leagues_placeholder_screen.dart';
+import '../../presentation/leagues/league_details_screen.dart';
+import '../../presentation/leagues/leagues_screen.dart';
 import '../../presentation/match_details/match_details_screen.dart';
 import '../../presentation/onboarding/league_selection_screen.dart';
 import '../../presentation/onboarding/notification_permission_screen.dart';
@@ -85,7 +87,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/leagues',
-                builder: (context, state) => const LeaguesPlaceholderScreen(),
+                builder: (context, state) => const LeaguesScreen(),
               ),
             ],
           ),
@@ -136,11 +138,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return MatchDetailsScreen(matchId: id, initialMatch: match);
         },
       ),
+      // League details screen
+      GoRoute(
+        path: '/league/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          final league = state.extra is LeagueModel
+              ? state.extra as LeagueModel
+              : null;
+          return LeagueDetailsScreen(leagueId: id, initialLeague: league);
+        },
+      ),
       // About Developer screen
       GoRoute(
         path: '/about-developer',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AboutDeveloperScreen(),
+      ),
+      // Settings: Manage Leagues screen
+      GoRoute(
+        path: '/settings/leagues',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            const LeagueSelectionScreen(isEditing: true),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {
@@ -187,6 +208,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               location == '/settings' ||
               location == '/about-developer' ||
               location.startsWith('/match/') ||
+              location.startsWith('/league/') ||
               location == '/search' ||
               location.startsWith('/team/'))) {
         return '/onboarding/leagues';

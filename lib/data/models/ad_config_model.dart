@@ -198,27 +198,55 @@ class AdConfig {
     return AdConfig(
       bannerHome: BannerAdPlacementConfig.fromMap(
         map['banner_home'] as Map<String, dynamic>?,
-        defaultAdUnitId: testBannerId,
       ),
       bannerMatchDetails: BannerAdPlacementConfig.fromMap(
         map['banner_match_details'] as Map<String, dynamic>?,
-        defaultAdUnitId: testBannerId,
       ),
       interstitialMatchOpen: InterstitialAdPlacementConfig.fromMap(
         map['interstitial_match_open'] as Map<String, dynamic>?,
-        defaultAdUnitId: testInterstitialId,
       ),
       nativeMatchList: NativeAdPlacementConfig.fromMap(
         map['native_match_list'] as Map<String, dynamic>?,
-        defaultAdUnitId: testNativeId,
       ),
       appOpenAd: AppOpenAdPlacementConfig.fromMap(
         map['app_open_ad'] as Map<String, dynamic>?,
-        defaultAdUnitId: testAppOpenId,
       ),
       rewardedAd: RewardedAdPlacementConfig.fromMap(
         map['rewarded_ad'] as Map<String, dynamic>?,
-        defaultAdUnitId: testRewardedId,
+      ),
+    );
+  }
+
+  /// Returns a copy of [AdConfig] where all placement ad unit IDs are forced
+  /// to Google's official test unit IDs for debug and profile builds.
+  /// Placement enablement and frequency configs from Firestore are strictly preserved.
+  AdConfig withTestUnitIds() {
+    return AdConfig(
+      bannerHome: BannerAdPlacementConfig(
+        enabled: bannerHome.enabled,
+        adUnitId: testBannerId,
+      ),
+      bannerMatchDetails: BannerAdPlacementConfig(
+        enabled: bannerMatchDetails.enabled,
+        adUnitId: testBannerId,
+      ),
+      interstitialMatchOpen: InterstitialAdPlacementConfig(
+        enabled: interstitialMatchOpen.enabled,
+        adUnitId: testInterstitialId,
+        frequencyCap: interstitialMatchOpen.frequencyCap,
+      ),
+      nativeMatchList: NativeAdPlacementConfig(
+        enabled: nativeMatchList.enabled,
+        adUnitId: testNativeId,
+        insertEveryNItems: nativeMatchList.insertEveryNItems,
+      ),
+      appOpenAd: AppOpenAdPlacementConfig(
+        enabled: appOpenAd.enabled,
+        adUnitId: testAppOpenId,
+      ),
+      rewardedAd: RewardedAdPlacementConfig(
+        enabled: rewardedAd.enabled,
+        adUnitId: testRewardedId,
       ),
     );
   }

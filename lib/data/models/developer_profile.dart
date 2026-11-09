@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 
 class DeveloperProfile {
   final String nameAr;
@@ -93,7 +94,7 @@ class DeveloperProfile {
         categoryNameAr: 'تطوير البرمجيات (Development)',
         categoryNameEn: 'Development',
         icon: Icons.code_rounded,
-        accentColor: Color(0xFFD4AF37),
+        accentColor: AppColors.primary,
         skills: [
           'Flutter',
           'Dart',
@@ -169,8 +170,8 @@ class DeveloperProfile {
         ],
       ),
       ProjectInfo(
-        titleAr: 'Shoot Live',
-        titleEn: 'Shoot Live',
+        titleAr: 'Match Score',
+        titleEn: 'Match Score',
         categoryAr: 'تطبيق رياضي مباشر • Flutter',
         categoryEn: 'Sports & Live Scores App • Flutter',
         descriptionAr: 'تطبيق شامل لمتابعة مباريات كرة القدم والنتائج والتشكيلات والإحصائيات في الوقت الفعلي، بواجهة حديثة ونظام تنبيهات متقدم وسريع.',

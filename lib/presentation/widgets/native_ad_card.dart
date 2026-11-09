@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -86,7 +87,12 @@ class _NativeAdCardState extends ConsumerState<NativeAdCard> {
           }
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('[NativeAdCard] Native ad failed to load: $error');
+          if (kDebugMode) {
+            debugPrint(
+              '[NativeAdCard] ❌ Native ad failed to load: '
+              'code=${error.code}, message="${error.message}"',
+            );
+          }
           ad.dispose();
           if (mounted) {
             setState(() {

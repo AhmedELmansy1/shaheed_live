@@ -25,7 +25,7 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
 });
 
-/// Central Notification Service for Shoot Live.
+/// Central Notification Service for Live Pulse.
 ///
 /// NOTE FOR XIAOMI / MIUI / HYPEROS DEVICES:
 /// On MIUI and other aggressive OEM skins:
@@ -208,7 +208,8 @@ class NotificationService {
       try {
         final payload = jsonDecode(response.payload!);
         if ((payload['type'] == 'match_reminder' ||
-                payload['type'] == 'live_event') &&
+                payload['type'] == 'live_event' ||
+                payload['type'] == 'test_notification') &&
             payload['matchId'] != null) {
           final matchId = payload['matchId'].toString();
           if (onMatchNotificationTap != null) {

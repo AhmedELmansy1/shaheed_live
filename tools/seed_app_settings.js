@@ -1,5 +1,5 @@
 /**
- * One-off Firestore Seeding Script for Shoot Live (config/app_settings)
+ * One-off Firestore Seeding Script for Match Score (config/app_settings)
  * Authenticated directly via the user's active Firebase CLI session.
  */
 const fs = require('fs');

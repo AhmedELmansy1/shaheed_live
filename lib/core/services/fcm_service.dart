@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'match_reminder_service.dart';
 import 'notification_service.dart';
@@ -16,6 +17,11 @@ final fcmServiceProvider = Provider<FcmService>((ref) {
 class FcmService {
   final NotificationService _notificationService;
   final Ref _ref;
+
+  /// Dedicated test topic for Phase 2.5 production verification.
+  /// Devices only subscribe to this topic when explicitly initiated by a developer/tester.
+  static const String testNotificationTopic = 'match_score_test_notifications';
+  static const String testTopicEnabledKey = 'is_test_notification_topic_enabled';
 
   FcmService(this._notificationService, this._ref);
 
@@ -37,17 +43,66 @@ class FcmService {
       }
     });
 
-    // 3. Log initial registration token for debugging / manual testing
-    FirebaseMessaging.instance.getToken().then((token) {
-      debugPrint('====================================================');
-      debugPrint('[FCM] 📱 Current Device FCM Registration Token:');
-      debugPrint('$token');
-      debugPrint('====================================================');
-    }).catchError((e) {
-      debugPrint('[FCM] ⚠️ Error retrieving FCM registration token: $e');
-    });
+    // 3. Log initial registration token for debugging / manual testing (kDebugMode only, deferred)
+    if (kDebugMode) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        FirebaseMessaging.instance.getToken().then((token) {
+          debugPrint('====================================================');
+          debugPrint('[FCM] 📱 Current Device FCM Registration Token:');
+          debugPrint('$token');
+          debugPrint('====================================================');
+        }).catchError((e) {
+          debugPrint('[FCM] ⚠️ Error retrieving FCM registration token: $e');
+        });
+      });
+    }
 
     setupInteractiveHandlers();
+  }
+
+  /// Explicitly subscribes this device to the isolated test topic [testNotificationTopic].
+  /// Logs diagnostic token safely in kDebugMode without exposing credentials.
+  Future<String?> enableTestNotificationTopic() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(testTopicEnabledKey, true);
+    try {
+      await FirebaseMessaging.instance.subscribeToTopic(testNotificationTopic);
+      final token = await FirebaseMessaging.instance.getToken();
+
+      if (kDebugMode) {
+        debugPrint('====================================================');
+        debugPrint('[FCM TEST MODE] ✅ Subscribed to isolated test topic: $testNotificationTopic');
+        debugPrint('[FCM TEST MODE] 📱 Diagnostic FCM Token: $token');
+        debugPrint('====================================================');
+      }
+      return token;
+    } catch (e) {
+      debugPrint('[FCM TEST MODE] ⚠️ Subscribe notice: $e');
+      return null;
+    }
+  }
+
+  /// Explicitly unsubscribes this device from the test topic [testNotificationTopic].
+  Future<bool> disableTestNotificationTopic() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(testTopicEnabledKey, false);
+    try {
+      await FirebaseMessaging.instance.unsubscribeFromTopic(testNotificationTopic);
+
+      if (kDebugMode) {
+        debugPrint('[FCM TEST MODE] 🛑 Unsubscribed from test topic: $testNotificationTopic');
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[FCM TEST MODE] ⚠️ Unsubscribe notice: $e');
+      return true;
+    }
+  }
+
+  /// Checks if this device currently has test topic subscription enabled.
+  Future<bool> isTestNotificationTopicEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(testTopicEnabledKey) ?? false;
   }
 
   void setupInteractiveHandlers() {
@@ -74,8 +129,11 @@ class FcmService {
     String title = message.notification?.title ?? 'إشعار جديد';
     String body = message.notification?.body ?? '';
 
+    final eventType = data['event_type'];
+    final isTestNotification =
+        data['type'] == 'test_notification' || eventType == 'production_verification';
+
     if (data.containsKey('event_type')) {
-      final eventType = data['event_type'];
       final home = data['home'] ?? '';
       final away = data['away'] ?? '';
       final homeScore = data['home_score'] ?? '';
@@ -87,6 +145,19 @@ class FcmService {
         case 'goal':
           title = '⚽ هدف!';
           body = '$scorer — $home $homeScore-$awayScore $away';
+          break;
+        case 'penalty':
+        case 'penalty_scored':
+          title = '⚽ هدف (ركلة جزاء)';
+          body = scorer.isNotEmpty
+              ? '$scorer — $home $homeScore-$awayScore $away'
+              : '$home $homeScore-$awayScore $away';
+          break;
+        case 'penalty_missed':
+          title = '❌ ركلة جزاء ضائعة';
+          body = player.isNotEmpty
+              ? '$player — $home × $away'
+              : '$home × $away';
           break;
         case 'red_card':
           title = '🟥 بطاقة حمراء';
@@ -105,30 +176,43 @@ class FcmService {
           body = '$home × $away تبدأ بعد ساعة';
           break;
         case 'reminder_15min':
-          title = '⏰ الماتش بعد ١٥ دقيقة';
+          title = '⏰ المباراة بعد ١٥ دقيقة';
           body = '$home × $away';
           break;
+        case 'production_verification':
+          title = message.notification?.title ?? '🧪 MATCH SCORE Test';
+          body = message.notification?.body ?? 'FCM notifications are working correctly.';
+          break;
       }
+    }
+
+    if (isTestNotification) {
+      title = message.notification?.title ?? '🧪 MATCH SCORE Test';
+      body = message.notification?.body ?? (body.isNotEmpty ? body : 'FCM notifications are working correctly.');
     }
 
     body = DateFormatter.toArabicNumerals(body);
 
     final matchId = data['match_id']?.toString();
-    final eventType = data['event_type'];
     final isPreMatchReminder =
         eventType == 'reminder_1hr' || eventType == 'reminder_15min';
 
     String? payload;
     if (matchId != null) {
+      final payloadType = isPreMatchReminder
+          ? 'match_reminder'
+          : (isTestNotification ? 'test_notification' : 'live_event');
       payload = jsonEncode({
-        'type': isPreMatchReminder ? 'match_reminder' : 'live_event',
+        'type': payloadType,
         'matchId': matchId,
       });
     }
 
     final channelId = isPreMatchReminder
         ? NotificationService.channelReminders
-        : NotificationService.channelLiveEvents;
+        : (isTestNotification
+            ? NotificationService.channelMatches
+            : NotificationService.channelLiveEvents);
 
     await _notificationService.showNotification(
       message.messageId.hashCode,

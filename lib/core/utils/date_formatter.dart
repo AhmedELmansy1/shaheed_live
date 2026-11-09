@@ -1,15 +1,22 @@
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-/// Date and time formatting utility using IANA timezone database for Africa/Cairo.
+import '../../data/api/match_score_api.dart';
+
+/// Date and time formatting utility using IANA timezone database.
 ///
-/// API TIMEZONE NOTE (Empirically Verified):
+/// API TIMEZONE NOTE:
 /// Raw `match_date` (YYYY-MM-DD) and `match_time` (HH:mm:ss) values returned by the Worker matches API
-/// (https://matches-api.edwardmitrovic.workers.dev/) are served in Cairo Local Time (Africa/Cairo).
+/// (https://matches-api.edwardmitrovic.workers.dev/) are served in the timezone defined by
+/// [ApiConfig.sourceTimezone] (currently 'Asia/Riyadh', fixed UTC+3, no DST).
+///
+/// Use [ApiConfig.sourceTimezone] everywhere as the single source-timezone constant.
+/// Converting the source instant to device-local is correct for every country; real kickoff
+/// times can be verified against the debug log.
 ///
 /// IANA Timezone Resolution:
-/// Conversion to device local time is performed via `tz.getLocation('Africa/Cairo')` and `tz.TZDateTime`,
-/// avoiding any hardcoded fixed UTC offsets (+03:00). DST rule shifts for Africa/Cairo are resolved
+/// Conversion to device local time is performed via [ApiConfig.sourceTimezone] and `tz.TZDateTime`,
+/// avoiding any hardcoded fixed UTC offsets (+03:00). DST rule shifts are resolved
 /// automatically by the `timezone` package database initialized at app startup in `TimezoneHelper.init()`.
 ///
 /// Day Bucketing Decision:
@@ -29,8 +36,8 @@ class DateFormatter {
     return result;
   }
 
-  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in `Africa/Cairo` timezone using IANA data,
-  /// converts to the device's local timezone, and formats as Arabic time string (e.g., "٧:٣٠ م").
+  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in source timezone ([ApiConfig.sourceTimezone])
+  /// using IANA data, converts to the device's local timezone, and formats as Arabic time string (e.g., "٧:٣٠ م").
   static String formatMatchTime(String? rawDate, String? rawTime) {
     if (rawDate == null ||
         rawDate.isEmpty ||
@@ -50,10 +57,10 @@ class DateFormatter {
       final minute = int.parse(timeParts[1]);
       final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
 
-      // Construct Cairo TZDateTime using IANA location data (NO hardcoded offset)
-      final cairoLocation = tz.getLocation('Africa/Cairo');
+      // Construct TZDateTime using the single source timezone constant (NO hardcoded offset)
+      final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
       final cairoTZDateTime = tz.TZDateTime(
-        cairoLocation,
+        sourceLocation,
         year,
         month,
         day,
@@ -72,8 +79,8 @@ class DateFormatter {
     }
   }
 
-  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in `Africa/Cairo` timezone using IANA data,
-  /// and returns the resolved local device [DateTime].
+  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in [ApiConfig.sourceTimezone]
+  /// using IANA data, and returns the resolved local device [DateTime].
   static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime) {
     if (rawDate == null ||
         rawDate.isEmpty ||
@@ -93,9 +100,9 @@ class DateFormatter {
       final minute = int.parse(timeParts[1]);
       final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
 
-      final cairoLocation = tz.getLocation('Africa/Cairo');
-      final cairoTZDateTime = tz.TZDateTime(
-        cairoLocation,
+      final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
+      final sourceTZDateTime = tz.TZDateTime(
+        sourceLocation,
         year,
         month,
         day,
@@ -104,7 +111,7 @@ class DateFormatter {
         second,
       );
 
-      return cairoTZDateTime.toLocal();
+      return sourceTZDateTime.toLocal();
     } catch (_) {
       try {
         return DateTime.parse('${rawDate.trim()} ${rawTime.trim()}');
@@ -114,9 +121,44 @@ class DateFormatter {
     }
   }
 
+  /// Debug-only helper: logs kickoff in source timezone vs device local.
+  /// Call for the first 3 matches to verify timezone conversion is correct.
+  static void debugLogKickoff(String matchId, String? rawDate, String? rawTime) {
+    assert(() {
+      if (rawDate == null || rawTime == null) return true;
+      try {
+        final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
+        final dateParts = rawDate.trim().split('-');
+        final timeParts = rawTime.trim().split(':');
+        final sourceDt = tz.TZDateTime(
+          sourceLocation,
+          int.parse(dateParts[0]),
+          int.parse(dateParts[1]),
+          int.parse(dateParts[2]),
+          int.parse(timeParts[0]),
+          timeParts.length > 1 ? int.parse(timeParts[1]) : 0,
+        );
+        final localDt = sourceDt.toLocal();
+        // ignore: avoid_print
+        print(
+          '[TZ-DEBUG] Match #$matchId | '
+          'Source (${ApiConfig.sourceTimezone}): $sourceDt | '
+          'Device local: $localDt',
+        );
+      } catch (e) {
+        // ignore: avoid_print
+        print('[TZ-DEBUG] Match #$matchId | Error: $e');
+      }
+      return true;
+    }());
+  }
+
   /// Formats a [DateTime] into API date string format (`YYYY-MM-DD`).
   static String toApiDateString(DateTime dateTime) {
-    return DateFormat('yyyy-MM-dd', 'en').format(dateTime);
+    final y = dateTime.year.toString().padLeft(4, '0');
+    final m = dateTime.month.toString().padLeft(2, '0');
+    final d = dateTime.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   /// Formats a [DateTime] for screen header display (e.g. "الثلاثاء، ٢٢ سبتمبر ٢٠٢٦").

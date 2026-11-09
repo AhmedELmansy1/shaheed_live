@@ -7,6 +7,7 @@ import '../../data/models/team_model.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/match_card.dart';
+import '../widgets/matches_skeleton.dart';
 import 'providers/search_provider.dart';
 
 class TeamFixturesScreen extends ConsumerWidget {
@@ -37,8 +38,9 @@ class TeamFixturesScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: fixturesState.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: MatchesSkeleton(),
         ),
         error: (error, stackTrace) => Center(
           child: SingleChildScrollView(

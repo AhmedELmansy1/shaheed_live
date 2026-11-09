@@ -23,21 +23,21 @@ import 'package:shoot_live/data/models/match_lineup_model.dart';
 
 class FakeMatchesRepository implements MatchesRepository {
   @override
-  Future<List<MatchModel>> getMatchesToday() async => [];
+  Future<List<MatchModel>> getMatchesToday({bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesTomorrow() async => [];
+  Future<List<MatchModel>> getMatchesTomorrow({bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesYesterday() async => [];
+  Future<List<MatchModel>> getMatchesYesterday({bool forceRefresh = false}) async => [];
   @override
-  Future<List<MatchModel>> getMatchesByDate(String date) async => [];
+  Future<List<MatchModel>> getMatchesByDate(String date, {bool forceRefresh = false}) async => [];
   @override
-  Future<MatchInfoModel?> getMatchInfo(String matchId) async => null;
+  Future<MatchInfoModel?> getMatchInfo(String matchId, {bool forceRefresh = false}) async => null;
   @override
-  Future<MatchStatisticsModel?> getMatchStatistics(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId}) async => null;
+  Future<MatchStatisticsModel?> getMatchStatistics(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId, bool forceRefresh = false}) async => null;
   @override
-  Future<List<MatchEventModel>> getMatchEvents(String matchId) async => [];
+  Future<List<MatchEventModel>> getMatchEvents(String matchId, {bool forceRefresh = false}) async => [];
   @override
-  Future<MatchLineupModel?> getMatchLineup(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId}) async => null;
+  Future<MatchLineupModel?> getMatchLineup(String matchId, {required dynamic homeTeamId, required dynamic awayTeamId, bool forceRefresh = false}) async => null;
 }
 
 /// Fake DocumentSnapshot for live stream testing
@@ -58,6 +58,8 @@ class FakeDocumentSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUp(() {
     SharedPreferences.setMockInitialValues({
       'hasCompletedNotificationSetup': true,

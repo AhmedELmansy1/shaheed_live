@@ -1,10 +1,20 @@
 import '../../core/utils/date_formatter.dart';
+import '../api/match_score_api.dart' as api;
 
+/// Extended event type enum covering all types from EventMapper.
 enum MatchEventType {
   goal,
+  ownGoal,
+  penaltyScored,
+  penaltyMissed,
+  varDisallowed,
   yellowCard,
   redCard,
+  secondYellow,
   substitution,
+  save,
+  crossbar,
+  missedChance,
   periodMarker,
   unknown,
 }
@@ -13,7 +23,7 @@ enum MatchEventType {
 ///
 /// REAL API RESPONSE FIELDS (Empirically Verified):
 /// - `events`: Array sorted latest-minute-first (e.g. min 120, 55, 45, 11, 0).
-/// - `type`: Integer code (`1` = goal, `2` = yellow, `3` = red, `4` = substitution, `100` = period marker).
+/// - `type`: Integer code — mapped via [EventMapper] in match_score_api.dart.
 /// - `status_name`: Server-provided Arabic text description for the event (e.g. "هدف", "بطاقة صفراء", "تبديل").
 /// - `time_minute` & `time_plus`: Minute and stoppage time (e.g., 45 + 2 -> "٤٥+٢").
 /// - Upcoming matches return `"data": {}` (empty map) with no events, returning empty `[]`.
@@ -21,6 +31,8 @@ class MatchEventModel {
   final int eventId;
   final dynamic teamId;
   final MatchEventType eventType;
+
+  /// Arabic label from EventMapper (e.g. "هدف", "بطاقة صفراء", "ركلة جزاء ضائعة").
   final String statusName;
   final int minute;
   final int stoppageMinute;
@@ -39,43 +51,36 @@ class MatchEventModel {
   });
 
   factory MatchEventModel.fromMap(Map<String, dynamic> map) {
-    final typeInt = (map['type'] as num?)?.toInt() ?? 0;
-    final statusNameStr = (map['status_name'] as String?) ?? '';
+    // Delegate event type mapping to EventMapper for full type coverage
+    final parsed = api.EventMapper.parse(map);
 
-    MatchEventType parseType() {
-      if (typeInt == 1 || statusNameStr.contains('هدف')) {
-        return MatchEventType.goal;
-      }
-      if (typeInt == 2 || statusNameStr.contains('صفراء')) {
-        return MatchEventType.yellowCard;
-      }
-      if (typeInt == 3 || statusNameStr.contains('حمراء')) {
-        return MatchEventType.redCard;
-      }
-      if (typeInt == 4 || statusNameStr.contains('تبديل')) {
-        return MatchEventType.substitution;
-      }
-      if (typeInt == 100) return MatchEventType.periodMarker;
-      return MatchEventType.unknown;
-    }
-
-    String? extractPlayerName(dynamic val) {
-      if (val == null) return null;
-      if (val is Map<String, dynamic>) {
-        return (val['short_title'] ?? val['title']) as String?;
-      }
-      return val.toString();
-    }
+    final MatchEventType eventType = switch (parsed.kind) {
+      api.MatchEventKind.goal => MatchEventType.goal,
+      api.MatchEventKind.ownGoal => MatchEventType.ownGoal,
+      api.MatchEventKind.penaltyScored => MatchEventType.penaltyScored,
+      api.MatchEventKind.penaltyMissed => MatchEventType.penaltyMissed,
+      api.MatchEventKind.varDisallowed => MatchEventType.varDisallowed,
+      api.MatchEventKind.yellowCard => MatchEventType.yellowCard,
+      api.MatchEventKind.redCard => MatchEventType.redCard,
+      api.MatchEventKind.secondYellow => MatchEventType.secondYellow,
+      api.MatchEventKind.substitution => MatchEventType.substitution,
+      api.MatchEventKind.save => MatchEventType.save,
+      api.MatchEventKind.crossbar => MatchEventType.crossbar,
+      api.MatchEventKind.missedChance => MatchEventType.missedChance,
+      api.MatchEventKind.periodMarker => MatchEventType.periodMarker,
+      api.MatchEventKind.other => MatchEventType.unknown,
+    };
 
     return MatchEventModel(
-      eventId: (map['event_id'] as num?)?.toInt() ?? 0,
-      teamId: map['team_id'] ?? 0,
-      eventType: parseType(),
-      statusName: statusNameStr,
-      minute: (map['time_minute'] as num?)?.toInt() ?? 0,
-      stoppageMinute: (map['time_plus'] as num?)?.toInt() ?? 0,
-      playerName: extractPlayerName(map['player_name']),
-      assistPlayerName: extractPlayerName(map['assist_player_name']),
+      eventId: parsed.id,
+      teamId: parsed.teamId,
+      eventType: eventType,
+      statusName: parsed.label,
+      minute: parsed.minute ~/ 100,
+      stoppageMinute: parsed.minute % 100,
+      playerName: parsed.player.isNotEmpty ? parsed.player : null,
+      assistPlayerName:
+          parsed.relatedPlayer.isNotEmpty ? parsed.relatedPlayer : null,
     );
   }
 

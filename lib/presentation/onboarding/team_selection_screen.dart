@@ -30,12 +30,22 @@ class TeamSelectionScreen extends ConsumerWidget {
       }
     }
 
+    final bg = AppColors.backgroundOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('اختيار الفرق المفضلة'),
+        backgroundColor: surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'اختيار الفرق المفضلة',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => context.go('/onboarding/leagues'),
         ),
       ),

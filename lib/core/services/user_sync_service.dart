@@ -58,6 +58,8 @@ class UserSyncService {
       final prefs = await SharedPreferences.getInstance();
       final selectedLeagues = prefs.getStringList('selected_leagues') ?? [];
       final selectedTeams = prefs.getStringList('selected_teams') ?? [];
+      final subscribedTeamTopics =
+          prefs.getStringList('subscribed_team_topics') ?? [];
 
       // Build device info
       String appVersion = 'unknown';
@@ -78,6 +80,7 @@ class UserSyncService {
       final data = <String, dynamic>{
         'selected_leagues': selectedLeagues,
         'selected_teams': selectedTeams,
+        'subscribed_team_topics': subscribedTeamTopics,
         'updated_at': FieldValue.serverTimestamp(),
         'device_info': {'platform': platform, 'app_version': appVersion},
       };
@@ -173,9 +176,17 @@ class UserSyncService {
               ?.map((e) => e.toString())
               .toList() ??
           [];
+      final cloudTopics =
+          (cloudData['subscribed_team_topics'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [];
 
       await prefs.setStringList('selected_leagues', cloudLeagues);
       await prefs.setStringList('selected_teams', cloudTeams);
+      if (cloudTopics.isNotEmpty) {
+        await prefs.setStringList('subscribed_team_topics', cloudTopics);
+      }
 
       // If cloud has selections, mark onboarding as completed locally
       if (cloudLeagues.isNotEmpty && cloudTeams.isNotEmpty) {

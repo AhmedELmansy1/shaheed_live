@@ -7,7 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
 
-/// Reusable Section Header for League groups with logo and match count badge.
+/// Editorial Section Header grouping fixtures by Competition / League.
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? logoUrl;
@@ -26,17 +26,10 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLight = AppColors.isLight(context);
-    final surfaceHigh = isLight
-        ? AppColors.lightSurfaceHigh
-        : AppColors.darkSurfaceHigh;
-    final border = isLight ? AppColors.lightBorder : AppColors.darkBorder;
-    final textPrimary = isLight
-        ? AppColors.lightTextPrimary
-        : AppColors.darkTextPrimary;
-    final textSecondary = isLight
-        ? AppColors.lightTextSecondary
-        : AppColors.darkTextSecondary;
+    final surfaceElevated = AppColors.surfaceElevatedOf(context);
+    final border = AppColors.borderOf(context);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -46,87 +39,103 @@ class SectionHeader extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.smRadius,
-        child: Row(
-          children: [
-            // League Logo / Emblem
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: surfaceHigh,
-                borderRadius: AppRadii.xsRadius,
-                border: Border.all(color: border, width: 1),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: logoUrl != null && logoUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: logoUrl!,
-                      fit: BoxFit.contain,
-                      errorWidget: (_, _, _) => const Icon(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: Row(
+            children: [
+              // League Emblem
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: surfaceElevated,
+                  borderRadius: AppRadii.xsRadius,
+                  border: Border.all(color: border, width: 1.0),
+                ),
+                padding: const EdgeInsets.all(2.5),
+                child: logoUrl != null && logoUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: logoUrl!,
+                        fit: BoxFit.contain,
+                        memCacheWidth: 64,
+                        memCacheHeight: 64,
+                        maxWidthDiskCache: 128,
+                        maxHeightDiskCache: 128,
+                        errorWidget: (_, _, _) => const Icon(
+                          Icons.emoji_events_rounded,
+                          color: AppColors.gold,
+                          size: 15,
+                        ),
+                      )
+                    : const Icon(
                         Icons.emoji_events_rounded,
+                        color: AppColors.gold,
+                        size: 15,
+                      ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+
+              // League Title
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.titleSmall(color: textPrimary)
+                            .copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
+                    if (isFollowed) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      const Icon(
+                        Icons.star_rounded,
                         color: AppColors.gold,
                         size: 16,
                       ),
-                    )
-                  : const Icon(
-                      Icons.emoji_events_rounded,
-                      color: AppColors.gold,
-                      size: 16,
-                    ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-
-            // League Title with optional Followed Star
-            Expanded(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      style: AppTypography.titleMedium(color: textPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (isFollowed) ...[
-                    const SizedBox(width: AppSpacing.xs),
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 16,
-                      color: AppColors.gold,
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
 
-            // Match count badge
-            if (count != null)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: isFollowed
-                      ? AppColors.gold.withValues(alpha: 0.12)
-                      : surfaceHigh,
-                  borderRadius: AppRadii.fullRadius,
-                  border: Border.all(
-                    color: isFollowed
-                        ? AppColors.gold.withValues(alpha: 0.4)
-                        : border,
+              // Match Count Pill
+              if (count != null && count! > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: surfaceElevated,
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(color: border, width: 1.0),
+                  ),
+                  child: Text(
+                    '${DateFormatter.toArabicNumerals(count.toString())} مباريات',
+                    style: AppTypography.labelSmall(color: textSecondary)
+                        .copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                child: Text(
-                  '${DateFormatter.toArabicNumerals('$count')} مباريات',
-                  style: AppTypography.caption(
-                    color: isFollowed ? AppColors.gold : textSecondary,
-                  ),
+
+              if (onTap != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: textSecondary,
                 ),
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );

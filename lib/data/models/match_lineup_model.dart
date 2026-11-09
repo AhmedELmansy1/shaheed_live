@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 
+import '../../data/api/match_score_api.dart' as api;
+
 /// Data model for single lineup player node or substitute.
 class LineupPlayer {
   final dynamic id;
   final String name;
   final int number;
-  final String? position; // e.g. "G", "D", "M", "F" or "G", "D", "C", "A"
-  final String? positionTitle; // Arabic position title if provided
+  final String? position;
+  final String? positionTitle;
   final String? photoUrl;
   final bool isSubstitute;
 
@@ -29,6 +31,29 @@ class LineupPlayer {
       return parts[0][0];
     }
     return '$number';
+  }
+
+  /// Creates a [LineupPlayer] from an [api.LineupPlayer] parsed by [api.LineupParser].
+  /// Uses the initials fallback from [api.LineupPlayer.initials] when no photo is available.
+  factory LineupPlayer.fromApiPlayer(
+    api.LineupPlayer p, {
+    bool isSubstitute = false,
+  }) {
+    if (isSubstitute) {
+      debugPrint(
+        '[LineupPlayer] Substitute: "${p.displayName}" (#${p.number}) photo: ${p.imageUrl}',
+      );
+    }
+    return LineupPlayer(
+      id: p.id,
+      name: p.displayName.isNotEmpty ? p.displayName : (p.name.isNotEmpty ? p.name : 'لاعب'),
+      number: p.number,
+      position: p.position,
+      positionTitle: null,
+      // '' means no photo → caller shows initials avatar via p.initials
+      photoUrl: p.imageUrl.isNotEmpty ? p.imageUrl : null,
+      isSubstitute: isSubstitute,
+    );
   }
 
   factory LineupPlayer.fromMap(
@@ -175,90 +200,43 @@ class MatchLineupModel {
 
   const MatchLineupModel({required this.homeLineup, required this.awayLineup});
 
+  /// Parses lineup response by delegating to [api.LineupParser.parse].
+  /// Falls back to null when the lineup is not announced.
   static MatchLineupModel? fromResponse(
     dynamic data,
     dynamic homeTeamId,
     dynamic awayTeamId,
   ) {
-    if (data == null || data is! Map<String, dynamic> || data.isEmpty) {
-      return null;
-    }
+    if (data == null) return null;
 
-    // Extract metadata from "0" object if available
-    final meta = data['0'] as Map<String, dynamic>?;
-    final homeFormation = meta?['home_formation']?.toString();
-    final awayFormation = meta?['away_formation']?.toString();
-
-    String? extractCoach(dynamic raw) {
-      if (raw == null) return null;
-      if (raw is Map<String, dynamic>) {
-        return (raw['title'] ?? raw['name'])?.toString();
-      }
-      return raw.toString();
-    }
-
-    final homeCoach = extractCoach(meta?['home_coach']);
-    final awayCoach = extractCoach(meta?['away_coach']);
-
-    final lineupMap = data['lineup'];
-    if (lineupMap == null || lineupMap is! Map<String, dynamic>) {
-      return null;
-    }
-
-    final homeKey = homeTeamId.toString();
-    final awayKey = awayTeamId.toString();
-
-    Map<String, dynamic>? homeTeamObj =
-        lineupMap[homeKey] as Map<String, dynamic>?;
-    Map<String, dynamic>? awayTeamObj =
-        lineupMap[awayKey] as Map<String, dynamic>?;
-
-    // Fallback if keys don't match exactly
-    if (homeTeamObj == null && lineupMap.values.isNotEmpty) {
-      homeTeamObj = lineupMap.values.first as Map<String, dynamic>?;
-    }
-    if (awayTeamObj == null && lineupMap.values.length > 1) {
-      awayTeamObj = lineupMap.values.last as Map<String, dynamic>?;
-    }
-
-    List<LineupPlayer> parseList(dynamic rawList, {bool isSubstitute = false}) {
-      if (rawList == null || rawList is! List) return [];
-      return rawList
-          .whereType<Map<String, dynamic>>()
-          .map((m) => LineupPlayer.fromMap(m, isSubstitute: isSubstitute))
-          .toList();
-    }
-
-    final homeXI = parseList(homeTeamObj?['lineup']);
-    final homeSubs = parseList(
-      homeTeamObj?['substitutions'] ??
-          homeTeamObj?['substitutes'] ??
-          homeTeamObj?['subs'] ??
-          homeTeamObj?['bench'],
-      isSubstitute: true,
+    final matchLineup = api.LineupParser.parse(
+      data,
+      homeId: int.tryParse(homeTeamId.toString()),
+      awayId: int.tryParse(awayTeamId.toString()),
     );
 
-    final awayXI = parseList(awayTeamObj?['lineup']);
-    final awaySubs = parseList(
-      awayTeamObj?['substitutions'] ??
-          awayTeamObj?['substitutes'] ??
-          awayTeamObj?['subs'] ??
-          awayTeamObj?['bench'],
-      isSubstitute: true,
-    );
+    if (matchLineup == null) return null;
 
     return MatchLineupModel(
       homeLineup: TeamLineupData(
-        formation: homeFormation,
-        coach: homeCoach,
-        startingXI: homeXI,
-        substitutes: homeSubs,
+        formation: matchLineup.home.formation,
+        coach: matchLineup.home.coach.isNotEmpty ? matchLineup.home.coach : null,
+        startingXI: matchLineup.home.starters
+            .map((p) => LineupPlayer.fromApiPlayer(p))
+            .toList(),
+        substitutes: matchLineup.home.substitutes
+            .map((p) => LineupPlayer.fromApiPlayer(p, isSubstitute: true))
+            .toList(),
       ),
       awayLineup: TeamLineupData(
-        formation: awayFormation,
-        coach: awayCoach,
-        startingXI: awayXI,
-        substitutes: awaySubs,
+        formation: matchLineup.away.formation,
+        coach: matchLineup.away.coach.isNotEmpty ? matchLineup.away.coach : null,
+        startingXI: matchLineup.away.starters
+            .map((p) => LineupPlayer.fromApiPlayer(p))
+            .toList(),
+        substitutes: matchLineup.away.substitutes
+            .map((p) => LineupPlayer.fromApiPlayer(p, isSubstitute: true))
+            .toList(),
       ),
     );
   }
