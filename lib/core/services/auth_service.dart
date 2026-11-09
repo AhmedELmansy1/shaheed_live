@@ -2,9 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Provides the [FirebaseAuth] singleton instance.
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
-  return FirebaseAuth.instance;
+/// Provides the [FirebaseAuth] singleton instance (or null if Firebase is not yet initialized).
+final firebaseAuthProvider = Provider<FirebaseAuth?>((ref) {
+  try {
+    return FirebaseAuth.instance;
+  } catch (_) {
+    return null;
+  }
 });
 
 /// StreamProvider that reactively tracks the Firebase Auth state.
@@ -12,7 +16,11 @@ final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
 /// Emits the current [User] on sign-in/sign-out events.
 /// UI widgets watching this will rebuild automatically if the auth state changes.
 final authStateProvider = StreamProvider<User?>((ref) {
-  return ref.watch(firebaseAuthProvider).authStateChanges();
+  final auth = ref.watch(firebaseAuthProvider);
+  if (auth == null) {
+    return const Stream.empty();
+  }
+  return auth.authStateChanges();
 });
 
 /// Convenience provider exposing the current Firebase uid (or null).
@@ -28,19 +36,34 @@ final currentUidProvider = Provider<String?>((ref) {
 /// - If Firebase is unavailable (no internet on first launch, misconfigured),
 ///   the app continues fully functional using shared_preferences only.
 class AuthService {
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _explicitAuth;
 
-  AuthService(this._auth);
+  AuthService([this._explicitAuth]);
+
+  FirebaseAuth? get _auth {
+    if (_explicitAuth != null) return _explicitAuth;
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Returns the current uid if already signed in.
-  String? get currentUid => _auth.currentUser?.uid;
+  String? get currentUid => _auth?.currentUser?.uid;
 
   /// Ensures the user is anonymously authenticated.
   ///
   /// Returns the uid on success, or null on failure (logged, never thrown).
   Future<String?> ensureAuthenticated() async {
     try {
-      final currentUser = _auth.currentUser;
+      final auth = _auth;
+      if (auth == null) {
+        debugPrint('[AuthService] FirebaseAuth not available yet; skipping anonymous auth.');
+        return null;
+      }
+
+      final currentUser = auth.currentUser;
       if (currentUser != null) {
         debugPrint(
           '[AuthService] Already authenticated: uid=${currentUser.uid}',
@@ -51,7 +74,7 @@ class AuthService {
       debugPrint(
         '[AuthService] No existing session — signing in anonymously...',
       );
-      final credential = await _auth.signInAnonymously();
+      final credential = await auth.signInAnonymously();
       final uid = credential.user?.uid;
       debugPrint('[AuthService] Anonymous sign-in successful: uid=$uid');
       return uid;

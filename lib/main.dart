@@ -13,9 +13,11 @@ import 'core/routing/app_router.dart';
 import 'core/services/ad_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/firebase_ready_provider.dart';
 import 'core/services/match_reminder_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/remote_config_service.dart';
+import 'core/services/sync_queue_service.dart';
 import 'core/services/user_sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -26,14 +28,8 @@ import 'firebase_options.dart';
 /// Top-level background message handler for FCM
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('[FCM Background] 📩 Handling background message ID: ${message.messageId}');
-  debugPrint('[FCM Background]   - Topic/From: ${message.from}');
-  debugPrint('[FCM Background]   - Data: ${message.data}');
-  debugPrint('[FCM Background]   - Notification: title="${message.notification?.title}", body="${message.notification?.body}"');
-}
-
-Future<void> _initFirebaseSafely() async {
-  try {
+  // Ensure Firebase is initialized inside the background isolate if cold-started
+  if (Firebase.apps.isEmpty) {
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -41,11 +37,11 @@ Future<void> _initFirebaseSafely() async {
     } catch (_) {
       await Firebase.initializeApp();
     }
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    debugPrint('[Main] Firebase initialized successfully.');
-  } catch (e) {
-    debugPrint('[Main] Firebase initialization fallback/skipped: $e');
   }
+  debugPrint('[FCM Background] 📩 Handling background message ID: ${message.messageId}');
+  debugPrint('[FCM Background]   - Topic/From: ${message.from}');
+  debugPrint('[FCM Background]   - Data: ${message.data}');
+  debugPrint('[FCM Background]   - Notification: title="${message.notification?.title}", body="${message.notification?.body}"');
 }
 
 Future<void> _initNotificationsSafely() async {
@@ -68,25 +64,21 @@ void main() async {
     SharedPreferences.getInstance(),
   ]);
 
-  // Launch background services without blocking the first Flutter frame
-  final firebaseInitFuture = _initFirebaseSafely();
+  // Launch local notifications service without blocking first frame
   final notifInitFuture = _initNotificationsSafely();
 
   runApp(ProviderScope(
     child: ShootLiveApp(
-      firebaseInitFuture: firebaseInitFuture,
       notifInitFuture: notifInitFuture,
     ),
   ));
 }
 
 class ShootLiveApp extends ConsumerStatefulWidget {
-  final Future<void>? firebaseInitFuture;
   final Future<void>? notifInitFuture;
 
   const ShootLiveApp({
     super.key,
-    this.firebaseInitFuture,
     this.notifInitFuture,
   });
 
@@ -115,14 +107,15 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
         await widget.notifInitFuture;
       }
 
-      // 3. Wait for Firebase initialization
-      if (widget.firebaseInitFuture != null) {
-        await widget.firebaseInitFuture;
-      }
+      // 3. Initialize Firebase via dedicated firebaseReadyProvider with background message registration
+      final firebaseNotifier = ref.read(firebaseReadyProvider.notifier);
+      await firebaseNotifier.initializeFirebase(
+        backgroundMessageHandler: _firebaseMessagingBackgroundHandler,
+      );
 
-      // 4. Initialize FCM foreground listener
+      // 4. Initialize FCM listeners (guarded inside by firebaseReadyProvider)
       try {
-        ref.read(fcmServiceProvider).init();
+        await ref.read(fcmServiceProvider).init();
       } catch (e) {
         debugPrint('[Main] FCM service init skipped/failed: $e');
       }
@@ -132,7 +125,16 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
         ref.read(adServiceProvider).loadAppOpenAd();
       } catch (_) {}
 
-      // 6. Background Auth and Cloud Sync (guarded for runtime when Firebase is configured)
+      // 6. Start connectivity listener and reconcile any pending syncs
+      try {
+        final syncQueue = ref.read(syncQueueServiceProvider);
+        syncQueue.startConnectivityMonitoring();
+        syncQueue.processPendingSync();
+      } catch (e) {
+        debugPrint('[Main] SyncQueue init notice: $e');
+      }
+
+      // 7. Background Auth and Cloud Sync (guarded for runtime when Firebase is configured)
       if (Firebase.apps.isNotEmpty) {
         try {
           ref.read(authServiceProvider).ensureAuthenticated().then((_) {
@@ -146,7 +148,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
           debugPrint('[Main] Auth notice: $e');
         }
 
-        // 7. Reschedule pending match reminders
+        // 8. Reschedule pending match reminders
         try {
           ref.read(matchReminderServiceProvider).rescheduleAllReminders().catchError((e) {
             debugPrint('[Main] Match reminder reschedule notice: $e');
@@ -155,7 +157,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
           debugPrint('[Main] Match reminder reschedule notice: $e');
         }
 
-        // 8. Fetch initial remote config
+        // 9. Fetch initial remote config
         () async {
           try {
             await ref.read(remoteConfigServiceProvider).fetchInitialConfig();

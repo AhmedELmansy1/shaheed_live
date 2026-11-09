@@ -29,14 +29,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// continuous session), local and cloud stay in sync via push-after-onboarding,
 /// so the conflict path rarely triggers.
 class UserSyncService {
-  final FirebaseFirestore _firestore;
-  final FirebaseAuth _auth;
+  final FirebaseFirestore? _explicitFirestore;
+  final FirebaseAuth? _explicitAuth;
 
-  UserSyncService(this._firestore, this._auth);
+  UserSyncService([this._explicitFirestore, this._explicitAuth]);
+
+  FirebaseFirestore? get _firestore {
+    if (_explicitFirestore != null) return _explicitFirestore;
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseAuth? get _auth {
+    if (_explicitAuth != null) return _explicitAuth;
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// The Firestore document path for the current user.
   String? get _userDocPath {
-    final uid = _auth.currentUser?.uid;
+    final uid = _auth?.currentUser?.uid;
     if (uid == null) return null;
     return 'users/$uid';
   }
@@ -51,6 +69,14 @@ class UserSyncService {
       if (docPath == null) {
         debugPrint(
           '[UserSyncService] pushLocalToFirestore: No authenticated user — skipping.',
+        );
+        return;
+      }
+
+      final fs = _firestore;
+      if (fs == null) {
+        debugPrint(
+          '[UserSyncService] pushLocalToFirestore: Firestore not available — skipping.',
         );
         return;
       }
@@ -74,7 +100,7 @@ class UserSyncService {
           ? 'ios'
           : 'android';
 
-      final docRef = _firestore.doc(docPath);
+      final docRef = fs.doc(docPath);
       final docSnapshot = await docRef.get();
 
       final data = <String, dynamic>{
@@ -127,7 +153,15 @@ class UserSyncService {
         return;
       }
 
-      final docRef = _firestore.doc(docPath);
+      final fs = _firestore;
+      if (fs == null) {
+        debugPrint(
+          '[UserSyncService] pullFirestoreToLocal: Firestore not available — skipping.',
+        );
+        return;
+      }
+
+      final docRef = fs.doc(docPath);
       final docSnapshot = await docRef.get();
 
       if (!docSnapshot.exists) {
@@ -209,5 +243,5 @@ class UserSyncService {
 
 /// Riverpod provider for [UserSyncService].
 final userSyncServiceProvider = Provider<UserSyncService>((ref) {
-  return UserSyncService(FirebaseFirestore.instance, FirebaseAuth.instance);
+  return UserSyncService();
 });

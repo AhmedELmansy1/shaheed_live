@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/services/match_reminder_service.dart';
+import '../../../core/services/sync_queue_service.dart';
 import '../../../core/services/user_sync_service.dart';
 import '../../../data/models/league_model.dart';
 import '../../../data/models/team_model.dart';
@@ -249,7 +250,8 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   /// High-performance instant onboarding completion:
-  /// Batches local storage writes, updates state instantly, and offloads network sync to the background.
+  /// Batches local storage writes, updates state instantly, enqueues persistent sync,
+  /// and offloads network sync to the background with automatic retry.
   Future<void> fastCompleteOnboarding() async {
     final selectedTeams = List<String>.from(state.selectedTeamIds);
     state = state.copyWith(hasCompletedOnboarding: true);
@@ -259,16 +261,13 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     await prefs.setStringList('selected_teams', selectedTeams);
     await prefs.setBool('hasCompletedOnboarding', true);
 
-    // 2. Offload network/FCM tasks to background without awaiting
-    Future.microtask(() async {
-      try {
-        final reminderService = ref.read(matchReminderServiceProvider);
-        await reminderService.syncTeamTopicSubscriptions(selectedTeams);
-      } catch (e) {
-        debugPrint('[OnboardingNotifier] Background FCM sync notice: $e');
-      }
+    // 2. Enqueue deferred sync work (persists pending flag + teams)
+    final syncQueue = ref.read(syncQueueServiceProvider);
+    await syncQueue.enqueueOnboardingSync(selectedTeams);
 
-      _pushToFirestoreAsync();
+    // 3. Offload immediate sync attempt to background without blocking the UI
+    Future.microtask(() async {
+      await syncQueue.processPendingSync();
     });
   }
 
@@ -286,6 +285,8 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('selected_leagues');
     await prefs.remove('selected_teams');
+    await prefs.remove(SyncQueueService.keyPendingOnboardingSync);
+    await prefs.remove(SyncQueueService.keyPendingSyncTeams);
     await prefs.setBool('hasCompletedOnboarding', false);
     state = state.copyWith(
       hasCompletedOnboarding: false,

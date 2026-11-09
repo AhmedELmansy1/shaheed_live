@@ -11,8 +11,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/fcm_service.dart';
+import '../../core/services/firebase_ready_provider.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/remote_config_service.dart';
+import '../../core/services/sync_queue_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -40,6 +42,10 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
   String? _fcmToken;
   String? _authUid;
   bool? _isAnonymous;
+  String? _firebaseInitStatusText;
+  bool _firebaseInitReady = false;
+  String? _pendingSyncStatusText;
+  bool _isSyncClean = true;
   List<String> _subscribedTopics = [];
   bool _isTestTopicEnabled = false;
   int _pendingRemindersCount = 0;
@@ -65,7 +71,36 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
       _appVersion = '${pkg.version} (${pkg.buildNumber})';
       _packageName = pkg.packageName;
 
-      // 2. Firebase Project ID & Auth Status
+      // 2. Firebase Initialization Status & Duration
+      try {
+        final readyState = ref.read(firebaseReadyProvider);
+        if (readyState.isReady) {
+          _firebaseInitStatusText = 'جاهز ومفعل (${readyState.initDurationMs}ms)';
+          _firebaseInitReady = true;
+        } else if (readyState.status == FirebaseInitStatus.failed) {
+          _firebaseInitStatusText = 'فشل (${readyState.initDurationMs}ms): ${readyState.error}';
+          _firebaseInitReady = false;
+        } else {
+          _firebaseInitStatusText = 'قيد التهيئة أو غير مفعل';
+          _firebaseInitReady = false;
+        }
+      } catch (e) {
+        _firebaseInitStatusText = 'غير متاح ($e)';
+        _firebaseInitReady = false;
+      }
+
+      // 3. Deferred Cloud Sync State (Pending Sync Queue)
+      try {
+        final syncQueue = ref.read(syncQueueServiceProvider);
+        _pendingSyncStatusText = await syncQueue.getSyncStatusDescription();
+        final hasPending = await syncQueue.hasPendingSync();
+        _isSyncClean = !hasPending;
+      } catch (e) {
+        _pendingSyncStatusText = 'خطأ في الفحص: $e';
+        _isSyncClean = false;
+      }
+
+      // 4. Firebase Project ID & Auth Status
       try {
         _firebaseProjectId = Firebase.app().options.projectId;
         final authUser = FirebaseAuth.instance.currentUser;
@@ -76,7 +111,7 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
         _authUid = 'Auth unavailable: $e';
       }
 
-      // 3. Notification permission status
+      // 5. Notification permission status
       try {
         _notificationPermissionStatus = await Permission.notification.status;
       } catch (e) {
@@ -268,6 +303,18 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
                       _buildInfoRow('إصدار التطبيق', _appVersion ?? '—'),
                       _buildDivider(border),
                       _buildInfoRow('معرف مشروع Firebase', _firebaseProjectId ?? '—'),
+                      _buildDivider(border),
+                      _buildInfoRow(
+                        'حالة تشغيل Firebase',
+                        _firebaseInitStatusText ?? '—',
+                        isHighlighted: _firebaseInitReady,
+                      ),
+                      _buildDivider(border),
+                      _buildInfoRow(
+                        'مزامنة البيانات المعلقة (Pending Cloud Sync)',
+                        _pendingSyncStatusText ?? '—',
+                        isHighlighted: _isSyncClean,
+                      ),
                       _buildDivider(border),
                       _buildInfoRow(
                         'حالة تسجيل الدخول (Auth UID)',

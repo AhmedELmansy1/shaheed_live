@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'firebase_ready_provider.dart';
 import 'match_reminder_service.dart';
 import 'notification_service.dart';
 import '../utils/date_formatter.dart';
@@ -56,17 +58,26 @@ class FcmService {
 
   FcmService(this._notificationService, this._ref);
 
-  void init() {
-    // 0. Auto-subscribe to the global 'all' broadcast topic
+  Future<void> init() async {
+    // 0. Wait for Firebase readiness so background/deferred init does not crash
+    final isReady = await _ref
+        .read(firebaseReadyProvider.notifier)
+        .awaitReady(timeout: const Duration(seconds: 5));
+    if (!isReady || Firebase.apps.isEmpty) {
+      debugPrint('[FCM] Firebase not ready or available; skipping FCM init.');
+      return;
+    }
+
+    // 1. Auto-subscribe to the global 'all' broadcast topic
     subscribeToGlobalBroadcast();
 
-    // 1. Foreground message receiver
+    // 2. Foreground message receiver
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('[FCM Foreground] 📩 Message received: ${message.messageId}, from: ${message.from}');
       handleForegroundMessage(message);
     });
 
-    // 2. Token refresh listener - re-subscribe to all active match topics if token rotates
+    // 3. Token refresh listener - re-subscribe to all active match topics if token rotates
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       debugPrint('[FCM] 🔄 Registration token refreshed: $newToken');
       try {

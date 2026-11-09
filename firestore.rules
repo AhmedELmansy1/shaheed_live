@@ -18,10 +18,10 @@ service cloud.firestore {
     }
 
     // 2. Per-Match Live Stream Configurations
-    // - Public read-only for mobile clients
+    // - Authenticated read-only for client apps (including anonymous users)
     // - Writes (create/update/delete) allowed ONLY for verified administrators
     match /match_streams/{matchId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if isAdmin();
     }
 
