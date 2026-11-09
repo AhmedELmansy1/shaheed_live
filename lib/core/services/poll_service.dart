@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -136,32 +137,61 @@ class PollService {
 
     debugPrint('[PollService] Submitting vote to: $url for match: $matchId, opt: $optionId');
 
-    final response = await _dio.post(
-      url,
-      data: {
-        'match_id': matchId,
-        'option_id': optionId,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $idToken',
-          'Content-Type': 'application/json',
+    Response response;
+    try {
+      response = await _dio.post(
+        url,
+        data: {
+          'match_id': matchId,
+          'option_id': optionId,
         },
-        validateStatus: (status) => status != null && status < 500,
-      ),
-    );
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+          responseType: ResponseType.json,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+    } catch (netErr) {
+      debugPrint('[PollService] Network error posting vote: $netErr');
+      throw Exception('تعذر الاتصال بخادم التصويت، يرجى التحقق من اتصالك بالإنترنت');
+    }
 
-    if (response.statusCode == 200 && response.data != null) {
+    // Safely parse response data whether returned as Map, String, or dynamic
+    dynamic responseBody = response.data;
+    if (responseBody is String) {
+      try {
+        responseBody = jsonDecode(responseBody);
+      } catch (_) {
+        responseBody = null;
+      }
+    }
+
+    if (response.statusCode == 200 && responseBody is Map) {
       // Save local receipt to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localReceiptKey(matchId), optionId);
 
-      final pollData = response.data['poll'] as Map<String, dynamic>;
-      return PollModel.fromMap(pollData, matchId, userVotedOptionId: optionId);
+      final rawPoll = responseBody['poll'];
+      if (rawPoll is Map) {
+        final pollData = Map<String, dynamic>.from(rawPoll);
+        return PollModel.fromMap(pollData, matchId, userVotedOptionId: optionId);
+      }
     }
 
-    final errorMsg = response.data?['error']?.toString() ??
-        'حدث خطأ أثناء تسجيل التصويت (كود ${response.statusCode})';
+    String errorMsg = 'حدث خطأ أثناء تسجيل التصويت (كود ${response.statusCode})';
+    if (responseBody is Map && responseBody['error'] != null) {
+      errorMsg = responseBody['error'].toString();
+    } else if (response.statusCode == 409) {
+      errorMsg = 'تم تسجيل تصويتك في هذا الاستطلاع مسبقاً';
+    } else if (response.statusCode == 403) {
+      errorMsg = 'هذا الاستطلاع مغلق حالياً';
+    } else if (response.statusCode == 401) {
+      errorMsg = 'يجب تسجيل الدخول للمشاركة في التصويت';
+    }
+
     throw Exception(errorMsg);
   }
 }

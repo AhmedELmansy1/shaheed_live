@@ -133,8 +133,9 @@ class ThemeConfigModel {
       return const ThemeConfigModel();
     }
 
-    final themeMap = (rawMap['theme_config'] is Map<String, dynamic>)
-        ? rawMap['theme_config'] as Map<String, dynamic>
+    final dynamic rawTheme = rawMap['theme_config'];
+    final Map<String, dynamic> themeMap = (rawTheme is Map)
+        ? Map<String, dynamic>.from(rawTheme)
         : rawMap;
 
     final enabled = (themeMap['enabled'] as bool?) ?? true;

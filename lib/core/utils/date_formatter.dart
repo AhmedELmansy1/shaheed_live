@@ -25,6 +25,9 @@ import '../../data/api/match_score_api.dart';
 /// `MatchesRepository.getMatchesByDate`. This guarantees that users in any time zone see matches bucketed
 /// according to their own local calendar day.
 class DateFormatter {
+  /// Global kickoff offset hours dynamically synced with dashboard theme/DST configuration.
+  static int globalKickoffOffsetHours = 0;
+
   /// Converts any string containing English digits (0-9) to Eastern Arabic digits (٠-٩).
   static String toArabicNumerals(String input) {
     const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -46,6 +49,8 @@ class DateFormatter {
         rawTime.isEmpty) {
       return '----';
     }
+
+    final effectiveOffset = offsetHours != 0 ? offsetHours : globalKickoffOffsetHours;
 
     try {
       final dateParts = rawDate.trim().split('-');
@@ -73,8 +78,8 @@ class DateFormatter {
       // Convert to local device timezone
       var localDateTime = cairoTZDateTime.toLocal();
 
-      if (offsetHours != 0) {
-        final clamped = offsetHours.clamp(-3, 3);
+      if (effectiveOffset != 0) {
+        final clamped = effectiveOffset.clamp(-3, 3);
         localDateTime = localDateTime.add(Duration(hours: clamped));
       }
 
@@ -84,8 +89,8 @@ class DateFormatter {
       try {
         var hour = int.tryParse(rawTime.substring(0, 2)) ?? 0;
         final minute = rawTime.substring(2, 5);
-        if (offsetHours != 0) {
-          hour = (hour + offsetHours.clamp(-3, 3)) % 24;
+        if (effectiveOffset != 0) {
+          hour = (hour + effectiveOffset.clamp(-3, 3)) % 24;
           if (hour < 0) hour += 24;
         }
         final hourStr = hour.toString().padLeft(2, '0');
@@ -106,6 +111,8 @@ class DateFormatter {
         rawTime.isEmpty) {
       return null;
     }
+
+    final effectiveOffset = offsetHours != 0 ? offsetHours : globalKickoffOffsetHours;
 
     try {
       final dateParts = rawDate.trim().split('-');
@@ -130,8 +137,8 @@ class DateFormatter {
       );
 
       var localDateTime = sourceTZDateTime.toLocal();
-      if (offsetHours != 0) {
-        final clamped = offsetHours.clamp(-3, 3);
+      if (effectiveOffset != 0) {
+        final clamped = effectiveOffset.clamp(-3, 3);
         localDateTime = localDateTime.add(Duration(hours: clamped));
       }
       return localDateTime;

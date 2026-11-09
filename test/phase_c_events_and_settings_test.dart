@@ -291,6 +291,13 @@ void main() {
 
   group('Clean Settings Screen Redesign Tests', () {
     testWidgets('SettingsScreen renders strictly wired controls and no debug junk', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       SharedPreferences.setMockInitialValues({
         'pref_notify_match_start': true,
         'pref_notify_goal_alerts': false,

@@ -164,7 +164,9 @@ class _StreamReportBottomSheetState
                       ),
                     ),
                     Text(
-                      '${widget.serverName} • ${widget.matchTitle}',
+                      widget.matchId == 0
+                          ? 'ملاحظة عامة على خدمة البث'
+                          : '${widget.serverName} • ${widget.matchTitle}',
                       style: TextStyle(
                         fontSize: 11,
                         color: context.textMuted,

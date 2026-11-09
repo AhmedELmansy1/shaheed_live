@@ -248,7 +248,7 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      id: id,
+      id: (id.abs()) % 100000,
       title: title,
       body: body,
       notificationDetails: details,

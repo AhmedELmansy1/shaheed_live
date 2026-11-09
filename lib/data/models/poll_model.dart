@@ -78,8 +78,14 @@ class PollModel {
     final optionsList = <PollOption>[];
     if (rawOptions is List) {
       for (final item in rawOptions) {
-        if (item is Map<String, dynamic>) {
-          optionsList.add(PollOption.fromMap(item));
+        if (item is Map) {
+          optionsList.add(PollOption.fromMap(Map<String, dynamic>.from(item)));
+        }
+      }
+    } else if (rawOptions is Map) {
+      for (final item in rawOptions.values) {
+        if (item is Map) {
+          optionsList.add(PollOption.fromMap(Map<String, dynamic>.from(item)));
         }
       }
     }

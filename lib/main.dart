@@ -22,6 +22,7 @@ import 'core/services/sync_queue_service.dart';
 import 'core/services/user_sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/utils/date_formatter.dart';
 import 'core/utils/timezone_helper.dart';
 import 'presentation/widgets/animated_app_background.dart';
 import 'firebase_options.dart';
@@ -222,6 +223,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final themeConfig = ref.watch(currentThemeConfigProvider);
+    DateFormatter.globalKickoffOffsetHours = themeConfig.kickoffOffsetHours;
     final lightColors = themeConfig.toThemeColors(isDark: false);
     final darkColors = themeConfig.toThemeColors(isDark: true);
 

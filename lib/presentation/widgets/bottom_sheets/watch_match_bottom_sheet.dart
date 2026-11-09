@@ -14,6 +14,7 @@ import '../../../data/models/match_stream_model.dart';
 import '../../match_details/providers/match_stream_provider.dart';
 import '../../match_details/screens/embed_player_screen.dart';
 import '../../match_details/screens/hls_player_screen.dart';
+import '../../match_details/widgets/stream_report_sheet.dart';
 import '../app_button.dart';
 import '../app_card.dart';
 
@@ -147,6 +148,34 @@ class WatchMatchBottomSheet extends ConsumerWidget {
             final server = servers[index];
             return _buildServerCard(context: context, server: server);
           },
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+        Center(
+          child: TextButton.icon(
+            icon: const Icon(Icons.flag_outlined, size: 16, color: Colors.amber),
+            label: Text(
+              'إبلاغ عن عطل أو مشكلة في خوادم البث',
+              style: TextStyle(
+                fontSize: 12,
+                color: textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              final matchTitle = match != null
+                  ? '${match!.homeTeam.title} vs ${match!.awayTeam.title}'
+                  : 'مباراة مباشرة';
+              StreamReportBottomSheet.show(
+                context,
+                matchId: matchId,
+                matchTitle: matchTitle,
+                serverId: servers.isNotEmpty ? servers.first.id : 'all_servers',
+                serverName: servers.isNotEmpty ? servers.first.name : 'خوادم البث',
+              );
+            },
+          ),
         ),
       ],
     );
@@ -352,7 +381,33 @@ class WatchMatchBottomSheet extends ConsumerWidget {
           ?middleWidget,
           ?actionWidget,
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            icon: const Icon(Icons.report_problem_outlined, size: 15, color: Colors.amber),
+            label: Text(
+              'إبلاغ عن عطل أو طلب تفعيل البث',
+              style: TextStyle(
+                color: textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              final matchTitle = match != null
+                  ? '${match!.homeTeam.title} vs ${match!.awayTeam.title}'
+                  : 'مباراة مباشرة';
+              StreamReportBottomSheet.show(
+                context,
+                matchId: matchId,
+                matchTitle: matchTitle,
+                serverId: 'waiting_state',
+                serverName: 'البث قيد التجهيز',
+              );
+            },
+          ),
+
+          const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 12),
 
@@ -542,6 +597,10 @@ class WatchMatchBottomSheet extends ConsumerWidget {
 
     Navigator.of(context).pop(); // Close bottom sheet
 
+    final matchTitle = match != null
+        ? '${match!.homeTeam.title} vs ${match!.awayTeam.title}'
+        : 'مباراة مباشرة';
+
     switch (server.playerType) {
       case PlayerType.hls:
         Navigator.of(context).push(
@@ -549,6 +608,9 @@ class WatchMatchBottomSheet extends ConsumerWidget {
             builder: (_) => HlsPlayerScreen(
               streamUrl: server.streamUrl,
               serverName: server.name,
+              matchId: matchId,
+              matchTitle: matchTitle,
+              serverId: server.id,
             ),
           ),
         );
@@ -560,6 +622,9 @@ class WatchMatchBottomSheet extends ConsumerWidget {
             builder: (_) => EmbedPlayerScreen(
               streamUrl: server.streamUrl,
               serverName: server.name,
+              matchId: matchId,
+              matchTitle: matchTitle,
+              serverId: server.id,
             ),
           ),
         );

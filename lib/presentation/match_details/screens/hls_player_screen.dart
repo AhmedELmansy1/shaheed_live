@@ -2,15 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/theme/app_colors.dart';
+import '../widgets/stream_report_sheet.dart';
 
 class HlsPlayerScreen extends StatefulWidget {
   final String streamUrl;
   final String serverName;
+  final dynamic matchId;
+  final String? matchTitle;
+  final String? serverId;
 
   const HlsPlayerScreen({
     super.key,
     required this.streamUrl,
     required this.serverName,
+    this.matchId,
+    this.matchTitle,
+    this.serverId,
   });
 
   @override
@@ -111,6 +118,21 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flag_outlined, color: Colors.amberAccent),
+            tooltip: 'إبلاغ عن عطل في البث',
+            onPressed: () {
+              StreamReportBottomSheet.show(
+                context,
+                matchId: widget.matchId ?? 0,
+                matchTitle: widget.matchTitle ?? 'مباراة مباشرة',
+                serverId: widget.serverId ?? 'hls_server',
+                serverName: widget.serverName,
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -245,17 +267,43 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 20),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: _initializePlayer,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('إعادة المحاولة'),
               ),
-            ),
-            onPressed: _initializePlayer,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('إعادة المحاولة'),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.amberAccent,
+                  side: const BorderSide(color: Colors.amberAccent),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  StreamReportBottomSheet.show(
+                    context,
+                    matchId: widget.matchId ?? 0,
+                    matchTitle: widget.matchTitle ?? 'مباراة مباشرة',
+                    serverId: widget.serverId ?? 'hls_server',
+                    serverName: widget.serverName,
+                  );
+                },
+                icon: const Icon(Icons.flag_outlined, size: 18),
+                label: const Text('إبلاغ عن عطل'),
+              ),
+            ],
           ),
         ],
       ),

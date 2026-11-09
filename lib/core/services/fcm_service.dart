@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_ready_provider.dart';
 import 'match_reminder_service.dart';
 import 'notification_service.dart';
+import 'remote_config_service.dart';
 import '../utils/date_formatter.dart';
 
 class ReceivedFcmLog {
@@ -120,6 +121,59 @@ class FcmService {
     }
 
     setupInteractiveHandlers();
+    _setupFirestoreNotificationListener();
+  }
+
+  /// Listens to real-time instant notifications pushed to Firestore `config/app_settings`.
+  /// Provides guaranteed dual-delivery even when FCM is delayed by device battery management.
+  void _setupFirestoreNotificationListener() {
+    try {
+      final remoteConfig = _ref.read(remoteConfigServiceProvider);
+      remoteConfig.listenToLatestNotification().listen((notif) async {
+        if (notif == null || notif.isEmpty) return;
+        final notifId = notif['id']?.toString() ?? '';
+        final title = notif['title']?.toString() ?? '';
+        final body = notif['body']?.toString() ?? '';
+        if (title.isEmpty && body.isEmpty) return;
+
+        final prefs = await SharedPreferences.getInstance();
+        final lastSeenId = prefs.getString('last_seen_firestore_notif_id');
+
+        // Check if this notification has already been processed
+        if (notifId.isNotEmpty && lastSeenId == notifId) {
+          return;
+        }
+
+        // On cold start, record current ID without triggering notification to prevent stale alarms
+        if (lastSeenId == null) {
+          await prefs.setString('last_seen_firestore_notif_id', notifId);
+          return;
+        }
+
+        await prefs.setString('last_seen_firestore_notif_id', notifId);
+
+        debugPrint('[FCM Dual] 🔔 Displaying instant notification from Firestore: $title');
+        final matchId = notif['match_id']?.toString();
+        String? payload;
+        if (matchId != null && matchId.isNotEmpty) {
+          payload = jsonEncode({
+            'type': 'match_reminder',
+            'matchId': matchId,
+          });
+        }
+
+        final safeId = (notifId.hashCode.abs()) % 100000;
+        await _notificationService.showNotification(
+          safeId,
+          title,
+          DateFormatter.toArabicNumerals(body),
+          payload: payload,
+          channelId: NotificationService.channelMatches,
+        );
+      });
+    } catch (e) {
+      debugPrint('[FCM] Dual Firestore notification listener notice: $e');
+    }
   }
 
   /// Subscribes the device to the global broadcast topic ('all') matching dashboard sends.
@@ -310,7 +364,9 @@ class FcmService {
         ? NotificationService.channelReminders
         : (isTestNotification
             ? NotificationService.channelMatches
-            : NotificationService.channelLiveEvents);
+            : (eventType != null
+                ? NotificationService.channelLiveEvents
+                : NotificationService.channelMatches));
 
     recordMessageLog(ReceivedFcmLog(
       id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -321,8 +377,9 @@ class FcmService {
       data: Map<String, dynamic>.from(data),
     ));
 
+    final safeId = ((message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch).abs()) % 100000;
     await _notificationService.showNotification(
-      message.messageId.hashCode,
+      safeId,
       title,
       body,
       payload: payload,

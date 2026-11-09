@@ -17,6 +17,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/utils/date_formatter.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../diagnostics/diagnostics_screen.dart';
+import '../match_details/widgets/stream_report_sheet.dart';
 import '../widgets/app_card.dart';
 import '../widgets/battery_guidance_dialog.dart';
 
@@ -427,7 +428,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // 5. About & Legal Section
+          // 5. Stream Reports & Support Section
+          _buildSectionHeader('مركز البلاغات والدعم الفني', textSecondary),
+          AppCard(
+            padding: EdgeInsets.zero,
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            child: ListTile(
+              leading: const Icon(
+                Icons.support_agent_rounded,
+                color: Colors.amber,
+                size: 22,
+              ),
+              title: Text(
+                'مركز بلاغات وملاحظات البث المباشر',
+                style: AppTypography.titleSmall(color: textPrimary),
+              ),
+              subtitle: Text(
+                'إرسال ملاحظة أو بلاغ عن تقطيع أو توقف في خوادم البث المباشر',
+                style: AppTypography.caption(color: textSecondary),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: textMuted,
+                size: 15,
+              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                StreamReportBottomSheet.show(
+                  context,
+                  matchId: 0,
+                  matchTitle: 'ملاحظة عامة على خوادم البث',
+                  serverId: 'general_feedback',
+                  serverName: 'مركز الدعم الفني',
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // 6. About & Legal Section
           _buildSectionHeader('حول التطبيق', textSecondary),
           AppCard(
             padding: EdgeInsets.zero,

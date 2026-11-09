@@ -30,6 +30,7 @@ import 'tabs/news_tab.dart';
 import 'tabs/standings_tab.dart';
 import 'tabs/statistics_tab.dart';
 import 'widgets/poll_card.dart';
+import 'widgets/stream_report_sheet.dart';
 
 /// Premium Match Details Screen in "Paper × Ink × Vermilion".
 ///
@@ -198,6 +199,22 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                   ref.read(matchReminderServiceProvider).toggleReminder(match);
                 },
               ),
+
+            // Report Stream Issue Action
+            IconButton(
+              icon: const Icon(Icons.flag_outlined, color: Colors.amber, size: 20),
+              tooltip: 'إبلاغ عن مشكلة في البث',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                StreamReportBottomSheet.show(
+                  context,
+                  matchId: match.id,
+                  matchTitle: '${match.homeTeam.title} vs ${match.awayTeam.title}',
+                  serverId: 'match_details',
+                  serverName: 'صفحة تفاصيل المباراة',
+                );
+              },
+            ),
             const SizedBox(width: AppSpacing.xs),
           ],
         ),

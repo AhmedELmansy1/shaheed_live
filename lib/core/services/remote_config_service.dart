@@ -217,6 +217,24 @@ class RemoteConfigService {
     }
   }
 
+  /// Listens to real-time instant broadcast notifications pushed via dashboard to `config/app_settings`.
+  Stream<Map<String, dynamic>?> listenToLatestNotification() {
+    try {
+      return _getAppSettingsSnapshotStream().map((snapshot) {
+        if (snapshot.exists && snapshot.data() != null) {
+          final data = snapshot.data()!;
+          final notif = data['latest_notification'];
+          if (notif is Map) {
+            return Map<String, dynamic>.from(notif);
+          }
+        }
+        return null;
+      }).handleError((_) => null);
+    } catch (_) {
+      return Stream.value(null);
+    }
+  }
+
   Future<void> _cacheTicker(TickerConfigModel model) async {
     try {
       final prefs = await SharedPreferences.getInstance();
