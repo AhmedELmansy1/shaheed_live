@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/app_constants.dart';
 import '../../core/services/cache_service.dart';
+import '../../core/services/data_saver_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
@@ -455,6 +456,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   },
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Data Saver & Network Section
+          _buildSectionHeader('الشبكة واستهلاك البيانات', textSecondary),
+          AppCard(
+            padding: EdgeInsets.zero,
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            child: SwitchListTile.adaptive(
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+              activeTrackColor: AppColors.primary,
+              secondary: const Icon(
+                Icons.data_saver_on_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+              title: Text(
+                'وضع توفير البيانات المتطور (Data Saver)',
+                style: AppTypography.titleSmall(color: textPrimary),
+              ),
+              subtitle: Text(
+                'تفضيل جودات البث الخفيفة تلقائياً وترشيد استهلاك باقة الإنترنت',
+                style: AppTypography.caption(color: textSecondary),
+              ),
+              value: ref.watch(dataSaverModeProvider),
+              onChanged: (val) {
+                HapticFeedback.selectionClick();
+                ref.read(dataSaverModeProvider.notifier).setEnabled(val);
+              },
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

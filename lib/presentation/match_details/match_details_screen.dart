@@ -24,6 +24,7 @@ import 'providers/match_details_providers.dart';
 import 'providers/match_stream_provider.dart';
 import 'services/stream_player.dart';
 import 'tabs/events_tab.dart';
+import 'tabs/h2h_tab.dart';
 import 'tabs/info_tab.dart';
 import 'tabs/lineup_tab.dart';
 import 'tabs/news_tab.dart';
@@ -136,7 +137,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
     );
 
     return DefaultTabController(
-      length: 6,
+      length: 7,
       initialIndex: 0, // Events tab by default
       child: Scaffold(
         backgroundColor: bg,
@@ -264,6 +265,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                     Tab(text: 'الأحداث'),
                     Tab(text: 'التشكيلة'),
                     Tab(text: 'الإحصائيات'),
+                    Tab(text: 'المواجهات'),
                     Tab(text: 'الترتيب'),
                     Tab(text: 'الأخبار'),
                     Tab(text: 'معلومات'),
@@ -282,6 +284,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                     ),
                     LineupTab(params: params),
                     StatisticsTab(params: params),
+                    H2HTab(match: match),
                     StandingsTab(
                       matchId: int.tryParse(match.id) ?? 0,
                       homeTeamId: int.tryParse(match.homeTeamId?.toString() ?? ''),

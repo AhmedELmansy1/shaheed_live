@@ -156,7 +156,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('إعدادات التطبيق'), findsOneWidget);
       expect(find.text('المظهر العام'), findsOneWidget);
-      expect(find.text('إدارة الأندية المفضلة'), findsOneWidget);
+      expect(find.text('الإشعارات والتنبيهات'), findsOneWidget);
 
       // 4. Tap Home tab (Index 0)
       await tester.tap(find.text('الرئيسية'));

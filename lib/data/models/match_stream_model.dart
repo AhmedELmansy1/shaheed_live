@@ -39,6 +39,7 @@ class StreamServerModel {
   final PlayerType playerType;
   final bool isActive;
   final int priority;
+  final String? quality;
 
   const StreamServerModel({
     required this.id,
@@ -47,7 +48,23 @@ class StreamServerModel {
     required this.playerType,
     required this.isActive,
     required this.priority,
+    this.quality,
   });
+
+  bool get isAudioOnly =>
+      quality?.toLowerCase() == 'audio' ||
+      name.contains('صوت') ||
+      name.contains('راديو');
+
+  String get qualityLabel {
+    if (quality != null && quality!.isNotEmpty) return quality!;
+    if (name.contains('1080') || name.contains('FHD')) return '1080p FHD';
+    if (name.contains('720') || name.contains('HD')) return '720p HD';
+    if (name.contains('480') || name.contains('SD')) return '480p SD';
+    if (name.contains('360') || name.contains('ضعيف')) return '360p';
+    if (isAudioOnly) return 'راديو مباشر';
+    return 'جودة متعددة';
+  }
 
   /// Cleans and normalizes stream URLs, extracting iframe src attributes if pasted directly.
   static String normalizeStreamUrl(String raw) {
@@ -94,6 +111,7 @@ class StreamServerModel {
       ),
       isActive: (map['is_active'] as bool?) ?? (map['isActive'] as bool?) ?? true,
       priority: parsePriority(map['priority']),
+      quality: map['quality']?.toString(),
     );
   }
 
@@ -105,6 +123,7 @@ class StreamServerModel {
       'player_type': playerType.toValue(),
       'is_active': isActive,
       'priority': priority,
+      'quality': quality,
     };
   }
 }

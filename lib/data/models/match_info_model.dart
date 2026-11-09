@@ -1,3 +1,49 @@
+/// Recent match encounter or outcome representation
+class RecentMatchOutcome {
+  final String title;
+  final String result; // 'win', 'draw', 'lose'
+
+  const RecentMatchOutcome({required this.title, required this.result});
+
+  factory RecentMatchOutcome.fromMap(Map<String, dynamic> map) {
+    return RecentMatchOutcome(
+      title: (map['title'] ?? '').toString(),
+      result: (map['result'] ?? 'draw').toString(),
+    );
+  }
+}
+
+/// Team recent form and head-to-head statistics
+class TeamFormModel {
+  final String teamName;
+  final int wins;
+  final int draws;
+  final int losses;
+  final List<RecentMatchOutcome> recentMatches;
+
+  const TeamFormModel({
+    required this.teamName,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+    required this.recentMatches,
+  });
+
+  factory TeamFormModel.fromMap(Map<String, dynamic> map) {
+    final rawMatches = map['recent_matches'] as List<dynamic>? ?? [];
+    return TeamFormModel(
+      teamName: (map['team_name'] ?? '').toString(),
+      wins: int.tryParse(map['wins']?.toString() ?? '') ?? 0,
+      draws: int.tryParse(map['draws']?.toString() ?? '') ?? 0,
+      losses: int.tryParse(map['losses']?.toString() ?? '') ?? 0,
+      recentMatches: rawMatches
+          .whereType<Map<String, dynamic>>()
+          .map((m) => RecentMatchOutcome.fromMap(m))
+          .toList(),
+    );
+  }
+}
+
 /// Data model for match information endpoint (`type=match_info&id={id}`).
 ///
 /// Supports all historical and new field variations from Worker/Next.js backend:
@@ -8,6 +54,7 @@
 /// - `round`
 /// - `championship` / `championship_title` / `championship_image`
 /// - `events`, `lineup`, `statics`: Flags or integers.
+/// - `home_form`, `away_form`: Recent 5 matches and form history.
 class MatchInfoModel {
   final int matchId;
   final String? stadium;
@@ -20,6 +67,8 @@ class MatchInfoModel {
   final bool hasEvents;
   final bool hasLineup;
   final bool hasStatics;
+  final TeamFormModel? homeForm;
+  final TeamFormModel? awayForm;
 
   const MatchInfoModel({
     required this.matchId,
@@ -33,6 +82,8 @@ class MatchInfoModel {
     this.hasEvents = false,
     this.hasLineup = false,
     this.hasStatics = false,
+    this.homeForm,
+    this.awayForm,
   });
 
   factory MatchInfoModel.fromMap(Map<String, dynamic> map) {
@@ -77,6 +128,12 @@ class MatchInfoModel {
       hasEvents: parseFlag(map['events']),
       hasLineup: parseFlag(map['lineup']),
       hasStatics: parseFlag(map['statics']),
+      homeForm: map['home_form'] is Map<String, dynamic>
+          ? TeamFormModel.fromMap(map['home_form'] as Map<String, dynamic>)
+          : null,
+      awayForm: map['away_form'] is Map<String, dynamic>
+          ? TeamFormModel.fromMap(map['away_form'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

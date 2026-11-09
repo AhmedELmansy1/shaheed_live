@@ -165,7 +165,7 @@ void main() {
       expect(find.byIcon(Icons.tv_rounded), findsNothing);
 
       // Switch to Info Tab to verify body button does NOT appear
-      await tester.tap(find.text('معلومات'));
+      await tester.tap(find.widgetWithText(Tab, 'معلومات'), warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 

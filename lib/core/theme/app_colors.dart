@@ -62,6 +62,7 @@ class AppColors {
   static const Color live = darkVermilion;
   static const Color livePulse = darkVermilion;
   static const Color liveIndicator = darkVermilion;
+  static const Color success = Color(0xFF22C55E);
   static const Color gold = Color(0xFFD97706);
   static const Color goldGlow = Color(0x33D97706);
   static const Color pitchLine = Color(0xFF475569);

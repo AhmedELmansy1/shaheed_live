@@ -143,10 +143,15 @@ class WatchMatchBottomSheet extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: servers.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+          separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             final server = servers[index];
-            return _buildServerCard(context: context, server: server);
+            return _buildServerCard(
+              context: context,
+              server: server,
+              allServers: servers,
+              serverIndex: index,
+            );
           },
         ),
 
@@ -490,11 +495,14 @@ class WatchMatchBottomSheet extends ConsumerWidget {
   Widget _buildServerCard({
     required BuildContext context,
     required StreamServerModel server,
+    required List<StreamServerModel> allServers,
+    required int serverIndex,
   }) {
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
 
     IconData getIconForPlayerType(PlayerType type) {
+      if (server.isAudioOnly) return Icons.radio_rounded;
       switch (type) {
         case PlayerType.hls:
           return Icons.play_circle_fill_rounded;
@@ -506,6 +514,7 @@ class WatchMatchBottomSheet extends ConsumerWidget {
     }
 
     String getBadgeForPlayerType(PlayerType type) {
+      if (server.isAudioOnly) return 'بث صوتي مباشر (راديو منخفض الاستهلاك)';
       switch (type) {
         case PlayerType.hls:
           return 'مشغل HLS المباشر (عالي الجودة)';
@@ -521,18 +530,20 @@ class WatchMatchBottomSheet extends ConsumerWidget {
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
       ),
-      onTap: () => _handleServerTap(context, server),
+      onTap: () => _handleServerTap(context, server, allServers, serverIndex),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: server.isAudioOnly
+                  ? Colors.amber.withValues(alpha: 0.15)
+                  : AppColors.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
               getIconForPlayerType(server.playerType),
-              color: AppColors.primary,
+              color: server.isAudioOnly ? Colors.amber : AppColors.primary,
               size: 24,
             ),
           ),
@@ -541,11 +552,43 @@ class WatchMatchBottomSheet extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  server.name,
-                  style: AppTypography.titleMedium(color: textPrimary)
-                      .copyWith(fontWeight: FontWeight.bold),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      server.name,
+                      style: AppTypography.titleMedium(color: textPrimary)
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    if (server.quality != null && server.quality!.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: server.isAudioOnly
+                              ? Colors.amber.withValues(alpha: 0.2)
+                              : AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: server.isAudioOnly
+                                ? Colors.amber.withValues(alpha: 0.4)
+                                : AppColors.primary.withValues(alpha: 0.3),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          server.qualityLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: server.isAudioOnly ? Colors.amber : AppColors.primary,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 Text(
                   getBadgeForPlayerType(server.playerType),
                   style: AppTypography.caption(color: textSecondary),
@@ -601,7 +644,12 @@ class WatchMatchBottomSheet extends ConsumerWidget {
     );
   }
 
-  void _handleServerTap(BuildContext context, StreamServerModel server) {
+  void _handleServerTap(
+    BuildContext context,
+    StreamServerModel server,
+    List<StreamServerModel> allServers,
+    int serverIndex,
+  ) {
     final uri = Uri.tryParse(server.streamUrl.trim());
     if (uri == null || (!uri.isScheme('http') && !uri.isScheme('https'))) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -629,6 +677,8 @@ class WatchMatchBottomSheet extends ConsumerWidget {
               matchId: matchId,
               matchTitle: matchTitle,
               serverId: server.id,
+              servers: allServers,
+              initialServerIndex: serverIndex,
             ),
           ),
         );
