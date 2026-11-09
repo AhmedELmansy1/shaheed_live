@@ -1,3 +1,7 @@
+// ignore_for_file: avoid_print, unnecessary_overrides
+@Tags(['integration'])
+library;
+
 import 'dart:io';
 
 import 'package:dio/dio.dart';

@@ -138,3 +138,4 @@ final syncQueueServiceProvider = Provider<SyncQueueService>((ref) {
   ref.onDispose(() => service.dispose());
   return service;
 });
+

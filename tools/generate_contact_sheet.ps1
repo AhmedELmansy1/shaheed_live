@@ -1,4 +1,4 @@
-﻿Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Drawing
 
 $logoPath = "D:\My_Project\shoot_live\assets\branding\modarraj_logo_512.png"
 $outputPath = "D:\My_Project\shoot_live\assets\branding\preview\contact_sheet.png"
