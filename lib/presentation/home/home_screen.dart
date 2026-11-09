@@ -127,7 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'كل نتيجة، لحظة بلحظة',
+                      'بث مباشر وأهداف لحظة بلحظة',
                       style: AppTypography.labelSmall(color: textSecondary).copyWith(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.1,

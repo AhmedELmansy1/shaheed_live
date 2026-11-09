@@ -46,7 +46,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   // If the message has no system notification payload (e.g. data-only message), display it via local notifications
   if (message.notification == null && message.data.isNotEmpty) {
-    final title = message.data['title']?.toString() ?? 'مدرّج';
+    final title = message.data['title']?.toString() ?? 'شوت لايف';
     final body = message.data['body']?.toString() ?? '';
     if (title.isNotEmpty || body.isNotEmpty) {
       try {

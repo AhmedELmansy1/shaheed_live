@@ -31,7 +31,7 @@ $brushWhite = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslat
 $brushMuted = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#94A3B8"))
 $brushDarkText = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#0F172A"))
 
-$g.DrawString("MODARRAJ - BRANDING AND ICON CONTACT SHEET", $fontTitle, $brushWhite, 40, 25)
+$g.DrawString("SHOOT LIVE - BRANDING AND ICON CONTACT SHEET", $fontTitle, $brushWhite, 40, 25)
 $g.DrawString("Multi-density inspection: 512px, 192px, 96px, 72px, 48px | Adaptive Monochrome | Status Bar Notification", $fontSubtitle, $brushMuted, 40, 65)
 
 # Helper function to draw rounded container

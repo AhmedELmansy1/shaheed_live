@@ -6,15 +6,14 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/config/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 
-/// Professional, energetic football heraldic emblem and logo for "مدرّج" (Modarraj).
+/// Professional, high-octane football application emblem and logo for "شوت لايف" (Shoot Live).
 ///
-/// Concept: "Crest × 3D Football × Stadium Grandstand Tiers"
-/// - Powerful geometric football club shield badge with gold-vermilion outer rim.
-/// - 3D shaded football (soccer ball) with classic geometric pentagons, seams, and specular shine.
-/// - Dynamic curved stadium grandstand tiers ("مدرج") sweeping across the lower base.
-/// - Championship gold star at the crest apex.
-/// - Dynamic velocity swoosh with live pulse beacon.
-/// - 100% vector-rendered via [ModarrajLogoPainter], crisp at any density.
+/// Concept: "High-Velocity Rocket Football × Electric Live Pulse"
+/// - Bold modern squircle badge with electric flame-to-gold border.
+/// - Dynamic 3D shaded football captured in rocket flight ("شوت").
+/// - Triple speed comet trails and kinetic acceleration lines.
+/// - Pulsing live broadcast orbit ring and live beacon ("لايف").
+/// - Crisp, high-contrast, scalable vector rendering via [ShootLiveLogoPainter] / [ModarrajLogoPainter].
 class AppLogo extends StatelessWidget {
   final double size;
   final bool showSubtitle;
@@ -38,7 +37,7 @@ class AppLogo extends StatelessWidget {
       height: size,
       child: CustomPaint(
         size: Size(size, size),
-        painter: ModarrajLogoPainter(progress: progress),
+        painter: ShootLiveLogoPainter(progress: progress),
       ),
     );
 
@@ -73,11 +72,11 @@ class AppLogo extends StatelessWidget {
               width: size * 0.09,
               height: size * 0.09,
               decoration: const BoxDecoration(
-                color: Color(0xFFFF4528),
+                color: Color(0xFFFF3B30),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFFFF4528),
+                    color: Color(0xFFFF3B30),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -90,9 +89,9 @@ class AppLogo extends StatelessWidget {
           AppConstants.appTitle,
           style: GoogleFonts.cairo(
             fontSize: size * 0.16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            letterSpacing: 1.2,
+            letterSpacing: 1.5,
             height: 1.1,
           ),
         ),
@@ -121,242 +120,185 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-/// Custom painter rendering the premium "Crest × 3D Football × Stadium Tiers" logo.
-class ModarrajLogoPainter extends CustomPainter {
+/// Backwards compatibility alias for [ShootLiveLogoPainter].
+typedef ModarrajLogoPainter = ShootLiveLogoPainter;
+
+/// Custom painter rendering the explosive "Shoot Live" football emblem.
+class ShootLiveLogoPainter extends CustomPainter {
   final double progress;
 
-  const ModarrajLogoPainter({this.progress = 1.0});
+  const ShootLiveLogoPainter({this.progress = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
     final scale = size.width / 512.0;
 
-    // 1. Draw Outer Shield Drop Shadow
-    final shadowShield = _createShieldPath(scale, dy: 6.0 * scale);
-    canvas.drawPath(
-      shadowShield,
+    // 1. Draw Squircle Drop Shadow
+    final badgeRect = Rect.fromLTWH(16 * scale, 16 * scale, 480 * scale, 480 * scale);
+    final badgeRRect = RRect.fromRectAndRadius(badgeRect, Radius.circular(116 * scale));
+
+    canvas.drawRRect(
+      badgeRRect.shift(Offset(0, 8 * scale)),
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.40 * progress)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10.0 * scale),
+        ..color = Colors.black.withValues(alpha: 0.45 * progress)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12.0 * scale),
     );
 
-    // 2. Draw Shield Body with Deep Obsidian Gradient
-    final shieldPath = _createShieldPath(scale);
-    final shieldPaint = Paint()
+    // 2. Draw Squircle Body with Deep Obsidian Gradient
+    final bgPaint = Paint()
       ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
         colors: [
-          Color(0xFF0E1626),
-          Color(0xFF0A0F1D),
-          Color(0xFF050811),
+          Color(0xFF0B0F19),
+          Color(0xFF111827),
+          Color(0xFF070A10),
         ],
         stops: [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ).createShader(badgeRect);
+    canvas.drawRRect(badgeRRect, bgPaint);
 
-    canvas.drawPath(shieldPath, shieldPaint);
-
-    // 3. Draw Shield Golden-Vermilion Rim Border
+    // 3. Draw Outer Neon Rim Border (Flame Vermilion to Amber Gold)
     final rimPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
+          Color(0xFFFF3B30),
+          Color(0xFFFF8A00),
           Color(0xFFFFB800),
-          Color(0xFFFF5A36),
-          Color(0xFFE52D19),
         ],
         stops: [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ).createShader(badgeRect)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.2, 8.0 * scale)
-      ..strokeJoin = StrokeJoin.round;
+      ..strokeWidth = math.max(1.2, 7.0 * scale);
+    canvas.drawRRect(badgeRRect, rimPaint);
 
-    canvas.drawPath(shieldPath, rimPaint);
-
-    // Inner subtle precision border line
-    final innerShield = _createShieldPath(scale * 0.94, dy: 14.0 * scale, dx: 15.0 * scale);
-    final innerRimPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12 * progress)
+    // 4. Subtle Ambient Orbit Rings
+    final ringPaint1 = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05 * progress)
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(0.6, 2.0 * scale);
-    canvas.drawPath(innerShield, innerRimPaint);
+    canvas.drawCircle(Offset(260 * scale, 245 * scale), 175 * scale, ringPaint1);
 
-    // 4. Draw Apex Championship Star
-    _drawApexStar(canvas, scale);
+    // 5. Speed Comet Flame Trails ("SHOOT / شوت")
+    _drawSpeedTrails(canvas, scale);
 
-    // 5. Draw Stadium Grandstand ("مدرج") Tiers at Lower Shield
-    _drawStadiumTiers(canvas, scale);
-
-    // 6. Draw The Football (Soccer Ball)
+    // 6. The 3D Football (Soccer Ball)
     _drawFootball(canvas, scale);
 
-    // 7. Draw Velocity Swoosh and Live Pulse Beacon
-    _drawVelocitySwoosh(canvas, scale);
+    // 7. Live Pulse Orbit Ring & Beacon ("LIVE / لايف")
+    _drawLivePulse(canvas, scale);
   }
 
-  Path _createShieldPath(double scale, {double dx = 0.0, double dy = 0.0}) {
-    final path = Path();
-    final topApex = Offset(256 * scale + dx, 34 * scale + dy);
-    final topRight = Offset(434 * scale + dx, 70 * scale + dy);
-    final rightMid = Offset(434 * scale + dx, 270 * scale + dy);
-    final bottomTip = Offset(256 * scale + dx, 478 * scale + dy);
-    final leftMid = Offset(78 * scale + dx, 270 * scale + dy);
-    final topLeft = Offset(78 * scale + dx, 70 * scale + dy);
-
-    path.moveTo(topApex.dx, topApex.dy);
-    path.lineTo(topRight.dx, topRight.dy);
-    path.lineTo(rightMid.dx, rightMid.dy);
-    path.cubicTo(
-      434 * scale + dx,
-      380 * scale + dy,
-      348 * scale + dx,
-      452 * scale + dy,
-      bottomTip.dx,
-      bottomTip.dy,
+  void _drawSpeedTrails(Canvas canvas, double scale) {
+    // Dynamic Speed Lines behind the ball
+    final linePaint1 = Paint()
+      ..color = const Color(0xFFFF3B30).withValues(alpha: 0.7 * progress)
+      ..strokeWidth = math.max(1.0, 4.0 * scale)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(90 * scale, 360 * scale),
+      Offset(160 * scale, 290 * scale),
+      linePaint1,
     );
-    path.cubicTo(
-      164 * scale + dx,
-      452 * scale + dy,
-      78 * scale + dx,
-      380 * scale + dy,
-      leftMid.dx,
-      leftMid.dy,
+
+    final linePaint2 = Paint()
+      ..color = const Color(0xFFFF9500).withValues(alpha: 0.85 * progress)
+      ..strokeWidth = math.max(1.2, 5.0 * scale)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(120 * scale, 390 * scale),
+      Offset(195 * scale, 315 * scale),
+      linePaint2,
     );
-    path.lineTo(topLeft.dx, topLeft.dy);
-    path.close();
-    return path;
-  }
 
-  void _drawApexStar(Canvas canvas, double scale) {
-    final starCenter = Offset(256 * scale, 82 * scale);
-    final starPath = Path();
-    final outerR = 14.0 * scale;
-    final innerR = 6.0 * scale;
+    final linePaint3 = Paint()
+      ..color = const Color(0xFFFFB800).withValues(alpha: 0.7 * progress)
+      ..strokeWidth = math.max(1.0, 4.0 * scale)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(150 * scale, 420 * scale),
+      Offset(225 * scale, 345 * scale),
+      linePaint3,
+    );
 
-    for (int i = 0; i < 10; i++) {
-      final r = i.isEven ? outerR : innerR;
-      final angle = -math.pi / 2 + (i * math.pi / 5);
-      final x = starCenter.dx + r * math.cos(angle);
-      final y = starCenter.dy + r * math.sin(angle);
-      if (i == 0) {
-        starPath.moveTo(x, y);
-      } else {
-        starPath.lineTo(x, y);
-      }
-    }
-    starPath.close();
+    // Outer Speed Flame Trail
+    final flamePath1 = Path();
+    flamePath1.moveTo(80 * scale, 410 * scale);
+    flamePath1.cubicTo(130 * scale, 395 * scale, 170 * scale, 350 * scale, 205 * scale, 315 * scale);
+    flamePath1.cubicTo(220 * scale, 300 * scale, 235 * scale, 285 * scale, 250 * scale, 270 * scale);
+    flamePath1.cubicTo(225 * scale, 295 * scale, 195 * scale, 340 * scale, 145 * scale, 385 * scale);
+    flamePath1.cubicTo(120 * scale, 405 * scale, 95 * scale, 412 * scale, 80 * scale, 410 * scale);
+    flamePath1.close();
 
-    final starPaint = Paint()
-      ..color = const Color(0xFFFFB800).withValues(alpha: progress)
+    final flamePaint1 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: [
+          const Color(0x00FF3B30),
+          const Color(0xDDFF3B30).withValues(alpha: 0.85 * progress),
+          const Color(0xFFFF9500).withValues(alpha: progress),
+        ],
+        stops: const [0.0, 0.4, 1.0],
+      ).createShader(Rect.fromLTWH(80 * scale, 270 * scale, 170 * scale, 140 * scale))
       ..style = PaintingStyle.fill;
-    canvas.drawPath(starPath, starPaint);
+    canvas.drawPath(flamePath1, flamePaint1);
 
-    // Flanking gold accent dots
-    final dotPaint = Paint()
-      ..color = const Color(0xFFFFB800).withValues(alpha: 0.8 * progress);
-    canvas.drawCircle(Offset(224 * scale, 84 * scale), 2.5 * scale, dotPaint);
-    canvas.drawCircle(Offset(288 * scale, 84 * scale), 2.5 * scale, dotPaint);
-  }
+    // Core White-Hot Acceleration Streak
+    final flamePath2 = Path();
+    flamePath2.moveTo(140 * scale, 415 * scale);
+    flamePath2.cubicTo(185 * scale, 390 * scale, 230 * scale, 340 * scale, 265 * scale, 285 * scale);
+    flamePath2.cubicTo(280 * scale, 260 * scale, 290 * scale, 245 * scale, 295 * scale, 235 * scale);
+    flamePath2.cubicTo(280 * scale, 255 * scale, 250 * scale, 310 * scale, 205 * scale, 365 * scale);
+    flamePath2.cubicTo(175 * scale, 400 * scale, 150 * scale, 415 * scale, 140 * scale, 415 * scale);
+    flamePath2.close();
 
-  void _drawStadiumTiers(Canvas canvas, double scale) {
-    final arcCenter = Offset(256 * scale, 240 * scale);
-
-    // Tier 3: Upper Terrace Arc (White glow)
-    final tier3Paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.28 * progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.0, 7.0 * scale)
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: arcCenter, radius: 176 * scale),
-      35 * math.pi / 180,
-      110 * math.pi / 180,
-      false,
-      tier3Paint,
-    );
-
-    // Tier 2: Middle Terrace Arc (Radiant Gold)
-    final tier2Paint = Paint()
-      ..color = const Color(0xFFFFB800).withValues(alpha: 0.95 * progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.2, 9.0 * scale)
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: arcCenter, radius: 142 * scale),
-      37 * math.pi / 180,
-      106 * math.pi / 180,
-      false,
-      tier2Paint,
-    );
-
-    // Tier 1: Lower Terrace Arc (Electric Vermilion)
-    final tier1Paint = Paint()
-      ..color = const Color(0xFFFF4528).withValues(alpha: progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.5, 11.0 * scale)
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: arcCenter, radius: 108 * scale),
-      40 * math.pi / 180,
-      100 * math.pi / 180,
-      false,
-      tier1Paint,
-    );
-
-    // Terrace Vertical Radial Aisles
-    final aislePaint = Paint()
-      ..color = const Color(0xFF0E1626)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(0.8, 3.0 * scale)
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(216 * scale, 360 * scale),
-      Offset(204 * scale, 416 * scale),
-      aislePaint,
-    );
-    canvas.drawLine(
-      Offset(256 * scale, 364 * scale),
-      Offset(256 * scale, 422 * scale),
-      aislePaint,
-    );
-    canvas.drawLine(
-      Offset(296 * scale, 360 * scale),
-      Offset(308 * scale, 416 * scale),
-      aislePaint,
-    );
+    final flamePaint2 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: [
+          const Color(0x00FF9500),
+          const Color(0xEEFFB800).withValues(alpha: 0.9 * progress),
+          Colors.white.withValues(alpha: progress),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromLTWH(140 * scale, 235 * scale, 155 * scale, 180 * scale))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(flamePath2, flamePaint2);
   }
 
   void _drawFootball(Canvas canvas, double scale) {
-    final ballCenter = Offset(256 * scale, 210 * scale);
-    final ballRadius = 84.0 * scale;
+    final ballCenter = Offset(270 * scale, 235 * scale);
+    final ballRadius = 88.0 * scale;
 
     // 1. Ball Drop Shadow
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.50 * progress)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8.0 * scale);
+      ..color = Colors.black.withValues(alpha: 0.60 * progress)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10.0 * scale);
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(256 * scale, 306 * scale),
-        width: 144 * scale,
-        height: 28 * scale,
+        center: Offset(260 * scale, 340 * scale),
+        width: 160 * scale,
+        height: 32 * scale,
       ),
       shadowPaint,
     );
 
-    // 2. Spherical Ball Base with 3D Lighting
+    // 2. 3D Shaded Leather Sphere
     final spherePaint = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(-0.24, -0.36),
-        radius: 0.75,
+        center: const Alignment(-0.28, -0.36),
+        radius: 0.72,
         colors: const [
           Colors.white,
-          Color(0xFFE2E8F0),
+          Color(0xFFF1F5F9),
           Color(0xFFCBD5E1),
-          Color(0xFF94A3B8),
+          Color(0xFF64748B),
         ],
-        stops: const [0.0, 0.55, 0.85, 1.0],
+        stops: const [0.0, 0.55, 0.82, 1.0],
       ).createShader(Rect.fromCircle(center: ballCenter, radius: ballRadius));
 
     canvas.drawCircle(ballCenter, ballRadius, spherePaint);
@@ -366,7 +308,7 @@ class ModarrajLogoPainter extends CustomPainter {
     canvas.clipPath(Path()..addOval(Rect.fromCircle(center: ballCenter, radius: ballRadius)));
 
     final patchPaint = Paint()
-      ..color = const Color(0xFF111827).withValues(alpha: progress)
+      ..color = const Color(0xFF0F172A).withValues(alpha: progress)
       ..style = PaintingStyle.fill;
 
     final seamPaint = Paint()
@@ -381,8 +323,8 @@ class ModarrajLogoPainter extends CustomPainter {
     for (int i = 0; i < 5; i++) {
       final a = -math.pi / 2 + (i * 2 * math.pi / 5);
       final pt = Offset(
-        ballCenter.dx + 27.0 * scale * math.cos(a),
-        ballCenter.dy + 27.0 * scale * math.sin(a),
+        ballCenter.dx + 28.0 * scale * math.cos(a),
+        ballCenter.dy + 28.0 * scale * math.sin(a),
       );
       cpVertices.add(pt);
       if (i == 0) {
@@ -409,16 +351,16 @@ class ModarrajLogoPainter extends CustomPainter {
         ballCenter.dx + ballRadius * math.cos(a),
         ballCenter.dy + ballRadius * math.sin(a),
       );
-      // Draw radiating seam line from central pentagon vertex to outer edge
+      // Radiating seam
       canvas.drawLine(cpVertices[i], edgePt, seamPaint);
 
-      // Draw small outer edge pentagonal polygon patch
+      // Edge patch polygon
       final edgePatch = Path();
       for (int k = 0; k < 5; k++) {
         final ea = a + (k * 2 * math.pi / 5) - math.pi / 5;
         final p = Offset(
-          edgePt.dx + 20.0 * scale * math.cos(ea),
-          edgePt.dy + 20.0 * scale * math.sin(ea),
+          edgePt.dx + 22.0 * scale * math.cos(ea),
+          edgePt.dy + 22.0 * scale * math.sin(ea),
         );
         if (k == 0) {
           edgePatch.moveTo(p.dx, p.dy);
@@ -432,87 +374,122 @@ class ModarrajLogoPainter extends CustomPainter {
 
     // 3D Specular Highlight Gloss
     canvas.save();
-    canvas.translate(228 * scale, 172 * scale);
-    canvas.rotate(-25 * math.pi / 180);
+    canvas.translate(240 * scale, 195 * scale);
+    canvas.rotate(-30 * math.pi / 180);
     final glossPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.40 * progress)
+      ..color = Colors.white.withValues(alpha: 0.50 * progress)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4.0 * scale);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset.zero,
-        width: 68 * scale,
-        height: 34 * scale,
+        width: 72 * scale,
+        height: 36 * scale,
       ),
       glossPaint,
     );
     canvas.restore();
 
+    // Bottom Ambient Occlusion Shadow
+    final bottomShadow = Paint()
+      ..color = const Color(0xFF0A0F1D).withValues(alpha: 0.25 * progress);
+    canvas.drawArc(
+      Rect.fromCircle(center: ballCenter, radius: ballRadius),
+      0,
+      math.pi,
+      true,
+      bottomShadow,
+    );
+
     canvas.restore();
 
-    // Subtle crisp sphere boundary stroke
+    // Sphere crisp perimeter border
     final sphereBorder = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35 * progress)
+      ..color = Colors.white.withValues(alpha: 0.40 * progress)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(0.6, 2.0 * scale);
+      ..strokeWidth = math.max(0.8, 2.0 * scale);
     canvas.drawCircle(ballCenter, ballRadius, sphereBorder);
   }
 
-  void _drawVelocitySwoosh(Canvas canvas, double scale) {
-    final swooshPath = Path();
-    swooshPath.moveTo(160 * scale, 252 * scale);
-    swooshPath.cubicTo(
-      180 * scale, 300 * scale,
-      240 * scale, 316 * scale,
-      294 * scale, 292 * scale,
-    );
-    swooshPath.cubicTo(
-      330 * scale, 276 * scale,
-      358 * scale, 244 * scale,
-      366 * scale, 216 * scale,
-    );
-    swooshPath.cubicTo(
-      362 * scale, 234 * scale,
-      340 * scale, 262 * scale,
-      308 * scale, 274 * scale,
-    );
-    swooshPath.cubicTo(
-      264 * scale, 290 * scale,
-      206 * scale, 280 * scale,
-      180 * scale, 246 * scale,
-    );
-    swooshPath.close();
+  void _drawLivePulse(Canvas canvas, double scale) {
+    // 1. Live Orbit Arc
+    final orbitPath = Path();
+    orbitPath.moveTo(190 * scale, 190 * scale);
+    orbitPath.cubicTo(220 * scale, 150 * scale, 280 * scale, 140 * scale, 330 * scale, 160 * scale);
+    orbitPath.cubicTo(375 * scale, 178 * scale, 400 * scale, 220 * scale, 395 * scale, 265 * scale);
+    orbitPath.cubicTo(390 * scale, 310 * scale, 355 * scale, 350 * scale, 310 * scale, 365 * scale);
+    orbitPath.cubicTo(265 * scale, 380 * scale, 215 * scale, 365 * scale, 185 * scale, 335 * scale);
 
-    final swooshPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.bottomLeft,
-        end: Alignment.topRight,
-        colors: [
-          Color(0x00FF4528),
-          Color(0xCCFF4528),
-          Color(0xFFFFB800),
-          Colors.white,
-        ],
-        stops: [0.0, 0.4, 0.8, 1.0],
-      ).createShader(Rect.fromLTWH(160 * scale, 210 * scale, 210 * scale, 110 * scale))
-      ..style = PaintingStyle.fill;
+    final orbitPaint = Paint()
+      ..color = const Color(0xFFFF3B30).withValues(alpha: 0.85 * progress)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.2, 4.5 * scale)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(orbitPath, orbitPaint);
 
-    canvas.drawPath(swooshPath, swooshPaint);
+    // 2. Live Pulse Beacon at Orbit Top-Right
+    final beaconCenter = Offset(365 * scale, 190 * scale);
 
-    // Live Pulse Core Dot at Swoosh Apex
-    final pulseOffset = Offset(366 * scale, 214 * scale);
+    // Outer halo glow
     final haloPaint = Paint()
-      ..color = const Color(0xFFFF4528).withValues(alpha: 0.6 * progress)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6.0 * scale);
-    canvas.drawCircle(pulseOffset, 8.0 * scale, haloPaint);
+      ..color = const Color(0xFFFF3B30).withValues(alpha: 0.35 * progress)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8.0 * scale);
+    canvas.drawCircle(beaconCenter, 16.0 * scale, haloPaint);
 
-    final corePaint = Paint()
+    // Core red dot
+    final beaconCore = Paint()
+      ..color = const Color(0xFFFF3B30).withValues(alpha: progress)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(beaconCenter, 9.0 * scale, beaconCore);
+
+    // Center white dot
+    final beaconWhite = Paint()
       ..color = Colors.white.withValues(alpha: progress)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(pulseOffset, 4.0 * scale, corePaint);
+    canvas.drawCircle(beaconCenter, 4.5 * scale, beaconWhite);
+
+    // 3. Mini Red "LIVE" Pill Badge at Bottom Center
+    final pillRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(256 * scale, 438 * scale),
+        width: 130 * scale,
+        height: 34 * scale,
+      ),
+      Radius.circular(17 * scale),
+    );
+
+    final pillPaint = Paint()
+      ..color = const Color(0xFFFF3B30).withValues(alpha: progress)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(pillRect, pillPaint);
+
+    // Live White Indicator Dot inside pill
+    canvas.drawCircle(Offset(210 * scale, 438 * scale), 4.5 * scale, beaconWhite);
+
+    // Live Text inside pill
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'LIVE',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 15 * scale,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2.0 * scale,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        256 * scale - (textPainter.width / 2) + (10 * scale),
+        438 * scale - (textPainter.height / 2),
+      ),
+    );
   }
 
   @override
-  bool shouldRepaint(covariant ModarrajLogoPainter oldDelegate) {
+  bool shouldRepaint(covariant ShootLiveLogoPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
 }
