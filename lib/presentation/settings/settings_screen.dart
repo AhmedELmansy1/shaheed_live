@@ -23,19 +23,20 @@ import '../widgets/battery_guidance_dialog.dart';
 
 /// Provider for notification preference toggles.
 final notificationSettingsProvider =
-    NotifierProvider<NotificationSettingsNotifier, ({bool matchStart, bool goalAlerts})>(
+    NotifierProvider<NotificationSettingsNotifier, ({bool matchStart, bool goalAlerts, String goalSound})>(
   () => NotificationSettingsNotifier(),
 );
 
 class NotificationSettingsNotifier
-    extends Notifier<({bool matchStart, bool goalAlerts})> {
+    extends Notifier<({bool matchStart, bool goalAlerts, String goalSound})> {
   static const String _matchStartKey = 'pref_notify_match_start';
   static const String _goalAlertsKey = 'pref_notify_goal_alerts';
+  static const String _goalSoundKey = 'pref_notify_goal_sound';
 
   @override
-  ({bool matchStart, bool goalAlerts}) build() {
+  ({bool matchStart, bool goalAlerts, String goalSound}) build() {
     _load();
-    return (matchStart: true, goalAlerts: true);
+    return (matchStart: true, goalAlerts: true, goalSound: 'whistle');
   }
 
   Future<void> _load() async {
@@ -43,19 +44,26 @@ class NotificationSettingsNotifier
     state = (
       matchStart: prefs.getBool(_matchStartKey) ?? true,
       goalAlerts: prefs.getBool(_goalAlertsKey) ?? true,
+      goalSound: prefs.getString(_goalSoundKey) ?? 'whistle',
     );
   }
 
   Future<void> setMatchStart(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_matchStartKey, value);
-    state = (matchStart: value, goalAlerts: state.goalAlerts);
+    state = (matchStart: value, goalAlerts: state.goalAlerts, goalSound: state.goalSound);
   }
 
   Future<void> setGoalAlerts(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_goalAlertsKey, value);
-    state = (matchStart: state.matchStart, goalAlerts: value);
+    state = (matchStart: state.matchStart, goalAlerts: value, goalSound: state.goalSound);
+  }
+
+  Future<void> setGoalSound(String sound) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_goalSoundKey, sound);
+    state = (matchStart: state.matchStart, goalAlerts: state.goalAlerts, goalSound: sound);
   }
 }
 
@@ -137,6 +145,130 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  String _getGoalSoundLabel(String sound) {
+    switch (sound) {
+      case 'whistle':
+        return 'صافرة الحكم الكروية (افتراضي)';
+      case 'cheer':
+        return 'هتاف الجمهور والمعلق الكروي';
+      case 'system':
+        return 'نغمة النظام الافتراضية';
+      case 'silent':
+        return 'صامت (اهتزاز فقط)';
+      default:
+        return 'صافرة الحكم الكروية';
+    }
+  }
+
+  void _showGoalSoundSelector(BuildContext context, String currentSound) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final border = AppColors.borderOf(context);
+
+    final sounds = [
+      (key: 'whistle', title: 'صافرة الحكم الكروية', desc: 'نغمة كروية أصيلة بصوت صافرة الحكم الرسمية'),
+      (key: 'cheer', title: 'هتاف الجمهور والمعلق', desc: 'حماس المدرجات وهتاف الهدف الكروي'),
+      (key: 'system', title: 'نغمة النظام الافتراضية', desc: 'نغمة الإشعارات القياسية لنظام الهاتف'),
+      (key: 'silent', title: 'صامت (اهتزاز فقط)', desc: 'تنبيه بصري مع اهتزاز دون صوت'),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceOf(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'اختر نغمة تنبيه الأهداف',
+                  style: AppTypography.titleMedium(color: textPrimary).copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'سيتم تشغيل هذه النغمة فور تسجيل هدف لأحد أنديتك المفضلة',
+                  style: AppTypography.bodySmall(color: textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ...sounds.map((s) {
+                  final isSelected = currentSound == s.key;
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      ref.read(notificationSettingsProvider.notifier).setGoalSound(s.key);
+                      Navigator.of(ctx).pop();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                        horizontal: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected
+                                ? Icons.radio_button_checked_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: isSelected ? AppColors.primary : textSecondary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.title,
+                                  style: AppTypography.bodyMedium(
+                                    color: isSelected ? AppColors.primary : textPrimary,
+                                  ).copyWith(
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  s.desc,
+                                  style: AppTypography.caption(color: textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -266,6 +398,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ref
                         .read(notificationSettingsProvider.notifier)
                         .setGoalAlerts(val);
+                  },
+                ),
+                Divider(color: border, height: 1),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.sports_soccer_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                  title: Text(
+                    'نغمة إشعار الأهداف المخصصة',
+                    style: AppTypography.titleSmall(color: textPrimary),
+                  ),
+                  subtitle: Text(
+                    _getGoalSoundLabel(notifSettings.goalSound),
+                    style: AppTypography.caption(color: AppColors.primary).copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: textMuted,
+                    size: 15,
+                  ),
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showGoalSoundSelector(context, notifSettings.goalSound);
                   },
                 ),
                 Divider(color: border, height: 1),

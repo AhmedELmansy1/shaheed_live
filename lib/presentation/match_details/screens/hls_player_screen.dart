@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/services/pip_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/stream_report_sheet.dart';
 
@@ -31,11 +32,23 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
   String _errorMessage = '';
   bool _showControls = true;
   bool _isMuted = false;
+  bool _isInPipMode = false;
 
   @override
   void initState() {
     super.initState();
     _initializePlayer();
+    PipService.setPipModeListener((inPip) {
+      if (mounted) {
+        setState(() {
+          _isInPipMode = inPip;
+          if (inPip) {
+            _showControls = false;
+          }
+        });
+      }
+    });
+    PipService.setAutoPip(true);
   }
 
   Future<void> _initializePlayer() async {
@@ -75,6 +88,8 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
 
   @override
   void dispose() {
+    PipService.setAutoPip(false);
+    PipService.removePipModeListener();
     _controller.removeListener(_onControllerUpdate);
     _controller.dispose();
     SystemChrome.setPreferredOrientations([
@@ -98,8 +113,40 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
     });
   }
 
+  Future<void> _enterPictureInPicture() async {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _showControls = false;
+    });
+    final success = await PipService.enterPip();
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('خاصية النافذة العائمة (PiP) غير مدعومة على هذا الجهاز أو الإصدار'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isInPipMode) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: _isInitialized
+              ? AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio > 0
+                      ? _controller.value.aspectRatio
+                      : 16 / 9,
+                  child: VideoPlayer(_controller),
+                )
+              : const SizedBox.shrink(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -119,6 +166,11 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_in_picture_alt_rounded, color: Colors.white),
+            tooltip: 'نافذة عائمة (PiP)',
+            onPressed: _enterPictureInPicture,
+          ),
           IconButton(
             icon: const Icon(Icons.flag_outlined, color: Colors.amberAccent),
             tooltip: 'إبلاغ عن عطل في البث',

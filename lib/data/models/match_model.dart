@@ -12,11 +12,27 @@ class ChampionshipInfo {
 
   const ChampionshipInfo({required this.id, required this.title, this.image});
 
-  factory ChampionshipInfo.fromMap(Map<String, dynamic> map) {
+  factory ChampionshipInfo.fromMap(dynamic raw) {
+    if (raw == null) {
+      return const ChampionshipInfo(id: 0, title: 'دوري غير محدد');
+    }
+    if (raw is! Map) {
+      return ChampionshipInfo(id: raw, title: 'دوري غير محدد');
+    }
+    final map = raw;
+    final id = map['id'] ?? map['url_id'] ?? 0;
+    final dynamic titleCandidate = map['title'] ?? map['name'] ?? map['champ_title'];
+    final titleStr = titleCandidate?.toString().trim() ?? '';
+    final cleanTitle =
+        (titleStr.isNotEmpty && titleStr != 'null') ? titleStr : 'دوري غير محدد';
+    final imageStr = (map['image'] ?? map['logo'] ?? map['champ_image'])?.toString();
+
     return ChampionshipInfo(
-      id: map['id'] ?? map['url_id'] ?? 0,
-      title: (map['title'] as String?) ?? 'دوري غير محدد',
-      image: map['image'] as String?,
+      id: id,
+      title: cleanTitle,
+      image: (imageStr != null && imageStr.isNotEmpty && imageStr != 'null')
+          ? imageStr
+          : null,
     );
   }
 }
@@ -29,11 +45,32 @@ class TeamInfo {
 
   const TeamInfo({required this.rowId, required this.title, this.image});
 
-  factory TeamInfo.fromMap(Map<String, dynamic> map) {
+  factory TeamInfo.fromMap(dynamic raw) {
+    if (raw == null) {
+      return const TeamInfo(rowId: 0, title: 'فريق غير محدد');
+    }
+    if (raw is! Map) {
+      return TeamInfo(rowId: raw, title: 'فريق غير محدد');
+    }
+    final map = raw;
+    final rowId = map['row_id'] ?? map['id'] ?? map['team_id'] ?? 0;
+    final dynamic titleCandidate = map['title'] ??
+        map['name'] ??
+        map['team_name'] ??
+        map['ar_title'] ??
+        map['team_title'] ??
+        map['short_title'];
+    final titleStr = titleCandidate?.toString().trim() ?? '';
+    final cleanTitle =
+        (titleStr.isNotEmpty && titleStr != 'null') ? titleStr : 'فريق غير محدد';
+    final imageStr = (map['image'] ?? map['logo'] ?? map['team_image'])?.toString();
+
     return TeamInfo(
-      rowId: map['row_id'] ?? 0,
-      title: (map['title'] as String?) ?? 'فريق غير محدد',
-      image: map['image'] as String?,
+      rowId: rowId,
+      title: cleanTitle,
+      image: (imageStr != null && imageStr.isNotEmpty && imageStr != 'null')
+          ? imageStr
+          : null,
     );
   }
 }
@@ -53,6 +90,8 @@ class MatchModel {
   final String? adminBadge;
   final String? adminTitle;
   final String? eventStatus;
+  final String? channel;
+  final String? commentator;
 
   const MatchModel({
     required this.matchId,
@@ -68,6 +107,8 @@ class MatchModel {
     this.adminBadge,
     this.adminTitle,
     this.eventStatus,
+    this.channel,
+    this.commentator,
   });
 
   // Convenience Getters for presentation layer
@@ -156,26 +197,56 @@ class MatchModel {
       return 0;
     }
 
+    var homeTeam = TeamInfo.fromMap(map['home_team']);
+    if (homeTeam.title == 'فريق غير محدد' && map['home_name'] != null) {
+      final hName = map['home_name'].toString().trim();
+      if (hName.isNotEmpty) {
+        homeTeam = TeamInfo(
+          rowId: homeTeam.rowId != 0 ? homeTeam.rowId : (map['home_id'] ?? 0),
+          title: hName,
+          image: homeTeam.image ?? map['home_image']?.toString(),
+        );
+      }
+    }
+
+    var awayTeam = TeamInfo.fromMap(map['away_team']);
+    if (awayTeam.title == 'فريق غير محدد' && map['away_name'] != null) {
+      final aName = map['away_name'].toString().trim();
+      if (aName.isNotEmpty) {
+        awayTeam = TeamInfo(
+          rowId: awayTeam.rowId != 0 ? awayTeam.rowId : (map['away_id'] ?? 0),
+          title: aName,
+          image: awayTeam.image ?? map['away_image']?.toString(),
+        );
+      }
+    }
+
+    final rawChannel =
+        (map['channel'] ?? map['channel_name'] ?? map['tv_channel'])?.toString().trim();
+    final rawCommentator =
+        (map['commentator'] ?? map['commentator_name'])?.toString().trim();
+
     return MatchModel(
       matchId: parseMatchId(map['match_id'] ?? map['id']),
       matchDate: map['match_date'] as String?,
       matchTime: map['match_time'] as String?,
       isLive: isActuallyLive,
       status: computedStatus,
-      championship: ChampionshipInfo.fromMap(
-        (map['championship'] as Map<String, dynamic>?) ?? {},
-      ),
-      homeTeam: TeamInfo.fromMap(
-        (map['home_team'] as Map<String, dynamic>?) ?? {},
-      ),
-      awayTeam: TeamInfo.fromMap(
-        (map['away_team'] as Map<String, dynamic>?) ?? {},
-      ),
+      championship: ChampionshipInfo.fromMap(map['championship']),
+      homeTeam: homeTeam,
+      awayTeam: awayTeam,
       homeScore: parseScore(map['home_scores']),
       awayScore: parseScore(map['away_scores']),
       adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
       adminTitle: adminTitleStr,
       eventStatus: (map['event_status'] as String?)?.toLowerCase(),
+      channel: (rawChannel != null && rawChannel.isNotEmpty && rawChannel != 'null')
+          ? rawChannel
+          : null,
+      commentator:
+          (rawCommentator != null && rawCommentator.isNotEmpty && rawCommentator != 'null')
+              ? rawCommentator
+              : null,
     );
   }
 }

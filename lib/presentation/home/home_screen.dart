@@ -408,6 +408,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     .setFilter(MatchFilterType.finished);
               },
             ),
+            const SizedBox(width: AppSpacing.sm),
+
+            // Vertical divider separating status from broadcast filters
+            Container(
+              height: 20,
+              width: 1,
+              color: border,
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+
+            // 6. Broadcast Channel Filter
+            Consumer(
+              builder: (context, ref, _) {
+                final selectedChannel = ref.watch(selectedChannelFilterProvider);
+                final isChannelActive = selectedChannel != null && selectedChannel.isNotEmpty;
+                return AppChip(
+                  label: isChannelActive ? selectedChannel : '📺 القناة',
+                  icon: isChannelActive ? Icons.check_circle_rounded : Icons.tv_rounded,
+                  iconColor: isChannelActive ? AppColors.primary : null,
+                  isSelected: isChannelActive,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showChannelFilterModal(context);
+                  },
+                );
+              },
+            ),
+            const SizedBox(width: AppSpacing.xs),
+
+            // 7. Commentator Filter
+            Consumer(
+              builder: (context, ref, _) {
+                final selectedCommentator = ref.watch(selectedCommentatorFilterProvider);
+                final isCommActive = selectedCommentator != null && selectedCommentator.isNotEmpty;
+                return AppChip(
+                  label: isCommActive ? selectedCommentator : '🎙️ المعلق',
+                  icon: isCommActive ? Icons.check_circle_rounded : Icons.record_voice_over_rounded,
+                  iconColor: isCommActive ? AppColors.primary : null,
+                  isSelected: isCommActive,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showCommentatorFilterModal(context);
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -729,6 +776,236 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       subtitle: subtitle,
       onRetry: () {
         ref.read(matchesProvider.notifier).refresh();
+      },
+    );
+  }
+
+  void _showChannelFilterModal(BuildContext context) {
+    final channels = ref.read(availableChannelsProvider);
+    final selected = ref.read(selectedChannelFilterProvider);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final border = AppColors.borderOf(context);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceOf(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    const Icon(Icons.tv_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'تصفية المباريات حسب القناة الناقلة',
+                      style: AppTypography.titleMedium(color: textPrimary).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Reset option (All channels)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    selected == null
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    color: selected == null ? AppColors.primary : textSecondary,
+                    size: 20,
+                  ),
+                  title: Text(
+                    'جميع القنوات (الكل)',
+                    style: AppTypography.bodyMedium(
+                      color: selected == null ? AppColors.primary : textPrimary,
+                    ).copyWith(
+                      fontWeight: selected == null ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(selectedChannelFilterProvider.notifier).setChannel(null);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                Divider(color: border, height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: channels.length,
+                    separatorBuilder: (context, index) => Divider(color: border, height: 1),
+                    itemBuilder: (c, idx) {
+                      final ch = channels[idx];
+                      final isCurrent = selected == ch;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          isCurrent
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: isCurrent ? AppColors.primary : textSecondary,
+                          size: 20,
+                        ),
+                        title: Text(
+                          ch,
+                          style: AppTypography.bodyMedium(
+                            color: isCurrent ? AppColors.primary : textPrimary,
+                          ).copyWith(
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(selectedChannelFilterProvider.notifier).setChannel(ch);
+                          Navigator.of(ctx).pop();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCommentatorFilterModal(BuildContext context) {
+    final commentators = ref.read(availableCommentatorsProvider);
+    final selected = ref.read(selectedCommentatorFilterProvider);
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final border = AppColors.borderOf(context);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceOf(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    const Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'تصفية المباريات حسب المعلق الكروي',
+                      style: AppTypography.titleMedium(color: textPrimary).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Reset option (All commentators)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    selected == null
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    color: selected == null ? AppColors.primary : textSecondary,
+                    size: 20,
+                  ),
+                  title: Text(
+                    'جميع المعلقين (الكل)',
+                    style: AppTypography.bodyMedium(
+                      color: selected == null ? AppColors.primary : textPrimary,
+                    ).copyWith(
+                      fontWeight: selected == null ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(selectedCommentatorFilterProvider.notifier).setCommentator(null);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                Divider(color: border, height: 1),
+                Expanded(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: commentators.length,
+                    separatorBuilder: (context, index) => Divider(color: border, height: 1),
+                    itemBuilder: (c, idx) {
+                      final comm = commentators[idx];
+                      final isCurrent = selected == comm;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          isCurrent
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: isCurrent ? AppColors.primary : textSecondary,
+                          size: 20,
+                        ),
+                        title: Text(
+                          comm,
+                          style: AppTypography.bodyMedium(
+                            color: isCurrent ? AppColors.primary : textPrimary,
+                          ).copyWith(
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(selectedCommentatorFilterProvider.notifier).setCommentator(comm);
+                          Navigator.of(ctx).pop();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }

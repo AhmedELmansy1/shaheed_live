@@ -195,14 +195,18 @@ class MatchCard extends ConsumerWidget {
                               children: [
                                 TeamLogo(
                                   logoUrl: match.homeTeam.image,
-                                  teamName: match.homeTeam.title,
+                                  teamName: match.homeTeam.title.isNotEmpty
+                                      ? match.homeTeam.title
+                                      : 'فريق غير محدد',
                                   size: 38,
                                   heroTag: 'match_home_${match.matchId}',
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Expanded(
                                   child: Text(
-                                    match.homeTeam.title,
+                                    match.homeTeam.title.isNotEmpty
+                                        ? match.homeTeam.title
+                                        : 'فريق غير محدد',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTypography.titleSmall(
@@ -243,7 +247,9 @@ class MatchCard extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    match.awayTeam.title,
+                                    match.awayTeam.title.isNotEmpty
+                                        ? match.awayTeam.title
+                                        : 'فريق غير محدد',
                                     textAlign: TextAlign.end,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -261,7 +267,9 @@ class MatchCard extends ConsumerWidget {
                                 const SizedBox(width: AppSpacing.sm),
                                 TeamLogo(
                                   logoUrl: match.awayTeam.image,
-                                  teamName: match.awayTeam.title,
+                                  teamName: match.awayTeam.title.isNotEmpty
+                                      ? match.awayTeam.title
+                                      : 'فريق غير محدد',
                                   size: 38,
                                   heroTag: 'match_away_${match.matchId}',
                                 ),

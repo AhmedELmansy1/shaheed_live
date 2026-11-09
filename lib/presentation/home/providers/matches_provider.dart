@@ -299,6 +299,93 @@ final matchesProvider =
       return MatchesNotifier();
     });
 
+class ChannelFilterNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setChannel(String? channel) => state = channel;
+}
+
+/// Provider for active Channel filter (e.g. 'beIN Sports 1 HD')
+final selectedChannelFilterProvider =
+    NotifierProvider<ChannelFilterNotifier, String?>(() => ChannelFilterNotifier());
+
+class CommentatorFilterNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setCommentator(String? commentator) => state = commentator;
+}
+
+/// Provider for active Commentator filter (e.g. 'عصام الشوالي')
+final selectedCommentatorFilterProvider =
+    NotifierProvider<CommentatorFilterNotifier, String?>(() => CommentatorFilterNotifier());
+
+/// Extracts active broadcast channels available in current matches
+final availableChannelsProvider = Provider<List<String>>((ref) {
+  final matchesAsync = ref.watch(matchesProvider);
+  return matchesAsync.maybeWhen(
+    data: (matches) {
+      final channels = <String>{};
+      for (final m in matches) {
+        if (m.channel != null && m.channel!.trim().isNotEmpty) {
+          channels.add(m.channel!.trim());
+        }
+      }
+      if (channels.isEmpty) {
+        return const [
+          'beIN Sports 1 HD',
+          'beIN Sports 2 HD',
+          'OnTime Sports 1',
+          'OnTime Sports 2',
+          'SSC Sports 1 HD',
+          'الكأس HD',
+        ];
+      }
+      return channels.toList()..sort();
+    },
+    orElse: () => const [
+      'beIN Sports 1 HD',
+      'OnTime Sports 1',
+      'SSC Sports 1 HD',
+    ],
+  );
+});
+
+/// Extracts active commentators available in current matches
+final availableCommentatorsProvider = Provider<List<String>>((ref) {
+  final matchesAsync = ref.watch(matchesProvider);
+  return matchesAsync.maybeWhen(
+    data: (matches) {
+      final commentators = <String>{};
+      for (final m in matches) {
+        if (m.commentator != null && m.commentator!.trim().isNotEmpty) {
+          commentators.add(m.commentator!.trim());
+        }
+      }
+      if (commentators.isEmpty) {
+        return const [
+          'عصام الشوالي',
+          'فهد العتيبي',
+          'حفيظ دراجي',
+          'خليل البلوشي',
+          'فارس عوض',
+          'مدحت شلبي',
+          'أيمن الكاشف',
+        ];
+      }
+      return commentators.toList()..sort();
+    },
+    orElse: () => const [
+      'عصام الشوالي',
+      'فهد العتيبي',
+      'حفيظ دراجي',
+      'خليل البلوشي',
+      'فارس عوض',
+    ],
+  );
+});
+
 /// Provider that returns matches filtered by the active [MatchFilterType]
 /// and strictly constrained to user's selected leagues (with team selection winning),
 /// with automatic priority for favorite teams and leagues.
@@ -364,8 +451,34 @@ final filteredMatchesProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
         );
     }
 
+    final selectedChannel = ref.watch(selectedChannelFilterProvider);
+    final selectedCommentator = ref.watch(selectedCommentatorFilterProvider);
+
+    var filteredList = result;
+    if (selectedChannel != null && selectedChannel.trim().isNotEmpty) {
+      final chLower = selectedChannel.trim().toLowerCase();
+      filteredList = filteredList.where((m) {
+        final mChannel = m.channel?.trim().toLowerCase() ?? '';
+        final badge = m.adminBadge?.trim().toLowerCase() ?? '';
+        return mChannel.contains(chLower) ||
+            chLower.contains(mChannel) ||
+            badge.contains(chLower);
+      }).toList();
+    }
+
+    if (selectedCommentator != null && selectedCommentator.trim().isNotEmpty) {
+      final commLower = selectedCommentator.trim().toLowerCase();
+      filteredList = filteredList.where((m) {
+        final mComm = m.commentator?.trim().toLowerCase() ?? '';
+        final badge = m.adminBadge?.trim().toLowerCase() ?? '';
+        return mComm.contains(commLower) ||
+            commLower.contains(mComm) ||
+            badge.contains(commLower);
+      }).toList();
+    }
+
     return prioritizeMatches(
-      matches: result,
+      matches: filteredList,
       selectedTeamIds: selectedTeamIds,
       selectedLeagueIds: selectedLeagueIds,
       allTeams: allTeams,

@@ -26,28 +26,33 @@ bool isFavoriteTeamMatch(
       .where((t) => selectedTeamIds.contains(t.id))
       .toList();
 
+  final hasValidHome = homeTitle.isNotEmpty && homeTitle != 'فريق غير محدد';
+  final hasValidAway = awayTitle.isNotEmpty && awayTitle != 'فريق غير محدد';
+
   for (final team in selectedTeams) {
     final name = team.name.trim().toLowerCase();
     final nameEn = team.nameEn.trim().toLowerCase();
-    if (name.isNotEmpty &&
-        (homeTitle.contains(name) ||
-            name.contains(homeTitle) ||
-            awayTitle.contains(name) ||
-            name.contains(awayTitle))) {
-      return true;
+
+    if (name.isNotEmpty) {
+      if (hasValidHome && (homeTitle.contains(name) || name.contains(homeTitle))) {
+        return true;
+      }
+      if (hasValidAway && (awayTitle.contains(name) || name.contains(awayTitle))) {
+        return true;
+      }
     }
-    if (nameEn.isNotEmpty &&
-        (homeTitle.contains(nameEn) || awayTitle.contains(nameEn))) {
-      return true;
+    if (nameEn.isNotEmpty) {
+      if (hasValidHome && homeTitle.contains(nameEn)) return true;
+      if (hasValidAway && awayTitle.contains(nameEn)) return true;
     }
   }
 
   // 3. Fallback check on raw selectedTeamIds (e.g. 'ahly', 'liverpool', 'barcelona')
   for (final id in selectedTeamIds) {
     final idLower = id.toLowerCase().replaceAll('_', ' ');
-    if (idLower.isNotEmpty &&
-        (homeTitle.contains(idLower) || awayTitle.contains(idLower))) {
-      return true;
+    if (idLower.isNotEmpty) {
+      if (hasValidHome && homeTitle.contains(idLower)) return true;
+      if (hasValidAway && awayTitle.contains(idLower)) return true;
     }
   }
 

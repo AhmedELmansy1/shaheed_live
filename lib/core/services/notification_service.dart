@@ -44,6 +44,21 @@ class NotificationService {
   static const String channelMatches = 'matches_channel_v2';
   static const String channelReminders = 'match_reminders_v2';
   static const String channelLiveEvents = 'live_events_v2';
+  static const String channelLiveEventsWhistle = 'live_events_whistle_v2';
+  static const String channelLiveEventsCheer = 'live_events_cheer_v2';
+
+  /// Resolves the Android channel ID according to user's selected goal alert sound.
+  static String resolveGoalChannelId(String soundPref) {
+    switch (soundPref) {
+      case 'whistle':
+        return channelLiveEventsWhistle;
+      case 'cheer':
+        return channelLiveEventsCheer;
+      case 'system':
+      default:
+        return channelLiveEvents;
+    }
+  }
 
   Future<void> init() async {
     const androidSettings = AndroidInitializationSettings(
@@ -140,10 +155,32 @@ class NotificationService {
       await androidPlatformChannelSpecifics.createNotificationChannel(
         const AndroidNotificationChannel(
           channelLiveEvents,
-          'أحداث المباريات المباشرة',
+          'أحداث المباريات المباشرة (نغمة النظام)',
           description: 'أحداث المباريات أثناء اللعب (أهداف، كروت)',
           importance: Importance.max,
           playSound: true,
+          enableVibration: true,
+        ),
+      );
+      await androidPlatformChannelSpecifics.createNotificationChannel(
+        const AndroidNotificationChannel(
+          channelLiveEventsWhistle,
+          'أهداف المباريات (صافرة الحكم)',
+          description: 'نغمة تنبيه بصوت صافرة حكم كرة القدم عند تسجيل هدف',
+          importance: Importance.max,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('whistle'),
+          enableVibration: true,
+        ),
+      );
+      await androidPlatformChannelSpecifics.createNotificationChannel(
+        const AndroidNotificationChannel(
+          channelLiveEventsCheer,
+          'أهداف المباريات (هتاف الجمهور)',
+          description: 'نغمة تنبيه بهتاف جماهيري كروي عند تسجيل هدف',
+          importance: Importance.max,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('goal_cheer'),
           enableVibration: true,
         ),
       );
