@@ -49,10 +49,30 @@ class StreamServerModel {
     required this.priority,
   });
 
+  /// Cleans and normalizes stream URLs, extracting iframe src attributes if pasted directly.
+  static String normalizeStreamUrl(String raw) {
+    var s = raw.trim();
+    if (s.isEmpty) return '';
+    // If user pasted an iframe tag like <iframe src="https://..." ...>
+    if (s.contains('<iframe') || s.contains('src=')) {
+      final match = RegExp(r'''src=["']([^"']+)["']''').firstMatch(s);
+      if (match != null && match.group(1) != null) {
+        s = match.group(1)!.trim();
+      }
+    }
+    if (s.startsWith('//')) {
+      s = 'https:$s';
+    } else if (!s.startsWith('http://') && !s.startsWith('https://')) {
+      s = 'https://$s';
+    }
+    return s;
+  }
+
   /// Validates that the stream URL uses a supported and secure scheme (http / https).
   bool get isValidUrl {
-    if (streamUrl.isEmpty) return false;
-    final uri = Uri.tryParse(streamUrl);
+    final clean = normalizeStreamUrl(streamUrl);
+    if (clean.isEmpty) return false;
+    final uri = Uri.tryParse(clean);
     return uri != null && (uri.isScheme('http') || uri.isScheme('https'));
   }
 
@@ -63,7 +83,7 @@ class StreamServerModel {
       return int.tryParse(p?.toString() ?? '') ?? 99;
     }
 
-    final rawUrl = (map['stream_url'] ?? map['url'] ?? '').toString().trim();
+    final rawUrl = normalizeStreamUrl((map['stream_url'] ?? map['url'] ?? '').toString());
 
     return StreamServerModel(
       id: (map['id'] ?? map['server_id'] ?? '').toString(),
@@ -119,6 +139,22 @@ class MatchStreamModel {
     final activeList = servers
         .where((s) => s.isActive && s.isValidUrl)
         .toList();
+
+    // Fallback: If servers array has no valid active items, but top-level streamUrl is configured
+    if (activeList.isEmpty && streamUrl != null && streamUrl!.trim().isNotEmpty) {
+      final clean = StreamServerModel.normalizeStreamUrl(streamUrl!);
+      if (clean.isNotEmpty) {
+        activeList.add(StreamServerModel(
+          id: 'primary',
+          name: 'سيرفر رئيسي',
+          streamUrl: clean,
+          playerType: PlayerType.embed,
+          isActive: true,
+          priority: 1,
+        ));
+      }
+    }
+
     activeList.sort((a, b) => a.priority.compareTo(b.priority));
     return activeList;
   }

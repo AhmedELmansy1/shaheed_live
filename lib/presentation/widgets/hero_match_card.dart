@@ -281,22 +281,11 @@ class HeroMatchCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              Expanded(
-                child: AppButton(
-                  label: 'تفاصيل المباراة',
-                  variant: AppButtonVariant.primary,
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    context.push('/match/${match.matchId}');
-                  },
-                ),
-              ),
               if (AppConstants.enableStreaming) ...[
-                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: AppButton(
-                    label: 'شاهد المباراة الآن ⚽',
-                    variant: AppButtonVariant.secondary,
+                    label: match.isLive ? 'مشاهدة الآن 🔴' : 'مشاهدة المباراة ⚽',
+                    variant: AppButtonVariant.primary,
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       WatchMatchBottomSheet.show(
@@ -307,7 +296,18 @@ class HeroMatchCard extends ConsumerWidget {
                     },
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
               ],
+              Expanded(
+                child: AppButton(
+                  label: 'تفاصيل المباراة',
+                  variant: AppConstants.enableStreaming ? AppButtonVariant.secondary : AppButtonVariant.primary,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.push('/match/${match.matchId}');
+                  },
+                ),
+              ),
             ],
           ),
         ],

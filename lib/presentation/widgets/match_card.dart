@@ -163,7 +163,7 @@ class MatchCard extends ConsumerWidget {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'بث مباشر',
+                                          'مشاهدة الآن 🔴',
                                           style: AppTypography.caption(
                                             color: AppColors.vermilion,
                                           ).copyWith(

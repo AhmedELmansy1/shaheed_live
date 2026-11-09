@@ -61,37 +61,8 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
         return Stream.value(null);
       }
 
-      final auth = _auth;
-      // If auth is available, attach stream after auth is verified, with automatic retry/re-subscribe on auth state changes
-      if (auth != null) {
-        return auth.authStateChanges().asyncExpand((user) async* {
-          if (user == null) {
-            // Initiate anonymous sign-in in background
-            _ensureAuth();
-            yield null;
-            return;
-          }
-
-          yield* fs
-              .collection('match_streams')
-              .doc(matchId.toString())
-              .snapshots()
-              .map((docSnap) {
-                if (!docSnap.exists || docSnap.data() == null) {
-                  return null;
-                }
-                return MatchStreamModel.fromMap(docSnap.data()!, matchId);
-              })
-              .handleError((error) {
-                if (error is FirebaseException && error.code == 'permission-denied') {
-                  debugPrint('[MatchStreamRepo] 🔒 PERMISSION DENIED reading match_streams/$matchId. User must be authenticated.');
-                } else {
-                  debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
-                }
-                return null;
-              });
-        });
-      }
+      // Proactively trigger anonymous authentication without stalling snapshot subscription
+      _ensureAuth();
 
       return fs
           .collection('match_streams')
@@ -104,11 +75,16 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
             return MatchStreamModel.fromMap(docSnap.data()!, matchId);
           })
           .handleError((error) {
-            debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              debugPrint('[MatchStreamRepo] 🔒 PERMISSION DENIED reading match_streams/$matchId. Retrying authentication...');
+              _ensureAuth();
+            } else {
+              debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
+            }
             return null;
           });
     } catch (e) {
-      debugPrint('[MatchStreamRepo] Failed to initialize stream for match $matchId: $e');
+      debugPrint('[MatchStreamRepo] Exception setting up stream listener: $e');
       return Stream.value(null);
     }
   }

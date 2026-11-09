@@ -8,8 +8,9 @@ class AppConstants {
 
   static const String defaultLocale = 'ar';
 
-  /// Compile-time feature flag for live streaming features. Defaults to `false` for store compliance.
-  /// Enable via `--dart-define=ENABLE_STREAMING=true`.
+  /// Feature flag for live streaming features. Enabled by default so stream links and watch buttons
+  /// are active during testing and standard builds. Can be explicitly disabled via
+  /// `--dart-define=ENABLE_STREAMING=false`.
   static bool enableStreaming =
-      const bool.fromEnvironment('ENABLE_STREAMING', defaultValue: false);
+      const bool.fromEnvironment('ENABLE_STREAMING', defaultValue: true);
 }
