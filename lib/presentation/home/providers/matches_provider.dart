@@ -10,6 +10,7 @@ import '../../../core/services/team_resolver_service.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/match_filter_helper.dart';
 import '../../../data/cache/matches_cache_service.dart';
+import '../../../data/models/league_model.dart';
 import '../../../data/models/match_model.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/matches_repository.dart';
@@ -89,23 +90,29 @@ class HomeFeedScopeNotifier extends Notifier<HomeFeedScope> {
 
   @override
   HomeFeedScope build() {
-    Future.microtask(() => _loadFromPrefs());
-    final onboarding = ref.watch(onboardingProvider);
-    final hasSelections = onboarding.selectedLeagueIds.isNotEmpty ||
-        onboarding.selectedTeamIds.isNotEmpty;
-    return hasSelections ? HomeFeedScope.myMatches : HomeFeedScope.allMatches;
+    // Default view: ALWAYS all matches across all leagues
+    Future.microtask(() => migrateAndLoad());
+    return HomeFeedScope.allMatches;
   }
 
-  Future<void> _loadFromPrefs() async {
+  Future<void> migrateAndLoad() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_prefKey);
-    if (saved != null) {
-      if (saved == 'allMatches' && state != HomeFeedScope.allMatches) {
-        state = HomeFeedScope.allMatches;
-      } else if (saved == 'myMatches' && state != HomeFeedScope.myMatches) {
-        state = HomeFeedScope.myMatches;
-      }
+    // Explicit migration: migrate any stored 'myMatches' mode to 'allMatches'
+    if (saved == 'myMatches' || saved == 'my_matches') {
+      debugPrint('[HomeFeedScopeNotifier] Migrating stored myMatches to allMatches');
+      await prefs.setString(_prefKey, 'allMatches');
+      state = HomeFeedScope.allMatches;
     }
+  }
+
+  Future<void> toggleMyMatches() async {
+    final next = state == HomeFeedScope.myMatches
+        ? HomeFeedScope.allMatches
+        : HomeFeedScope.myMatches;
+    state = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKey, next.name);
   }
 
   Future<void> setScope(HomeFeedScope scope) async {
@@ -372,12 +379,16 @@ class LeagueGroupData {
   final String leagueTitle;
   final String? leagueLogo;
   final bool isFollowed;
+  final bool isPopular;
+  final int displayOrder;
   final List<MatchModel> matches;
 
   const LeagueGroupData({
     required this.leagueTitle,
     required this.leagueLogo,
     required this.isFollowed,
+    this.isPopular = false,
+    this.displayOrder = 100,
     required this.matches,
   });
 }
@@ -386,7 +397,7 @@ class LeagueGroupData {
 class HomeSectionData {
   final MatchModel? heroMatch;
   final List<MatchModel> favoriteMatches; // Matches of user's favorite teams
-  final List<LeagueGroupData> leagueGroups; // Followed leagues first!
+  final List<LeagueGroupData> leagueGroups; // Followed leagues first, then popular!
   final List<MatchModel> liveMatches;
   final List<MatchModel> allFilteredMatches;
 
@@ -401,10 +412,27 @@ class HomeSectionData {
   bool get isEmpty => allFilteredMatches.isEmpty;
 }
 
+/// Helper function to sort a list of matches: live matches first, then by kickoff time.
+List<MatchModel> sortMatchesLiveFirstThenTime(List<MatchModel> list) {
+  final sorted = List<MatchModel>.from(list);
+  sorted.sort((m1, m2) {
+    if (m1.isLive && !m2.isLive) return -1;
+    if (!m1.isLive && m2.isLive) return 1;
+
+    // Both live or both non-live: sort by kickoff time
+    final t1 = m1.matchTime ?? '';
+    final t2 = m2.matchTime ?? '';
+    return t1.compareTo(t2);
+  });
+  return sorted;
+}
+
 /// Provider that computes and memoizes structured sections for the Home screen:
 /// - Hero match with priority
-/// - "مبارياتك" section for user favorite teams
-/// - Grouped leagues below, with user's followed leagues ordered FIRST
+/// - (a) Pinned section "مبارياتك" for user favorite teams
+/// - (b) Matches of followed leagues
+/// - (c) Everything else grouped by league (popular leagues first)
+/// Inside each group: live matches first, then by kickoff time.
 final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
   final filteredAsync = ref.watch(filteredMatchesProvider);
   final onboardingState = ref.watch(onboardingProvider);
@@ -433,12 +461,13 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
       allLeagues: allLeagues,
     );
 
-    // 2. Favorite team matches (for "مبارياتك" top section)
-    final favoriteMatches = selectedTeamIds.isNotEmpty
+    // 2. Favorite team matches (for pinned "مبارياتك" top section)
+    final rawFavorites = selectedTeamIds.isNotEmpty
         ? matches
             .where((m) => isFavoriteTeamMatch(m, selectedTeamIds, allTeams))
             .toList()
         : <MatchModel>[];
+    final favoriteMatches = sortMatchesLiveFirstThenTime(rawFavorites);
 
     // 3. Rest of matches (to be grouped by league)
     // Avoid duplicating favorite team matches if they're already in the top section
@@ -452,33 +481,56 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
       rawGroups.putIfAbsent(m.championship.title, () => []).add(m);
     }
 
-    // 5. Build LeagueGroupData and order followed leagues FIRST
+    // 5. Build LeagueGroupData: inside each group, live matches first then kickoff time
     final leagueGroups = rawGroups.entries.map((entry) {
       final title = entry.key;
-      final groupMatches = entry.value;
-      final logo = groupMatches.isNotEmpty ? groupMatches.first.championship.image : null;
-      final isFollowed = isFavoriteLeagueMatch(groupMatches.first, selectedLeagueIds, allLeagues);
+      final groupMatches = sortMatchesLiveFirstThenTime(entry.value);
+      final firstMatch = groupMatches.first;
+      final logo = firstMatch.championship.image;
+      final isFollowed = isFavoriteLeagueMatch(firstMatch, selectedLeagueIds, allLeagues);
+
+      // Find matching LeagueModel to retrieve isPopular and displayOrder
+      final resolvedLeague = allLeagues.cast<LeagueModel?>().firstWhere(
+            (l) =>
+                l?.id == firstMatch.championship.id.toString() ||
+                (l != null && l.name.isNotEmpty && title.contains(l.name)),
+            orElse: () => null,
+          );
 
       return LeagueGroupData(
         leagueTitle: title,
         leagueLogo: logo,
         isFollowed: isFollowed,
+        isPopular: resolvedLeague?.isPopular ?? false,
+        displayOrder: resolvedLeague?.displayOrder ?? 100,
         matches: groupMatches,
       );
     }).toList();
 
-    // Sort: followed leagues first!
+    // 6. Sort league groups:
+    // (b) Matches of followed leagues first
+    // (c) Remaining leagues: popular leagues first, then by displayOrder, then live matches
     leagueGroups.sort((a, b) {
+      // Followed leagues first
       if (a.isFollowed && !b.isFollowed) return -1;
       if (!a.isFollowed && b.isFollowed) return 1;
 
-      // Secondary: leagues with active live matches come first
+      // Popular leagues first
+      if (a.isPopular && !b.isPopular) return -1;
+      if (!a.isPopular && b.isPopular) return 1;
+
+      // Display order (smaller order = higher priority)
+      if (a.displayOrder != b.displayOrder) {
+        return a.displayOrder.compareTo(b.displayOrder);
+      }
+
+      // Active live matches inside league
       final aHasLive = a.matches.any((m) => m.isLive);
       final bHasLive = b.matches.any((m) => m.isLive);
       if (aHasLive && !bHasLive) return -1;
       if (!aHasLive && bHasLive) return 1;
 
-      return 0; // maintain natural order
+      return a.leagueTitle.compareTo(b.leagueTitle);
     });
 
     final liveMatches = matches.where((m) => m.isLive).toList();

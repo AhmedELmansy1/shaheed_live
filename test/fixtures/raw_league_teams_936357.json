@@ -1,0 +1,127 @@
+{
+  "league_id": 936357,
+  "league_name": "Serie A",
+  "count": 20,
+  "teams": [
+    {
+      "id": 8543,
+      "name": "لاتسيو",
+      "logo": "https://imgs.ysscores.com/teams/64/5111690283002.png",
+      "slug": "SS-Lazio"
+    },
+    {
+      "id": 8636,
+      "name": "إنتر ميلان",
+      "logo": "https://imgs.ysscores.com/teams/64/3101690283003.png",
+      "slug": "Inter-Milan"
+    },
+    {
+      "id": 8686,
+      "name": "روما",
+      "logo": "https://imgs.ysscores.com/teams/64/17722024059541.png",
+      "slug": "AS-Roma"
+    },
+    {
+      "id": 8564,
+      "name": "ميلان",
+      "logo": "https://imgs.ysscores.com/teams/64/3181690283002.png",
+      "slug": "AC-Milan"
+    },
+    {
+      "id": 10171,
+      "name": "كومو",
+      "logo": "https://imgs.ysscores.com/teams/64/8641690823614.png",
+      "slug": "Como-1907"
+    },
+    {
+      "id": 9891,
+      "name": "فروزينوني",
+      "logo": "https://imgs.ysscores.com/teams/64/5761690283004.png",
+      "slug": "Frosinone-Calcio"
+    },
+    {
+      "id": 9885,
+      "name": "يوفنتوس",
+      "logo": "https://imgs.ysscores.com/teams/64/9331690283003.png",
+      "slug": "Juventus-FC"
+    },
+    {
+      "id": 9857,
+      "name": "بولونيا",
+      "logo": "https://imgs.ysscores.com/teams/64/4281690283003.png",
+      "slug": "Bologna-FC-1909"
+    },
+    {
+      "id": 8529,
+      "name": "كالياري",
+      "logo": "https://imgs.ysscores.com/teams/64/7311690283001.png",
+      "slug": "Cagliari-Calcio"
+    },
+    {
+      "id": 9875,
+      "name": "نابولي",
+      "logo": "https://imgs.ysscores.com/teams/64/9521720636634.png",
+      "slug": "SSC-Napoli"
+    },
+    {
+      "id": 9804,
+      "name": "تورينو",
+      "logo": "https://imgs.ysscores.com/teams/64/7501690283003.png",
+      "slug": "Torino-FC"
+    },
+    {
+      "id": 8524,
+      "name": "أتالانتا",
+      "logo": "https://imgs.ysscores.com/teams/64/17795813126107.png",
+      "slug": "Atalanta-BC"
+    },
+    {
+      "id": 10233,
+      "name": "جنوى",
+      "logo": "https://imgs.ysscores.com/teams/64/1891690283004.png",
+      "slug": "Genoa-CFC"
+    },
+    {
+      "id": 9888,
+      "name": "ليتشي",
+      "logo": "https://imgs.ysscores.com/teams/64/9031690283003.png",
+      "slug": "US-Lecce"
+    },
+    {
+      "id": 8535,
+      "name": "فيورنتينا",
+      "logo": "https://imgs.ysscores.com/teams/64/1231690283002.png",
+      "slug": "ACF-Fiorentina"
+    },
+    {
+      "id": 10167,
+      "name": "بارما",
+      "logo": "https://imgs.ysscores.com/teams/64/4061690823331.png",
+      "slug": "Parma-Calcio-1913"
+    },
+    {
+      "id": 7943,
+      "name": "ساسولو",
+      "logo": "https://imgs.ysscores.com/teams/64/731690283001.png",
+      "slug": "US-Sassuolo"
+    },
+    {
+      "id": 6504,
+      "name": "مونزا",
+      "logo": "https://imgs.ysscores.com/teams/64/5671690283001.png",
+      "slug": "AC-Monza"
+    },
+    {
+      "id": 7881,
+      "name": "فينيسا",
+      "logo": "https://imgs.ysscores.com/teams/64/771690370510.png",
+      "slug": "Venezia-FC"
+    },
+    {
+      "id": 8600,
+      "name": "أودينيزي",
+      "logo": "https://imgs.ysscores.com/teams/64/8741690284718.png",
+      "slug": "Udinese-Calcio"
+    }
+  ]
+}

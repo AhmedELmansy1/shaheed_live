@@ -19,6 +19,7 @@ class CatalogException implements Exception {
 abstract class OnboardingRepository {
   Future<List<LeagueModel>> getPopularLeagues({bool forceRefresh = false});
   Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false});
+  Future<List<TeamModel>> getTeamsByLeagueId(String leagueId, {bool forceRefresh = false});
   Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false});
 }
 
@@ -454,6 +455,11 @@ class MockOnboardingRepository implements OnboardingRepository {
   }
 
   @override
+  Future<List<TeamModel>> getTeamsByLeagueId(String leagueId, {bool forceRefresh = false}) async {
+    return _mockTeams.where((team) => team.leagueId == leagueId).toList();
+  }
+
+  @override
   Future<List<TeamModel>> getPopularTeams({bool forceRefresh = false}) async => _mockTeams;
 
   List<TeamModel> getPopularTeamsSync() => _mockTeams;
@@ -548,13 +554,106 @@ class ApiOnboardingRepository implements OnboardingRepository {
   }
 
   @override
-  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false}) async {
-    final allTeams = await _getAllTeams(forceRefresh: forceRefresh);
-    if (leagueIds.isEmpty) return allTeams;
+  Future<List<TeamModel>> getTeamsByLeagueId(String leagueId, {bool forceRefresh = false}) async {
+    final p = await _getPrefs();
+    final cacheKey = 'cached_league_teams_${leagueId}_v1';
 
+    // 1. Check persistent disk cache if not forcing refresh
+    if (!forceRefresh) {
+      final cachedJson = p.getString(cacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List && decoded.isNotEmpty) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => TeamModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return list;
+          }
+        } catch (e) {
+          debugPrint('[ApiOnboardingRepository] Error parsing cached league teams ($leagueId): $e');
+        }
+      }
+    }
+
+    // 2. Fetch directly with type=teams&league_id=<id>
+    try {
+      final response = await dioClient.get(
+        queryParameters: {'type': 'teams', 'league_id': leagueId},
+      );
+
+      List<TeamModel> teams = [];
+      if (response is Map<String, dynamic>) {
+        final list = response['teams'] ?? response['data'];
+        if (list is List) {
+          teams = list
+              .whereType<Map<String, dynamic>>()
+              .map((m) => TeamModel.fromMap(m))
+              .toList();
+        }
+      } else if (response is List) {
+        teams = response
+            .whereType<Map<String, dynamic>>()
+            .map((m) => TeamModel.fromMap(m))
+            .toList();
+      }
+
+      if (teams.isNotEmpty) {
+        final serialized = jsonEncode(teams.map((t) => t.toMap()).toList());
+        await p.setString(cacheKey, serialized);
+        return teams;
+      }
+    } catch (e) {
+      debugPrint('[ApiOnboardingRepository] Error fetching teams for league $leagueId: $e');
+      // Fallback: check cache again in case of network error
+      final cachedJson = p.getString(cacheKey);
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(cachedJson);
+          if (decoded is List) {
+            final list = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((m) => TeamModel.fromMap(m))
+                .toList();
+            if (list.isNotEmpty) return list;
+          }
+        } catch (_) {}
+      }
+      rethrow;
+    }
+
+    return [];
+  }
+
+  @override
+  Future<List<TeamModel>> getTeamsForLeagues(List<String> leagueIds, {bool forceRefresh = false}) async {
+    if (leagueIds.isEmpty) return _getAllTeams(forceRefresh: forceRefresh);
+
+    final List<TeamModel> combined = [];
     final idSet = leagueIds.map((id) => id.trim()).toSet();
-    final filtered = allTeams.where((t) => idSet.contains(t.leagueId)).toList();
-    return filtered;
+
+    // Fetch in parallel for each league
+    final futures = idSet.map((id) async {
+      try {
+        return await getTeamsByLeagueId(id, forceRefresh: forceRefresh);
+      } catch (_) {
+        return <TeamModel>[];
+      }
+    });
+
+    final results = await Future.wait(futures);
+    for (final list in results) {
+      combined.addAll(list);
+    }
+
+    if (combined.isNotEmpty) {
+      return combined;
+    }
+
+    // Fallback to global catalog if per-league failed
+    final allTeams = await _getAllTeams(forceRefresh: forceRefresh);
+    return allTeams.where((t) => idSet.contains(t.leagueId)).toList();
   }
 
   @override

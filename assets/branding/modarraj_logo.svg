@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Deep midnight background gradient -->
+    <linearGradient id="midnightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0B1020" />
+      <stop offset="100%" stop-color="#16213E" />
+    </linearGradient>
+
+    <!-- Subtle live dot glow filter -->
+    <filter id="liveGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#midnightGrad)" />
+
+  <!-- Stadium Grandstand Tiers (Concentric rising stands opening upward) -->
+  <!-- Tier 4 (Upper roof / crown terrace) -->
+  <path d="M 55.7 249.1 A 216 216 0 0 1 456.3 249.1"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="14"
+        stroke-linecap="round"
+        stroke-opacity="0.50" />
+
+  <!-- Tier 3 (Upper stands) -->
+  <path d="M 98.1 272.5 A 168 168 0 0 1 413.9 272.5"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="17"
+        stroke-linecap="round"
+        stroke-opacity="0.75" />
+
+  <!-- Tier 2 (Middle stands) -->
+  <path d="M 148.2 282.0 A 118 118 0 0 1 363.8 282.0"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="16"
+        stroke-linecap="round"
+        stroke-opacity="0.90" />
+
+  <!-- Tier 1 (Lower stands) -->
+  <path d="M 197.1 296.0 A 68 68 0 0 1 314.9 296.0"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="14"
+        stroke-linecap="round"
+        stroke-opacity="1.00" />
+
+  <!-- Pitch / Ball & Live Indicator Dot -->
+  <circle cx="256" cy="330" r="23" fill="#FF4D3D" filter="url(#liveGlow)" />
+</svg>

@@ -1,0 +1,127 @@
+{
+  "league_id": 943009,
+  "league_name": "Egyptian League",
+  "count": 20,
+  "teams": [
+    {
+      "id": 517894,
+      "name": "بيراميدز",
+      "logo": "https://imgs.ysscores.com/teams/64/5771692283569.png",
+      "slug": "Pyramids-FC"
+    },
+    {
+      "id": 101745,
+      "name": "الأهلي",
+      "logo": "https://imgs.ysscores.com/teams/64/9591694714907.png",
+      "slug": "Al-Ahly-FC"
+    },
+    {
+      "id": 80591,
+      "name": "الزمالك",
+      "logo": "https://imgs.ysscores.com/teams/64/7971694082496.png",
+      "slug": "Zamalek-SC"
+    },
+    {
+      "id": 608449,
+      "name": "سيراميكا",
+      "logo": "https://imgs.ysscores.com/teams/64/631694081965.png",
+      "slug": "Cleopatra-FC"
+    },
+    {
+      "id": 101766,
+      "name": "الإتحاد",
+      "logo": "https://imgs.ysscores.com/teams/64/3771694082184.png",
+      "slug": "Ittihad-Alexandria-SC"
+    },
+    {
+      "id": 797212,
+      "name": "مودرن سبورت",
+      "logo": "https://imgs.ysscores.com/teams/64/5391724147326.png",
+      "slug": "Modern-Sport-Club"
+    },
+    {
+      "id": 101757,
+      "name": "المقاولون العرب",
+      "logo": "https://imgs.ysscores.com/teams/64/2721694082551.png",
+      "slug": "El-Mokawloon-SC"
+    },
+    {
+      "id": 687954,
+      "name": "البنك الأهلي",
+      "logo": "https://imgs.ysscores.com/teams/64/7591694081941.png",
+      "slug": "Bank-El-Ahly"
+    },
+    {
+      "id": 205189,
+      "name": "سموحة",
+      "logo": "https://imgs.ysscores.com/teams/64/481694082088.png",
+      "slug": "Smouha-SC"
+    },
+    {
+      "id": 585662,
+      "name": "نادي زد",
+      "logo": "https://imgs.ysscores.com/teams/64/8411694619351.png",
+      "slug": "Zed-FC"
+    },
+    {
+      "id": 103017,
+      "name": "السويس بتروجيت",
+      "logo": "https://imgs.ysscores.com/teams/64/17873555652953.png",
+      "slug": "Petrojet"
+    },
+    {
+      "id": 101762,
+      "name": "المصري",
+      "logo": "https://imgs.ysscores.com/teams/64/1521694644423.png",
+      "slug": "El-Masry-SC"
+    },
+    {
+      "id": 316488,
+      "name": "القناة",
+      "logo": "https://imgs.ysscores.com/teams/64/5821715097236.png",
+      "slug": "Qanah-FC"
+    },
+    {
+      "id": 101747,
+      "name": "طلائع الجيش",
+      "logo": "https://imgs.ysscores.com/teams/64/5871731000840.png",
+      "slug": "Talaea-El-Gaish"
+    },
+    {
+      "id": 205190,
+      "name": "وادي دجلة",
+      "logo": "https://imgs.ysscores.com/teams/64/2161728755640.png",
+      "slug": "Wadi-Degla-FC"
+    },
+    {
+      "id": 101754,
+      "name": "الشرقية إنبي",
+      "logo": "https://imgs.ysscores.com/teams/64/17874779322765.png",
+      "slug": "El-Sharkia-Enppi-FC"
+    },
+    {
+      "id": 101752,
+      "name": "غزل المحلة",
+      "logo": "https://imgs.ysscores.com/teams/64/9801725831886.png",
+      "slug": "Ghazl-El-Mahalla"
+    },
+    {
+      "id": 139526,
+      "name": "بترول أسيوط",
+      "logo": "https://imgs.ysscores.com/teams/64/5831736286055.png",
+      "slug": "Petrol-Asyut"
+    },
+    {
+      "id": 316504,
+      "name": "أبو قير",
+      "logo": "https://imgs.ysscores.com/teams/64/8611715098753.png",
+      "slug": "Abo-Qir-Fertilizers"
+    },
+    {
+      "id": 178268,
+      "name": "الجونة",
+      "logo": "https://imgs.ysscores.com/teams/64/3751731169729.png",
+      "slug": "El-Gouna-FC"
+    }
+  ]
+}

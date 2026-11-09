@@ -1,0 +1,115 @@
+{
+  "league_id": 938769,
+  "league_name": "Bundesliga",
+  "count": 18,
+  "teams": [
+    {
+      "id": 9823,
+      "name": "بايرن ميونخ",
+      "logo": "https://imgs.ysscores.com/teams/64/2351690288818.png",
+      "slug": "Bayern-Munich"
+    },
+    {
+      "id": 9789,
+      "name": "دورتموند",
+      "logo": "https://imgs.ysscores.com/teams/64/4201690288818.png",
+      "slug": "Borussia-Dortmund"
+    },
+    {
+      "id": 8358,
+      "name": "فرايبورغ",
+      "logo": "https://imgs.ysscores.com/teams/64/4771690288817.png",
+      "slug": "SC-Freiburg"
+    },
+    {
+      "id": 178475,
+      "name": "لايبزيج",
+      "logo": "https://imgs.ysscores.com/teams/64/8361734715237.png",
+      "slug": "RB-Leipzig"
+    },
+    {
+      "id": 8178,
+      "name": "باير ليفركوزن",
+      "logo": "https://imgs.ysscores.com/teams/64/7151690288816.png",
+      "slug": "Bayer-04-Leverkusen"
+    },
+    {
+      "id": 8697,
+      "name": "فيردر بريمن",
+      "logo": "https://imgs.ysscores.com/teams/64/9771690288817.png",
+      "slug": "SV-Werder-Bremen"
+    },
+    {
+      "id": 8232,
+      "name": "إلفيرسبيرج",
+      "logo": "https://imgs.ysscores.com/teams/64/9101690370517.png",
+      "slug": "SV-07-Elversberg"
+    },
+    {
+      "id": 10269,
+      "name": "شتوتجارت",
+      "logo": "https://imgs.ysscores.com/teams/64/8731690288819.png",
+      "slug": "VfB-Stuttgart"
+    },
+    {
+      "id": 8226,
+      "name": "هوفنهايم",
+      "logo": "https://imgs.ysscores.com/teams/64/5141690288816.png",
+      "slug": "TSG-1899-Hoffenheim"
+    },
+    {
+      "id": 9810,
+      "name": "فرانكفورت",
+      "logo": "https://imgs.ysscores.com/teams/64/231690288818.png",
+      "slug": "Eintracht-Frankfurt"
+    },
+    {
+      "id": 9790,
+      "name": "هامبورغ",
+      "logo": "https://imgs.ysscores.com/teams/64/261690370540.png",
+      "slug": "Hamburger-SV"
+    },
+    {
+      "id": 9905,
+      "name": "ماينتس",
+      "logo": "https://imgs.ysscores.com/teams/64/8131690288819.png",
+      "slug": "1.FSV-Mainz-05"
+    },
+    {
+      "id": 8460,
+      "name": "بادربورن",
+      "logo": "https://imgs.ysscores.com/teams/64/3911690370525.png",
+      "slug": "SC-Paderborn-07"
+    },
+    {
+      "id": 8406,
+      "name": "أوجسبورغ",
+      "logo": "https://imgs.ysscores.com/teams/64/7221690288817.png",
+      "slug": "FC-Augsburg"
+    },
+    {
+      "id": 8722,
+      "name": "كولن",
+      "logo": "https://imgs.ysscores.com/teams/64/2071690288818.png",
+      "slug": "1.FC-Köln"
+    },
+    {
+      "id": 8149,
+      "name": "يونيون برلين",
+      "logo": "https://imgs.ysscores.com/teams/64/6521690288816.png",
+      "slug": "1.FC-Union-Berlin"
+    },
+    {
+      "id": 10189,
+      "name": "شالكه",
+      "logo": "https://imgs.ysscores.com/teams/64/7011690370555.png",
+      "slug": "FC-Schalke-04"
+    },
+    {
+      "id": 9788,
+      "name": "مونشنغلادباخ",
+      "logo": "https://imgs.ysscores.com/teams/64/4571690288818.png",
+      "slug": "Borussia-Mönchengladbach"
+    }
+  ]
+}

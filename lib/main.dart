@@ -61,20 +61,34 @@ Future<void> _initNotificationsSafely() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Parallelize critical startup initializations
+  // Fast essential startup initializations (all local, zero network)
   await Future.wait([
     EnvConfig.init(),
     TimezoneHelper.init(),
-    _initFirebaseSafely(),
-    _initNotificationsSafely(),
     SharedPreferences.getInstance(),
   ]);
 
-  runApp(const ProviderScope(child: ShootLiveApp()));
+  // Launch background services without blocking the first Flutter frame
+  final firebaseInitFuture = _initFirebaseSafely();
+  final notifInitFuture = _initNotificationsSafely();
+
+  runApp(ProviderScope(
+    child: ShootLiveApp(
+      firebaseInitFuture: firebaseInitFuture,
+      notifInitFuture: notifInitFuture,
+    ),
+  ));
 }
 
 class ShootLiveApp extends ConsumerStatefulWidget {
-  const ShootLiveApp({super.key});
+  final Future<void>? firebaseInitFuture;
+  final Future<void>? notifInitFuture;
+
+  const ShootLiveApp({
+    super.key,
+    this.firebaseInitFuture,
+    this.notifInitFuture,
+  });
 
   @override
   ConsumerState<ShootLiveApp> createState() => _ShootLiveAppState();
@@ -87,8 +101,8 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Defer non-critical services (AdMob, FCM listener) until after first frame is painted
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Defer all heavier services (Firebase, AdMob, FCM) until after the first frame is painted
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 1. Initialize AdMob SDK and test device config
       MobileAds.instance.initialize().then((_) {
         AdService.initTestDeviceConfig();
@@ -96,19 +110,29 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
         debugPrint('[Main] AdMob init deferred error: $e');
       });
 
-      // 2. Initialize FCM foreground listener
+      // 2. Wait for notifications initialization
+      if (widget.notifInitFuture != null) {
+        await widget.notifInitFuture;
+      }
+
+      // 3. Wait for Firebase initialization
+      if (widget.firebaseInitFuture != null) {
+        await widget.firebaseInitFuture;
+      }
+
+      // 4. Initialize FCM foreground listener
       try {
         ref.read(fcmServiceProvider).init();
       } catch (e) {
         debugPrint('[Main] FCM service init skipped/failed: $e');
       }
 
-      // 3. Preload App Open Ad in parallel non-blocking
+      // 5. Preload App Open Ad in parallel non-blocking
       try {
         ref.read(adServiceProvider).loadAppOpenAd();
       } catch (_) {}
 
-      // 4. Background Auth and Cloud Sync (guarded for runtime when Firebase is configured)
+      // 6. Background Auth and Cloud Sync (guarded for runtime when Firebase is configured)
       if (Firebase.apps.isNotEmpty) {
         try {
           ref.read(authServiceProvider).ensureAuthenticated().then((_) {
@@ -122,7 +146,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
           debugPrint('[Main] Auth notice: $e');
         }
 
-        // 5. Reschedule pending match reminders
+        // 7. Reschedule pending match reminders
         try {
           ref.read(matchReminderServiceProvider).rescheduleAllReminders().catchError((e) {
             debugPrint('[Main] Match reminder reschedule notice: $e');
@@ -131,7 +155,7 @@ class _ShootLiveAppState extends ConsumerState<ShootLiveApp>
           debugPrint('[Main] Match reminder reschedule notice: $e');
         }
 
-        // 6. Fetch initial remote config
+        // 8. Fetch initial remote config
         () async {
           try {
             await ref.read(remoteConfigServiceProvider).fetchInitialConfig();

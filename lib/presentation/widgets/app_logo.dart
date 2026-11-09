@@ -1,19 +1,23 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/config/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 
-/// Reusable application logo for Match Score (ماتش سكور).
+/// Professional, geometric application emblem and logo for "مدرّج" (Modarraj).
 ///
-/// Features a futuristic football stadium crest emblem with neon live accents
-/// and crisp typography with an active live dot indicator.
+/// Concept: "Stands + Live Signal"
+/// - Concentric rising stadium tiers / grandstand arcs opening upward.
+/// - Vibrant live red-orange dot (#FF4D3D) at the focal bottom center.
+/// - Deep midnight backdrop (#0B1020 -> #16213E).
+/// - 100% vector-rendered via [ModarrajLogoPainter] without external bitmap dependencies.
 class AppLogo extends StatelessWidget {
   final double size;
   final bool showSubtitle;
   final bool isHorizontal;
   final double progress;
-  final bool showBadgeImage;
 
   const AppLogo({
     super.key,
@@ -21,13 +25,12 @@ class AppLogo extends StatelessWidget {
     this.showSubtitle = true,
     this.isHorizontal = false,
     this.progress = 1.0,
-    this.showBadgeImage = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderRadius = BorderRadius.circular(size * 0.24);
+    final borderRadius = BorderRadius.circular(size * 0.22);
 
     final emblem = Container(
       width: size,
@@ -36,54 +39,34 @@ class AppLogo extends StatelessWidget {
         borderRadius: borderRadius,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35 * progress),
-            blurRadius: size * 0.28,
-            spreadRadius: size * 0.04,
+            color: const Color(0xFFFF4D3D).withValues(alpha: 0.25 * progress),
+            blurRadius: size * 0.24,
+            spreadRadius: -size * 0.02,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: AppColors.live.withValues(alpha: 0.2 * progress),
-            blurRadius: size * 0.2,
-            spreadRadius: -size * 0.02,
-            offset: const Offset(-4, -4),
+            color: const Color(0xFF0B1020).withValues(alpha: 0.40 * progress),
+            blurRadius: size * 0.20,
+            spreadRadius: size * 0.02,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: borderRadius,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Background fallback vector painter
-            CustomPaint(
-              size: Size(size, size),
-              painter: FootballShieldLogoPainter(
-                progress: progress,
-                primaryColor: AppColors.primary,
-                liveColor: AppColors.live,
-                isDark: isDark,
-              ),
-            ),
-            // High-res badge image asset with smooth fade
-            if (showBadgeImage)
-              Image.asset(
-                'assets/images/app_icon.png',
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback to CustomPaint silently if asset is unavailable
-                  return const SizedBox();
-                },
-              ),
-          ],
+        child: CustomPaint(
+          size: Size(size, size),
+          painter: ModarrajLogoPainter(progress: progress),
         ),
       ),
     );
 
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
+    if (!showSubtitle) {
+      return emblem;
+    }
+
+    final textPrimary =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
 
     final typography = Column(
       mainAxisSize: MainAxisSize.min,
@@ -97,7 +80,7 @@ class AppLogo extends StatelessWidget {
             Text(
               AppConstants.appName,
               style: GoogleFonts.cairo(
-                fontSize: size * 0.30,
+                fontSize: size * 0.32,
                 fontWeight: FontWeight.w900,
                 color: textPrimary,
                 height: 1.15,
@@ -109,11 +92,11 @@ class AppLogo extends StatelessWidget {
               width: size * 0.09,
               height: size * 0.09,
               decoration: const BoxDecoration(
-                color: AppColors.live,
+                color: Color(0xFFFF4D3D),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.live,
+                    color: Color(0xFFFF4D3D),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -122,28 +105,25 @@ class AppLogo extends StatelessWidget {
             ),
           ],
         ),
-        if (showSubtitle) ...[
-          const SizedBox(height: 3),
-          Text(
-            'MATCH SCORE',
-            style: GoogleFonts.poppins(
-              fontSize: size * 0.12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3.0,
-              color: AppColors.primary,
-            ),
+        Text(
+          AppConstants.appTitle,
+          style: GoogleFonts.cairo(
+            fontSize: size * 0.16,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            letterSpacing: 1.5,
+            height: 1.1,
           ),
-        ],
+        ),
       ],
     );
 
     if (isHorizontal) {
       return Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           emblem,
-          SizedBox(width: size * 0.22),
+          const SizedBox(width: 14),
           typography,
         ],
       );
@@ -153,113 +133,89 @@ class AppLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         emblem,
-        SizedBox(height: size * 0.16),
+        const SizedBox(height: 14),
         typography,
       ],
     );
   }
 }
 
-/// Fallback vector painter rendering an iconic football stadium shield with dual neon accents
-class FootballShieldLogoPainter extends CustomPainter {
+/// Custom painter rendering the geometric "Stands + Live Signal" logo.
+class ModarrajLogoPainter extends CustomPainter {
   final double progress;
-  final Color primaryColor;
-  final Color liveColor;
-  final bool isDark;
 
-  FootballShieldLogoPainter({
-    required this.progress,
-    required this.primaryColor,
-    required this.liveColor,
-    required this.isDark,
-  });
+  const ModarrajLogoPainter({this.progress = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final w = size.width;
-    final h = size.height;
+    final scale = size.width / 512.0;
 
-    // 1. Dark Shield Base
-    final shieldPath = Path();
-    shieldPath.moveTo(w * 0.15, h * 0.12);
-    shieldPath.quadraticBezierTo(w * 0.5, h * 0.04, w * 0.85, h * 0.12);
-    shieldPath.quadraticBezierTo(w * 0.90, h * 0.55, w * 0.5, h * 0.94);
-    shieldPath.quadraticBezierTo(w * 0.10, h * 0.55, w * 0.15, h * 0.12);
-    shieldPath.close();
-
+    // 1. Draw Deep Midnight Background Gradient
     final bgPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: isDark
-            ? [const Color(0xFF161E2E), const Color(0xFF090D16)]
-            : [const Color(0xFF1E293B), const Color(0xFF0F172A)],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF0B1020), Color(0xFF16213E)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
-    canvas.drawPath(shieldPath, bgPaint);
+    final cx = size.width / 2.0;
+    final cy = 330.0 * scale;
 
-    // 2. Dual Neon Rim (Green on left, Coral on right)
-    final rimPaintGreen = Paint()
-      ..color = liveColor.withValues(alpha: 0.85 * progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.04;
+    // 2. Draw Stadium Grandstand Tiers (rising concentric arcs opening upward)
+    final tiers = [
+      _TierConfig(r: 216.0 * scale, stroke: math.max(1.0, 14.0 * scale), alpha: 0.50, halfAngleDeg: 68.0),
+      _TierConfig(r: 168.0 * scale, stroke: math.max(1.5, 17.0 * scale), alpha: 0.75, halfAngleDeg: 70.0),
+      _TierConfig(r: 118.0 * scale, stroke: math.max(1.5, 16.0 * scale), alpha: 0.90, halfAngleDeg: 66.0),
+      _TierConfig(r: 68.0 * scale, stroke: math.max(1.5, 14.0 * scale), alpha: 1.00, halfAngleDeg: 60.0),
+    ];
 
-    final rimPaintCoral = Paint()
-      ..color = primaryColor.withValues(alpha: 0.85 * progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.04;
+    for (final tier in tiers) {
+      final arcPaint = Paint()
+        ..color = Colors.white.withValues(alpha: tier.alpha * progress)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = tier.stroke
+        ..strokeCap = StrokeCap.round;
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: w * 0.36),
-      3.14159 * 0.5,
-      3.14159,
-      false,
-      rimPaintGreen,
-    );
+      final startAngleRad = (180.0 + (90.0 - tier.halfAngleDeg)) * math.pi / 180.0;
+      final sweepAngleRad = (tier.halfAngleDeg * 2.0) * math.pi / 180.0;
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: w * 0.36),
-      -3.14159 * 0.5,
-      3.14159,
-      false,
-      rimPaintCoral,
-    );
-
-    // 3. Football Core Geometry
-    final ballRadius = w * 0.22;
-    final ballPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.035;
-
-    canvas.drawCircle(center, ballRadius, ballPaint);
-
-    // Center pentagon
-    final pentagonPath = Path();
-    for (int i = 0; i < 5; i++) {
-      final angle = (i * 72.0 - 90.0) * (3.14159 / 180.0);
-      final px = center.dx + (ballRadius * 0.45) * (i == 0 ? 0 : (angle > 0 ? 0.95 : -0.95));
-      final py = center.dy + (ballRadius * 0.45) * (i == 0 ? -1 : 0.4);
-      if (i == 0) {
-        pentagonPath.moveTo(px, py);
-      } else {
-        pentagonPath.lineTo(px, py);
-      }
+      final rect = Rect.fromCircle(center: Offset(cx, cy), radius: tier.r);
+      canvas.drawArc(rect, startAngleRad, sweepAngleRad, false, arcPaint);
     }
-    pentagonPath.close();
 
-    final pentagonPaint = Paint()
-      ..color = primaryColor
+    // 3. Draw Pitch / Live Dot at (cx, cy)
+    final dotRadius = math.max(2.5, 23.0 * scale);
+
+    // Subtle glow behind dot
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFF4D3D).withValues(alpha: 0.40 * progress)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8.0 * scale);
+    canvas.drawCircle(Offset(cx, cy), dotRadius * 1.3, glowPaint);
+
+    // Core solid red-orange dot
+    final dotPaint = Paint()
+      ..color = const Color(0xFFFF4D3D).withValues(alpha: progress)
       ..style = PaintingStyle.fill;
-    canvas.drawPath(pentagonPath, pentagonPaint);
+    canvas.drawCircle(Offset(cx, cy), dotRadius, dotPaint);
   }
 
   @override
-  bool shouldRepaint(covariant FootballShieldLogoPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.primaryColor != primaryColor ||
-        oldDelegate.liveColor != liveColor ||
-        oldDelegate.isDark != isDark;
+  bool shouldRepaint(covariant ModarrajLogoPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
+}
+
+class _TierConfig {
+  final double r;
+  final double stroke;
+  final double alpha;
+  final double halfAngleDeg;
+
+  const _TierConfig({
+    required this.r,
+    required this.stroke,
+    required this.alpha,
+    required this.halfAngleDeg,
+  });
 }

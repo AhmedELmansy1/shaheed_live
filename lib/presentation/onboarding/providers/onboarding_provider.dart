@@ -29,6 +29,11 @@ class OnboardingState {
   final List<TeamModel> filteredTeams;
   final List<String> selectedTeamIds;
 
+  // Per-league lazy loading maps
+  final Map<String, List<TeamModel>> leagueTeams;
+  final Map<String, bool> leagueLoading;
+  final Map<String, String?> leagueErrors;
+
   const OnboardingState({
     this.isLoading = true,
     this.errorMessage,
@@ -38,7 +43,13 @@ class OnboardingState {
     this.selectedLeagueIds = const [],
     this.filteredTeams = const [],
     this.selectedTeamIds = const [],
+    this.leagueTeams = const {},
+    this.leagueLoading = const {},
+    this.leagueErrors = const {},
   });
+
+  /// O(1) set lookup for fast selection rendering
+  Set<String> get selectedTeamIdsSet => selectedTeamIds.toSet();
 
   OnboardingState copyWith({
     bool? isLoading,
@@ -50,6 +61,9 @@ class OnboardingState {
     List<String>? selectedLeagueIds,
     List<TeamModel>? filteredTeams,
     List<String>? selectedTeamIds,
+    Map<String, List<TeamModel>>? leagueTeams,
+    Map<String, bool>? leagueLoading,
+    Map<String, String?>? leagueErrors,
   }) {
     return OnboardingState(
       isLoading: isLoading ?? this.isLoading,
@@ -62,6 +76,9 @@ class OnboardingState {
       selectedLeagueIds: selectedLeagueIds ?? this.selectedLeagueIds,
       filteredTeams: filteredTeams ?? this.filteredTeams,
       selectedTeamIds: selectedTeamIds ?? this.selectedTeamIds,
+      leagueTeams: leagueTeams ?? this.leagueTeams,
+      leagueLoading: leagueLoading ?? this.leagueLoading,
+      leagueErrors: leagueErrors ?? this.leagueErrors,
     );
   }
 }
@@ -117,12 +134,6 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
 
       // 2. Fetch real catalog from API or local cache
       final leagues = await repository.getPopularLeagues();
-      List<TeamModel> teams = [];
-      if (cleanedLeagues.isNotEmpty) {
-        teams = await repository.getTeamsForLeagues(cleanedLeagues);
-      } else {
-        teams = await repository.getPopularTeams();
-      }
 
       if (!ref.mounted) return;
       state = state.copyWith(
@@ -132,9 +143,15 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         hasCompletedOnboarding: onboardingDone,
         leagues: leagues,
         selectedLeagueIds: cleanedLeagues,
-        filteredTeams: teams,
         selectedTeamIds: cleanedTeams,
       );
+
+      // 3. Load teams for selected leagues if any
+      if (cleanedLeagues.isNotEmpty) {
+        for (final lId in cleanedLeagues) {
+          loadTeamsForLeague(lId);
+        }
+      }
     } catch (e, st) {
       debugPrint('[OnboardingNotifier] Error in init(): $e\n$st');
       if (ref.mounted) {
@@ -157,44 +174,106 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   Future<void> saveSelectedLeagues() async {
-    final repository = ref.read(onboardingRepositoryProvider);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('selected_leagues', state.selectedLeagueIds);
 
-    // Load teams matching selected leagues
-    final teams = await repository.getTeamsForLeagues(state.selectedLeagueIds);
-    state = state.copyWith(filteredTeams: teams);
+    // Kick off lazy loads for each selected league
+    for (final leagueId in state.selectedLeagueIds) {
+      if (!state.leagueTeams.containsKey(leagueId) || (state.leagueTeams[leagueId]?.isEmpty ?? true)) {
+        loadTeamsForLeague(leagueId);
+      }
+    }
 
-    // Sync updated leagues to Firestore in background
     _pushToFirestoreAsync();
   }
 
+  /// Lazily fetches the full team list for an individual league
+  Future<void> loadTeamsForLeague(String leagueId, {bool forceRefresh = false}) async {
+    final updatedLoading = Map<String, bool>.from(state.leagueLoading);
+    final updatedErrors = Map<String, String?>.from(state.leagueErrors);
+    updatedLoading[leagueId] = true;
+    updatedErrors.remove(leagueId);
+    state = state.copyWith(leagueLoading: updatedLoading, leagueErrors: updatedErrors);
+
+    try {
+      final repository = ref.read(onboardingRepositoryProvider);
+      final teams = await repository.getTeamsByLeagueId(leagueId, forceRefresh: forceRefresh);
+
+      if (!ref.mounted) return;
+
+      final updatedTeams = Map<String, List<TeamModel>>.from(state.leagueTeams);
+      updatedTeams[leagueId] = teams;
+
+      // Update combined filteredTeams
+      final allLoadedTeams = <TeamModel>[];
+      for (final list in updatedTeams.values) {
+        allLoadedTeams.addAll(list);
+      }
+
+      final finishLoading = Map<String, bool>.from(state.leagueLoading);
+      finishLoading[leagueId] = false;
+
+      state = state.copyWith(
+        leagueTeams: updatedTeams,
+        leagueLoading: finishLoading,
+        filteredTeams: allLoadedTeams,
+      );
+    } catch (e) {
+      debugPrint('[OnboardingNotifier] Error loading teams for league $leagueId: $e');
+      if (!ref.mounted) return;
+      final finishLoading = Map<String, bool>.from(state.leagueLoading);
+      finishLoading[leagueId] = false;
+      final finishErrors = Map<String, String?>.from(state.leagueErrors);
+      finishErrors[leagueId] = 'تعذر تحميل الفرق لهذا الدوري';
+
+      state = state.copyWith(
+        leagueLoading: finishLoading,
+        leagueErrors: finishErrors,
+      );
+    }
+  }
+
+  /// Retries fetching teams for a specific league on failure
+  Future<void> retryLeagueTeams(String leagueId) async {
+    await loadTeamsForLeague(leagueId, forceRefresh: true);
+  }
+
   void toggleTeamSelection(String teamId) {
-    final current = List<String>.from(state.selectedTeamIds);
+    final current = Set<String>.from(state.selectedTeamIds);
     if (current.contains(teamId)) {
       current.remove(teamId);
     } else {
       current.add(teamId);
     }
-    state = state.copyWith(selectedTeamIds: current);
+    state = state.copyWith(selectedTeamIds: current.toList());
+  }
+
+  /// High-performance instant onboarding completion:
+  /// Batches local storage writes, updates state instantly, and offloads network sync to the background.
+  Future<void> fastCompleteOnboarding() async {
+    final selectedTeams = List<String>.from(state.selectedTeamIds);
+    state = state.copyWith(hasCompletedOnboarding: true);
+
+    // 1. Single synchronous/batch persistent write
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('selected_teams', selectedTeams);
+    await prefs.setBool('hasCompletedOnboarding', true);
+
+    // 2. Offload network/FCM tasks to background without awaiting
+    Future.microtask(() async {
+      try {
+        final reminderService = ref.read(matchReminderServiceProvider);
+        await reminderService.syncTeamTopicSubscriptions(selectedTeams);
+      } catch (e) {
+        debugPrint('[OnboardingNotifier] Background FCM sync notice: $e');
+      }
+
+      _pushToFirestoreAsync();
+    });
   }
 
   Future<void> saveSelectedTeams() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('selected_teams', state.selectedTeamIds);
-    await prefs.setBool('hasCompletedOnboarding', true);
-
-    state = state.copyWith(hasCompletedOnboarding: true);
-
-    // Auto-subscribe chosen clubs to FCM team topics (and unsubscribe removed ones)
-    try {
-      final reminderService = ref.read(matchReminderServiceProvider);
-      await reminderService.syncTeamTopicSubscriptions(state.selectedTeamIds);
-    } catch (e) {
-      debugPrint('[OnboardingNotifier] Error syncing team FCM topics: $e');
-    }
-
-    _pushToFirestoreAsync();
+    await fastCompleteOnboarding();
   }
 
   Future<void> completeNotificationSetup() async {
@@ -212,6 +291,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
       hasCompletedOnboarding: false,
       selectedLeagueIds: [],
       selectedTeamIds: [],
+      leagueTeams: {},
+      leagueLoading: {},
+      leagueErrors: {},
     );
   }
 

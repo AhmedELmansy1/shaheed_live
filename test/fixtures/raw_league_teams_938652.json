@@ -1,0 +1,127 @@
+{
+  "league_id": 938652,
+  "league_name": "La Liga",
+  "count": 20,
+  "teams": [
+    {
+      "id": 8634,
+      "name": "برشلونة",
+      "logo": "https://imgs.ysscores.com/teams/64/9541690196746.png",
+      "slug": "FC-Barcelona"
+    },
+    {
+      "id": 8633,
+      "name": "ريال مدريد",
+      "logo": "https://imgs.ysscores.com/teams/64/1871690196746.png",
+      "slug": "Real-Madrid"
+    },
+    {
+      "id": 9906,
+      "name": "أتلتيكو مدريد",
+      "logo": "https://imgs.ysscores.com/teams/64/1431719588699.png",
+      "slug": "Atlético-de-Madrid"
+    },
+    {
+      "id": 8603,
+      "name": "ريال بيتيس",
+      "logo": "https://imgs.ysscores.com/teams/64/17645945054618.png",
+      "slug": "Real-Betis-Balompié"
+    },
+    {
+      "id": 8560,
+      "name": "ريال سوسيداد",
+      "logo": "https://imgs.ysscores.com/teams/64/9441690196745.png",
+      "slug": "Real-Sociedad"
+    },
+    {
+      "id": 8302,
+      "name": "إشبيلية",
+      "logo": "https://imgs.ysscores.com/teams/64/6931690196743.png",
+      "slug": "Sevilla-FC"
+    },
+    {
+      "id": 8315,
+      "name": "أتلتيك بلباو",
+      "logo": "https://imgs.ysscores.com/teams/64/1061690197944.png",
+      "slug": "Athletic-Bilbao"
+    },
+    {
+      "id": 10205,
+      "name": "فياريال",
+      "logo": "https://imgs.ysscores.com/teams/64/7121690196747.png",
+      "slug": "Villarreal-CF"
+    },
+    {
+      "id": 9783,
+      "name": "لاكورونيا",
+      "logo": "https://imgs.ysscores.com/teams/64/2961698772258.png",
+      "slug": "Deportivo-de-La-Coruña"
+    },
+    {
+      "id": 8696,
+      "name": "راسينغ",
+      "logo": "https://imgs.ysscores.com/teams/64/3011761516113.png",
+      "slug": "Racing-Santander"
+    },
+    {
+      "id": 9910,
+      "name": "سيلتا فيغو",
+      "logo": "https://imgs.ysscores.com/teams/64/9611690196747.png",
+      "slug": "Celta-de-Vigo"
+    },
+    {
+      "id": 9866,
+      "name": "ألافيس",
+      "logo": "https://imgs.ysscores.com/teams/64/2381690196746.png",
+      "slug": "Deportivo-Alavés"
+    },
+    {
+      "id": 8558,
+      "name": "إسبانيول",
+      "logo": "https://imgs.ysscores.com/teams/64/4481690370529.png",
+      "slug": "RCD-Espanyol-Barcelona"
+    },
+    {
+      "id": 8370,
+      "name": "رايو فاليكانو",
+      "logo": "https://imgs.ysscores.com/teams/64/1511690196745.png",
+      "slug": "Rayo-Vallecano"
+    },
+    {
+      "id": 8305,
+      "name": "خيتافي",
+      "logo": "https://imgs.ysscores.com/teams/64/3451691957863.png",
+      "slug": "Getafe-CF"
+    },
+    {
+      "id": 8371,
+      "name": "أوساسونا",
+      "logo": "https://imgs.ysscores.com/teams/64/7961690196745.png",
+      "slug": "CA-Osasuna"
+    },
+    {
+      "id": 8581,
+      "name": "ليفانتي",
+      "logo": "https://imgs.ysscores.com/teams/64/2601690370530.png",
+      "slug": "Levante-UD"
+    },
+    {
+      "id": 10268,
+      "name": "إلتشي",
+      "logo": "https://imgs.ysscores.com/teams/64/6441698766179.png",
+      "slug": "Elche-CF"
+    },
+    {
+      "id": 10267,
+      "name": "فالنسيا",
+      "logo": "https://imgs.ysscores.com/teams/64/7881690196747.png",
+      "slug": "Valencia-CF"
+    },
+    {
+      "id": 9864,
+      "name": "ملقا",
+      "logo": "https://imgs.ysscores.com/teams/64/1171690458315.png",
+      "slug": "Málaga-CF"
+    }
+  ]
+}

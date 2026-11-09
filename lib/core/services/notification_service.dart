@@ -234,7 +234,7 @@ class NotificationService {
     final androidDetails = AndroidNotificationDetails(
       channelId,
       _getChannelName(channelId),
-      icon: '@drawable/ic_notification',
+      icon: '@drawable/ic_stat_notify',
       color: const Color(0xFFE5482D),
       importance: Importance.max,
       priority: Priority.high,
@@ -267,7 +267,7 @@ class NotificationService {
     final androidDetails = AndroidNotificationDetails(
       channelId,
       _getChannelName(channelId),
-      icon: '@drawable/ic_notification',
+      icon: '@drawable/ic_stat_notify',
       color: const Color(0xFFE5482D),
       importance: Importance.max,
       priority: Priority.high,

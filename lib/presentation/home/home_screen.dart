@@ -308,6 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final onboarding = ref.watch(onboardingProvider);
     final hasSelections = onboarding.selectedLeagueIds.isNotEmpty ||
         onboarding.selectedTeamIds.isNotEmpty;
+    final isMyMatchesActive = scope == HomeFeedScope.myMatches;
 
     return Container(
       width: double.infinity,
@@ -324,48 +325,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
-            if (hasSelections) ...[
-              AppChip(
-                label: 'مبارياتي',
-                icon: Icons.bookmark_rounded,
-                isSelected: scope == HomeFeedScope.myMatches,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref
-                      .read(homeFeedScopeProvider.notifier)
-                      .setScope(HomeFeedScope.myMatches);
-                },
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              AppChip(
-                label: 'كل المباريات',
-                icon: Icons.sports_soccer_rounded,
-                isSelected: scope == HomeFeedScope.allMatches,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref
-                      .read(homeFeedScopeProvider.notifier)
-                      .setScope(HomeFeedScope.allMatches);
-                },
-              ),
-              Container(
-                height: 20,
-                width: 1,
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                color: border,
-              ),
-            ],
+            // 1. All (Default view: all matches across all leagues)
             AppChip(
               label: 'الكل',
-              isSelected: activeFilter == MatchFilterType.all,
+              isSelected: activeFilter == MatchFilterType.all && !isMyMatchesActive,
               onTap: () {
                 HapticFeedback.selectionClick();
                 ref
                     .read(matchFilterProvider.notifier)
                     .setFilter(MatchFilterType.all);
+                if (isMyMatchesActive) {
+                  ref
+                      .read(homeFeedScopeProvider.notifier)
+                      .setScope(HomeFeedScope.allMatches);
+                }
               },
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.xs),
+
+            // 2. Optional "مبارياتي" filter chip (OFF by default)
+            if (hasSelections) ...[
+              AppChip(
+                label: 'مبارياتي',
+                icon: Icons.bookmark_rounded,
+                isSelected: isMyMatchesActive,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref.read(homeFeedScopeProvider.notifier).toggleMyMatches();
+                },
+              ),
+              const SizedBox(width: AppSpacing.xs),
+            ],
+
+            // 3. Live filter
             AppChip(
               label: 'مباشر',
               icon: Icons.fiber_manual_record_rounded,
@@ -378,7 +370,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     .setFilter(MatchFilterType.live);
               },
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.xs),
+
+            // 4. Upcoming filter
             AppChip(
               label: 'القادمة',
               isSelected: activeFilter == MatchFilterType.upcoming,
@@ -389,17 +383,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     .setFilter(MatchFilterType.upcoming);
               },
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.xs),
+
+            // 5. Finished filter
             AppChip(
-              label: 'المفضلة',
-              icon: Icons.star_rounded,
-              iconColor: AppColors.gold,
-              isSelected: activeFilter == MatchFilterType.favorites,
+              label: 'المنتهية',
+              isSelected: activeFilter == MatchFilterType.finished,
               onTap: () {
                 HapticFeedback.selectionClick();
                 ref
                     .read(matchFilterProvider.notifier)
-                    .setFilter(MatchFilterType.favorites);
+                    .setFilter(MatchFilterType.finished);
               },
             ),
           ],

@@ -1,0 +1,223 @@
+{
+  "league_id": 943230,
+  "league_name": "Champions League",
+  "count": 36,
+  "teams": [
+    {
+      "id": 9847,
+      "name": "باريس",
+      "logo": "https://imgs.ysscores.com/teams/64/4461690287785.png",
+      "slug": "Paris-Saint-Germain"
+    },
+    {
+      "id": 8633,
+      "name": "ريال مدريد",
+      "logo": "https://imgs.ysscores.com/teams/64/1871690196746.png",
+      "slug": "Real-Madrid"
+    },
+    {
+      "id": 9825,
+      "name": "أرسنال",
+      "logo": "https://imgs.ysscores.com/teams/64/1701690118820.png",
+      "slug": "Arsenal-FC"
+    },
+    {
+      "id": 10171,
+      "name": "كومو",
+      "logo": "https://imgs.ysscores.com/teams/64/8641690823614.png",
+      "slug": "Como-1907"
+    },
+    {
+      "id": 8634,
+      "name": "برشلونة",
+      "logo": "https://imgs.ysscores.com/teams/64/9541690196746.png",
+      "slug": "FC-Barcelona"
+    },
+    {
+      "id": 10252,
+      "name": "أستون فيلا",
+      "logo": "https://imgs.ysscores.com/teams/64/9921723414870.png",
+      "slug": "Aston-Villa"
+    },
+    {
+      "id": 8456,
+      "name": "مان سيتي",
+      "logo": "https://imgs.ysscores.com/teams/64/4481690118308.png",
+      "slug": "Manchester-City"
+    },
+    {
+      "id": 8650,
+      "name": "ليفربول",
+      "logo": "https://imgs.ysscores.com/teams/64/4081724601375.png",
+      "slug": "Liverpool-FC"
+    },
+    {
+      "id": 8342,
+      "name": "كلوب بروج",
+      "logo": "https://imgs.ysscores.com/teams/64/121690370520.png",
+      "slug": "Club-Brugge-KV"
+    },
+    {
+      "id": 9768,
+      "name": "سبورتينغ لشبونة",
+      "logo": "https://imgs.ysscores.com/teams/64/17829367926898.png",
+      "slug": "Sporting-CP"
+    },
+    {
+      "id": 8603,
+      "name": "ريال بيتيس",
+      "logo": "https://imgs.ysscores.com/teams/64/17645945054618.png",
+      "slug": "Real-Betis-Balompié"
+    },
+    {
+      "id": 9789,
+      "name": "دورتموند",
+      "logo": "https://imgs.ysscores.com/teams/64/4201690288818.png",
+      "slug": "Borussia-Dortmund"
+    },
+    {
+      "id": 9823,
+      "name": "بايرن ميونخ",
+      "logo": "https://imgs.ysscores.com/teams/64/2351690288818.png",
+      "slug": "Bayern-Munich"
+    },
+    {
+      "id": 10269,
+      "name": "شتوتجارت",
+      "logo": "https://imgs.ysscores.com/teams/64/8731690288819.png",
+      "slug": "VfB-Stuttgart"
+    },
+    {
+      "id": 8636,
+      "name": "إنتر ميلان",
+      "logo": "https://imgs.ysscores.com/teams/64/3101690283003.png",
+      "slug": "Inter-Milan"
+    },
+    {
+      "id": 9977,
+      "name": "لاسك",
+      "logo": "https://imgs.ysscores.com/teams/64/5301690370548.png",
+      "slug": "LASK"
+    },
+    {
+      "id": 10260,
+      "name": "مان يونايتد",
+      "logo": "https://imgs.ysscores.com/teams/64/4871690119302.png",
+      "slug": "Manchester-United"
+    },
+    {
+      "id": 8637,
+      "name": "غلطة سراي",
+      "logo": "https://imgs.ysscores.com/teams/64/2081756067376.png",
+      "slug": "Galatasaray"
+    },
+    {
+      "id": 8695,
+      "name": "فنربخشة",
+      "logo": "https://imgs.ysscores.com/teams/64/681690127723.png",
+      "slug": "Fenerbahce"
+    },
+    {
+      "id": 8686,
+      "name": "روما",
+      "logo": "https://imgs.ysscores.com/teams/64/17722024059541.png",
+      "slug": "AS-Roma"
+    },
+    {
+      "id": 9728,
+      "name": "شاختار دونيتسك",
+      "logo": "https://imgs.ysscores.com/teams/64/6191751838320.png",
+      "slug": "Shakhtar-Donetsk"
+    },
+    {
+      "id": 8478,
+      "name": "فيكينغ",
+      "logo": "https://imgs.ysscores.com/teams/64/2981690370526.png",
+      "slug": "Viking-FK"
+    },
+    {
+      "id": 9906,
+      "name": "أتلتيكو مدريد",
+      "logo": "https://imgs.ysscores.com/teams/64/1431719588699.png",
+      "slug": "Atlético-de-Madrid"
+    },
+    {
+      "id": 8640,
+      "name": "آيندهوفن",
+      "logo": "https://imgs.ysscores.com/teams/64/3391690378187.png",
+      "slug": "PSV-Eindhoven"
+    },
+    {
+      "id": 8402,
+      "name": "بودو/غليمت",
+      "logo": "https://imgs.ysscores.com/teams/64/8781690370522.png",
+      "slug": "FK-Bodø-Glimt"
+    },
+    {
+      "id": 9773,
+      "name": "بورتو",
+      "logo": "https://imgs.ysscores.com/teams/64/4801690385949.png",
+      "slug": "FC-Porto"
+    },
+    {
+      "id": 9875,
+      "name": "نابولي",
+      "logo": "https://imgs.ysscores.com/teams/64/9521720636634.png",
+      "slug": "SSC-Napoli"
+    },
+    {
+      "id": 10205,
+      "name": "فياريال",
+      "logo": "https://imgs.ysscores.com/teams/64/7121690196747.png",
+      "slug": "Villarreal-CF"
+    },
+    {
+      "id": 178475,
+      "name": "لايبزيج",
+      "logo": "https://imgs.ysscores.com/teams/64/8361734715237.png",
+      "slug": "RB-Leipzig"
+    },
+    {
+      "id": 8563,
+      "name": "أيك أثينا",
+      "logo": "https://imgs.ysscores.com/teams/64/6901694359099.png",
+      "slug": "AEK-Athens"
+    },
+    {
+      "id": 951893,
+      "name": "صباح",
+      "logo": "https://imgs.ysscores.com/teams/64/17888728154718.png",
+      "slug": "Sabah-FK"
+    },
+    {
+      "id": 10235,
+      "name": "فاينورد",
+      "logo": "https://imgs.ysscores.com/teams/64/9951690455713.png",
+      "slug": "Feyenoord-Rotterdam"
+    },
+    {
+      "id": 8588,
+      "name": "لانس",
+      "logo": "https://imgs.ysscores.com/teams/64/1281690287063.png",
+      "slug": "RC-Lens"
+    },
+    {
+      "id": 7787,
+      "name": "سلافيا براغ",
+      "logo": "https://imgs.ysscores.com/teams/64/9621690370507.png",
+      "slug": "SK-Slavia-Prague"
+    },
+    {
+      "id": 8639,
+      "name": "ليل",
+      "logo": "https://imgs.ysscores.com/teams/64/381690287334.png",
+      "slug": "LOSC-Lille"
+    },
+    {
+      "id": 6019,
+      "name": "براتيسلافا",
+      "logo": "https://imgs.ysscores.com/teams/64/9611690821406.png",
+      "slug": "Slovan-Bratislava"
+    }
+  ]
+}

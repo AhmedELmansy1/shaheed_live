@@ -1,0 +1,115 @@
+{
+  "league_id": 937873,
+  "league_name": "Ligue 1",
+  "count": 18,
+  "teams": [
+    {
+      "id": 9847,
+      "name": "باريس",
+      "logo": "https://imgs.ysscores.com/teams/64/4461690287785.png",
+      "slug": "Paris-Saint-Germain"
+    },
+    {
+      "id": 8639,
+      "name": "ليل",
+      "logo": "https://imgs.ysscores.com/teams/64/381690287334.png",
+      "slug": "LOSC-Lille"
+    },
+    {
+      "id": 6379,
+      "name": "نادي باريس",
+      "logo": "https://imgs.ysscores.com/teams/64/6551690370501.png",
+      "slug": "Paris-FC"
+    },
+    {
+      "id": 8592,
+      "name": "مارسيليا",
+      "logo": "https://imgs.ysscores.com/teams/64/17816370094121.png",
+      "slug": "Olympique-Marseille"
+    },
+    {
+      "id": 9748,
+      "name": "ليون",
+      "logo": "https://imgs.ysscores.com/teams/64/4081690287528.png",
+      "slug": "Olympique-Lyon"
+    },
+    {
+      "id": 9831,
+      "name": "نيس",
+      "logo": "https://imgs.ysscores.com/teams/64/7361690287672.png",
+      "slug": "OGC-Nice"
+    },
+    {
+      "id": 9829,
+      "name": "موناكو",
+      "logo": "https://imgs.ysscores.com/teams/64/3861690287583.png",
+      "slug": "AS-Monaco"
+    },
+    {
+      "id": 9851,
+      "name": "رين",
+      "logo": "https://imgs.ysscores.com/teams/64/5061690287944.png",
+      "slug": "Stade-Rennais-FC"
+    },
+    {
+      "id": 8521,
+      "name": "بريست",
+      "logo": "https://imgs.ysscores.com/teams/64/7551690287380.png",
+      "slug": "Stade-Brestois-29"
+    },
+    {
+      "id": 8689,
+      "name": "لوريان",
+      "logo": "https://imgs.ysscores.com/teams/64/6891690287722.png",
+      "slug": "FC-Lorient"
+    },
+    {
+      "id": 8588,
+      "name": "لانس",
+      "logo": "https://imgs.ysscores.com/teams/64/1281690287063.png",
+      "slug": "RC-Lens"
+    },
+    {
+      "id": 9941,
+      "name": "تولوز",
+      "logo": "https://imgs.ysscores.com/teams/64/5161690287967.png",
+      "slug": "FC-Toulouse"
+    },
+    {
+      "id": 9848,
+      "name": "ستراسبورغ",
+      "logo": "https://imgs.ysscores.com/teams/64/8951690287872.png",
+      "slug": "RC-Strasbourg-Alsace"
+    },
+    {
+      "id": 8583,
+      "name": "أوكسير",
+      "logo": "https://imgs.ysscores.com/teams/64/8671690370530.png",
+      "slug": "AJ-Auxerre"
+    },
+    {
+      "id": 8682,
+      "name": "لو مان",
+      "logo": "https://imgs.ysscores.com/teams/64/7281718366884.png",
+      "slug": "Le-Mans-FC"
+    },
+    {
+      "id": 8121,
+      "name": "أنجيه",
+      "logo": "https://imgs.ysscores.com/teams/64/1121690370513.png",
+      "slug": "Angers-SCO"
+    },
+    {
+      "id": 10242,
+      "name": "تروا",
+      "logo": "https://imgs.ysscores.com/teams/64/6871690370557.png",
+      "slug": "ESTAC-Troyes"
+    },
+    {
+      "id": 9746,
+      "name": "لوهافر",
+      "logo": "https://imgs.ysscores.com/teams/64/6941691927287.png",
+      "slug": "Le-Havre-AC"
+    }
+  ]
+}

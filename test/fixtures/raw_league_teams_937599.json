@@ -1,0 +1,127 @@
+{
+  "league_id": 937599,
+  "league_name": "Premier League",
+  "count": 20,
+  "teams": [
+    {
+      "id": 9825,
+      "name": "أرسنال",
+      "logo": "https://imgs.ysscores.com/teams/64/1701690118820.png",
+      "slug": "Arsenal-FC"
+    },
+    {
+      "id": 10204,
+      "name": "برايتون",
+      "logo": "https://imgs.ysscores.com/teams/64/2271696710594.png",
+      "slug": "Brighton-Hove-Albion"
+    },
+    {
+      "id": 8456,
+      "name": "مان سيتي",
+      "logo": "https://imgs.ysscores.com/teams/64/4481690118308.png",
+      "slug": "Manchester-City"
+    },
+    {
+      "id": 8650,
+      "name": "ليفربول",
+      "logo": "https://imgs.ysscores.com/teams/64/4081724601375.png",
+      "slug": "Liverpool-FC"
+    },
+    {
+      "id": 8455,
+      "name": "تشيلسي",
+      "logo": "https://imgs.ysscores.com/teams/64/2571690118280.png",
+      "slug": "Chelsea-FC"
+    },
+    {
+      "id": 8668,
+      "name": "إيفرتون",
+      "logo": "https://imgs.ysscores.com/teams/64/8461690118694.png",
+      "slug": "Everton-FC"
+    },
+    {
+      "id": 8678,
+      "name": "بورنموث",
+      "logo": "https://imgs.ysscores.com/teams/64/7651690118769.png",
+      "slug": "AFC-Bournemouth"
+    },
+    {
+      "id": 9937,
+      "name": "برينتفورد",
+      "logo": "https://imgs.ysscores.com/teams/64/4791690118957.png",
+      "slug": "Brentford-FC"
+    },
+    {
+      "id": 8463,
+      "name": "ليدز يونايتد",
+      "logo": "https://imgs.ysscores.com/teams/64/4691690458244.png",
+      "slug": "Leeds-United"
+    },
+    {
+      "id": 10252,
+      "name": "أستون فيلا",
+      "logo": "https://imgs.ysscores.com/teams/64/9921723414870.png",
+      "slug": "Aston-Villa"
+    },
+    {
+      "id": 8586,
+      "name": "توتنهام",
+      "logo": "https://imgs.ysscores.com/teams/64/2501692467226.png",
+      "slug": "Tottenham-Hotspur"
+    },
+    {
+      "id": 10261,
+      "name": "نيوكاسل",
+      "logo": "https://imgs.ysscores.com/teams/64/3721690119405.png",
+      "slug": "Newcastle-United"
+    },
+    {
+      "id": 8667,
+      "name": "هال سيتي",
+      "logo": "https://imgs.ysscores.com/teams/64/3801690370535.png",
+      "slug": "Hull-City"
+    },
+    {
+      "id": 9902,
+      "name": "إيبسويتش",
+      "logo": "https://imgs.ysscores.com/teams/64/8291690370545.png",
+      "slug": "Ipswich-Town"
+    },
+    {
+      "id": 9879,
+      "name": "فولهام",
+      "logo": "https://imgs.ysscores.com/teams/64/4711690118927.png",
+      "slug": "Fulham-FC"
+    },
+    {
+      "id": 10203,
+      "name": "نوتينغهام",
+      "logo": "https://imgs.ysscores.com/teams/64/7741690119007.png",
+      "slug": "Nottingham-Forest"
+    },
+    {
+      "id": 8669,
+      "name": "كوفنتري",
+      "logo": "https://imgs.ysscores.com/teams/64/3861690370535.png",
+      "slug": "Coventry-City"
+    },
+    {
+      "id": 10260,
+      "name": "مان يونايتد",
+      "logo": "https://imgs.ysscores.com/teams/64/4871690119302.png",
+      "slug": "Manchester-United"
+    },
+    {
+      "id": 8472,
+      "name": "سندرلاند",
+      "logo": "https://imgs.ysscores.com/teams/64/10001690823905.png",
+      "slug": "Sunderland-AFC"
+    },
+    {
+      "id": 9826,
+      "name": "كريستال بالاس",
+      "logo": "https://imgs.ysscores.com/teams/64/6121690118883.png",
+      "slug": "Crystal-Palace"
+    }
+  ]
+}
