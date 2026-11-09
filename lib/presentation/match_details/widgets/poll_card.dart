@@ -338,20 +338,36 @@ class _PollCardState extends ConsumerState<PollCard> {
           _optimisticPoll = serverPoll;
           _isVoting = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
+            backgroundColor: Color(0xFF10B981),
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        final alreadyVoted = errorMsg.contains('مسبقاً') || errorMsg.contains('already');
+
         setState(() {
-          _optimisticPoll = null; // Rollback
+          if (!alreadyVoted) {
+            _optimisticPoll = null; // Rollback only if not already voted
+          }
           _isVoting = false;
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().replaceAll('Exception: ', ''),
+              alreadyVoted ? 'تم تسجيل تصويتك مسبقاً في هذا الاستطلاع 👍' : errorMsg,
               style: const TextStyle(fontFamily: 'Cairo'),
             ),
-            backgroundColor: Colors.red.shade800,
+            backgroundColor: alreadyVoted ? Colors.amber.shade800 : Colors.red.shade800,
           ),
         );
       }

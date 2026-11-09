@@ -576,7 +576,25 @@ class WatchMatchBottomSheet extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.flag_outlined, color: Colors.amber, size: 18),
+            tooltip: 'إبلاغ عن عطل في هذا السيرفر',
+            onPressed: () {
+              Navigator.pop(context);
+              final matchTitle = match != null
+                  ? '${match!.homeTeam.title} vs ${match!.awayTeam.title}'
+                  : 'مباراة مباشرة';
+              StreamReportBottomSheet.show(
+                context,
+                matchId: matchId,
+                matchTitle: matchTitle,
+                serverId: server.id,
+                serverName: server.name,
+              );
+            },
+          ),
+          const SizedBox(width: 4),
           Icon(Icons.arrow_forward_ios_rounded, color: textSecondary, size: 16),
         ],
       ),

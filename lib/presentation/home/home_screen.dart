@@ -35,6 +35,7 @@ import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
 import '../widgets/sponsorship_banner_widget.dart';
 import 'widgets/breaking_news_ticker.dart';
+import 'widgets/instant_notification_banner.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
@@ -223,6 +224,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             // Breaking News Ticker (driven by config/app_settings.ticker_config)
             const BreakingNewsTicker(),
+
+            // Instant Push Notification In-App Banner (driven by config/app_settings.latest_notification)
+            const InstantNotificationBanner(),
 
             // Direct Sponsorship (Home Top Placement)
             const SponsorshipBannerWidget(
