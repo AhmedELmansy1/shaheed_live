@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,6 +17,8 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/timezone_helper.dart';
+import '../home/providers/matches_provider.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../diagnostics/diagnostics_screen.dart';
 import '../match_details/widgets/stream_report_sheet.dart';
@@ -87,11 +90,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _cacheFootprint = 'جاري الحساب...';
   bool _isClearingCache = false;
   int _diagnosticTapCount = 0;
+  int _timezoneOffset = DateFormatter.globalKickoffOffsetHours;
 
   @override
   void initState() {
     super.initState();
     _computeCacheFootprint();
+    _loadTimezoneOffset();
+  }
+
+  Future<void> _loadTimezoneOffset() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt('pref_user_timezone_offset') ?? DateFormatter.globalKickoffOffsetHours;
+    if (mounted) {
+      setState(() {
+        _timezoneOffset = saved;
+        DateFormatter.globalKickoffOffsetHours = saved;
+      });
+    }
+  }
+
+  Future<void> _setTimezoneOffset(int offset) async {
+    HapticFeedback.selectionClick();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('pref_user_timezone_offset', offset);
+    setState(() {
+      _timezoneOffset = offset;
+      DateFormatter.globalKickoffOffsetHours = offset;
+    });
+    ref.read(matchesProvider.notifier).refresh();
+  }
+
+  Future<void> _requestLocationAndTimezone() async {
+    HapticFeedback.mediumImpact();
+    try {
+      final status = await Permission.locationWhenInUse.request();
+      await TimezoneHelper.init();
+      ref.read(matchesProvider.notifier).refresh();
+      if (mounted) {
+        final desc = TimezoneHelper.deviceTimezoneDescription;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              status.isGranted
+                  ? 'تم التحقق من موقعك وضبط توقيت المباريات تلقائياً ($desc) 📍'
+                  : 'يتم استخدام توقيت جهازك الحالي تلقائياً ($desc)',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('توقيتك الحالي: ${TimezoneHelper.deviceTimezoneDescription}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _computeCacheFootprint() async {
@@ -487,6 +545,120 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 HapticFeedback.selectionClick();
                 ref.read(dataSaverModeProvider.notifier).setEnabled(val);
               },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Timezone & Location Section
+          _buildSectionHeader('التوقيت والمنطقة الجغرافية', textSecondary),
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            margin: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
+                      ),
+                      child: const Icon(
+                        Icons.access_time_filled_rounded,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'توقيت انطلاق المباريات',
+                            style: AppTypography.titleSmall(color: textPrimary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            TimezoneHelper.deviceTimezoneDescription,
+                            style: AppTypography.caption(color: AppColors.primary).copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _requestLocationAndTimezone,
+                      icon: const Icon(Icons.my_location_rounded, size: 16),
+                      label: const Text('تحديث 📍'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.full),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'يتم تحويل مواعيد المباريات تلقائياً لتوافق توقيت مدينتك. اضغط تحديث لطلب إذن الموقع الجغرافي وتعيين التوقيت الدقيق.',
+                  style: AppTypography.caption(color: textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Divider(color: border, height: 1),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Text(
+                      'تعديل الفارق الزمني يدوياً:',
+                      style: AppTypography.caption(color: textPrimary).copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final off in [-2, -1, 0, 1, 2])
+                      ChoiceChip(
+                        label: Text(
+                          off == 0
+                              ? 'تلقائي (0)'
+                              : (off > 0 ? '+$off س' : '$off س'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: _timezoneOffset == off ? FontWeight.bold : FontWeight.normal,
+                            color: _timezoneOffset == off
+                                ? (isLight ? Colors.white : AppColors.darkBackground)
+                                : textPrimary,
+                          ),
+                        ),
+                        selected: _timezoneOffset == off,
+                        selectedColor: AppColors.primary,
+                        backgroundColor: isLight ? Colors.grey.shade100 : Colors.white.withValues(alpha: 0.05),
+                        side: BorderSide(
+                          color: _timezoneOffset == off
+                              ? AppColors.primary
+                              : border,
+                        ),
+                        onSelected: (_) => _setTimezoneOffset(off),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

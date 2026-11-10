@@ -177,13 +177,18 @@ class MatchReminderService {
   static int getConfirmationNotificationId(int matchId) => matchId * 10;
   static int getReminder1HrId(int matchId) => matchId * 10 + 1;
   static int getReminder15MinId(int matchId) => matchId * 10 + 2;
+  static int getReminder30MinId(int matchId) => matchId * 10 + 3;
 
   MatchReminderService(this._notificationService, this._ref);
 
   /// Toggles notifications for a match:
   /// - If active (due to followed club or manual toggle), toggles OFF.
-  /// - If inactive, toggles ON.
-  Future<void> toggleReminder(MatchModel match) async {
+  /// - If inactive, schedules alarm at [customMinutesBefore] (default 15m) and toggles ON.
+  Future<void> toggleReminder(
+    MatchModel match, {
+    int customMinutesBefore = 15,
+    bool includeGoalAlerts = true,
+  }) async {
     final matchId = match.matchId;
     if (matchId <= 0) {
       debugPrint('[MatchReminder] Invalid matchId ($matchId). Aborting.');
@@ -241,10 +246,12 @@ class MatchReminderService {
       // Cancel local notifications
       final id1Hr = getReminder1HrId(matchId);
       final id15Min = getReminder15MinId(matchId);
+      final id30Min = getReminder30MinId(matchId);
       final idConfirm = getConfirmationNotificationId(matchId);
 
       await _notificationService.cancelNotification(id1Hr);
       await _notificationService.cancelNotification(id15Min);
+      await _notificationService.cancelNotification(id30Min);
       await _notificationService.cancelNotification(idConfirm);
       await _notificationService.cancelNotification(matchId);
 
@@ -265,7 +272,7 @@ class MatchReminderService {
     } else {
       // 2. TOGGLE / SCHEDULE / UNMUTE
       debugPrint(
-        '[MatchReminder] -> State is currently OFF. Turning ON for Match #$matchId...',
+        '[MatchReminder] -> State is currently OFF. Turning ON for Match #$matchId with lead: ${customMinutesBefore}m...',
       );
 
       if (isClubFollowed) {
@@ -283,6 +290,7 @@ class MatchReminderService {
         'homeName': homeName,
         'awayName': awayName,
         'competition': compName,
+        'leadMinutes': customMinutesBefore,
       };
 
       storedReminders.removeWhere((jsonStr) {
@@ -295,16 +303,84 @@ class MatchReminderService {
       storedReminders.add(jsonEncode(reminderData));
       await prefs.setStringList(_storageKey, storedReminders);
 
-      // Immediate confirmation system notification in tray
-      final confirmId = getConfirmationNotificationId(matchId);
-      final confirmTitle = '🔔 تم تفعيل التنبيه';
-      final confirmBody = DateFormatter.toArabicNumerals(
-        'سيتم تذكيرك بمباراة $homeName × $awayName',
-      );
       final reminderPayload = jsonEncode({
         'type': 'match_reminder',
         'matchId': matchId.toString(),
       });
+
+      // 2a. Schedule precise local alarms via AlarmManager (15m, 30m, 1hr or kickoff)
+      final kickoff = _computeKickoffTime(match.matchDate, match.matchTime);
+      if (kickoff != null) {
+        final now = tz.TZDateTime.now(tz.local);
+
+        if (customMinutesBefore > 0) {
+          final leadTime = kickoff.subtract(Duration(minutes: customMinutesBefore));
+          if (leadTime.isAfter(now)) {
+            final reminderId = customMinutesBefore == 30
+                ? getReminder30MinId(matchId)
+                : (customMinutesBefore == 60
+                    ? getReminder1HrId(matchId)
+                    : getReminder15MinId(matchId));
+
+            final leadTitle = customMinutesBefore == 15
+                ? '⏰ اقتربت المباراة (بعد 15 دقيقة)'
+                : (customMinutesBefore == 30
+                    ? '⏱️ تذكير بالمباراة (بعد 30 دقيقة)'
+                    : '🔔 تذكير بالمباراة (بعد ساعة)');
+
+            final leadBody = DateFormatter.toArabicNumerals(
+              'مباراة $homeName ضد $awayName تنطلق في ${match.formattedLocalTime}',
+            );
+
+            try {
+              await _notificationService.scheduleNotification(
+                reminderId,
+                leadTitle,
+                leadBody,
+                leadTime,
+                payload: reminderPayload,
+                channelId: NotificationService.channelReminders,
+              );
+              debugPrint(
+                '[MatchReminder] ⏰ Scheduled pre-match alarm #$reminderId at $leadTime',
+              );
+            } catch (e) {
+              debugPrint('[MatchReminder] Error scheduling pre-match alarm: $e');
+            }
+          }
+        }
+
+        // At-kickoff alarm
+        if (kickoff.isAfter(now)) {
+          final startTitle = '⚽ انطلقت صافرة البداية!';
+          final startBody = DateFormatter.toArabicNumerals(
+            'انطلقت الآن مباراة $homeName ضد $awayName',
+          );
+          try {
+            await _notificationService.scheduleNotification(
+              matchId,
+              startTitle,
+              startBody,
+              kickoff,
+              payload: reminderPayload,
+              channelId: NotificationService.channelReminders,
+            );
+            debugPrint('[MatchReminder] ⚽ Scheduled kickoff alarm at $kickoff');
+          } catch (e) {
+            debugPrint('[MatchReminder] Error scheduling kickoff alarm: $e');
+          }
+        }
+      }
+
+      // 2b. Immediate confirmation notification in tray
+      final confirmId = getConfirmationNotificationId(matchId);
+      final leadDesc = customMinutesBefore == 0
+          ? 'عند صافرة البداية'
+          : 'قبل المباراة بـ $customMinutesBefore دقيقة';
+      final confirmTitle = '🔔 تم تفعيل التنبيه';
+      final confirmBody = DateFormatter.toArabicNumerals(
+        'سيتم تذكيرك بمباراة $homeName × $awayName ($leadDesc)',
+      );
 
       try {
         await _notificationService.showNotification(
@@ -323,19 +399,21 @@ class MatchReminderService {
         );
       }
 
-      // Subscribe to match topic
-      try {
-        final topic = 'match_${matchId}_events';
-        debugPrint(
-          '[MatchReminder] 📡 Attempting FCM subscribe to topic: $topic...',
-        );
-        await FirebaseMessaging.instance.subscribeToTopic(topic);
-        debugPrint(
-          '[MatchReminder] ✅ FCM subscribe SUCCESS for topic: $topic',
-        );
-      } catch (e, st) {
-        debugPrint('[MatchReminder] ❌ FCM subscribe FAILED for Match #$matchId: $e');
-        debugPrint('[MatchReminder] StackTrace: $st');
+      // 2c. Subscribe to live goals and match events topic if enabled
+      if (includeGoalAlerts) {
+        try {
+          final topic = 'match_${matchId}_events';
+          debugPrint(
+            '[MatchReminder] 📡 Attempting FCM subscribe to topic: $topic...',
+          );
+          await FirebaseMessaging.instance.subscribeToTopic(topic);
+          debugPrint(
+            '[MatchReminder] ✅ FCM subscribe SUCCESS for topic: $topic',
+          );
+        } catch (e, st) {
+          debugPrint('[MatchReminder] ❌ FCM subscribe FAILED for Match #$matchId: $e');
+          debugPrint('[MatchReminder] StackTrace: $st');
+        }
       }
 
       debugPrint(

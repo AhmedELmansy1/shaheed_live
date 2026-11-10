@@ -37,8 +37,8 @@ class ApiConfig {
       'https://shoot-live-admin-dashboard.vercel.app/api/matches';
 
   /// Timezone of `match_date` + `match_time` returned by the API.
-  /// Plugin says Riyadh (fixed +3). Verify before release (see header note).
-  static const String sourceTimezone = 'Asia/Riyadh';
+  /// YsScores source feed is published in Cairo time ('Africa/Cairo', UTC+2 standard).
+  static const String sourceTimezone = 'Africa/Cairo';
 
   /// Image CDN used by the data source.
   static const String imgHost = 'https://imgs.ysscores.com';

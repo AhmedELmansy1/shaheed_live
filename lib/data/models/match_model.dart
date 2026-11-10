@@ -144,6 +144,12 @@ class MatchModel {
   DateTime? getKickoffDateTime({int offsetHours = 0}) =>
       DateFormatter.parseCairoMatchDateTime(matchDate, matchTime, offsetHours: offsetHours);
 
+  /// Formatted remaining countdown to kickoff (e.g. "متبقي 2 س و 15 د", "متبقي 45 دقيقة").
+  String get remainingTimeUntilKickoff =>
+      DateFormatter.formatRemainingKickoff(kickoffDateTime);
+  String getRemainingTimeUntilKickoff({int offsetHours = 0}) =>
+      DateFormatter.formatRemainingKickoff(getKickoffDateTime(offsetHours: offsetHours));
+
   /// Returns the formatted live minute or status (e.g. "٤٥'", "٩٠+٤'", "استراحة"), or null if not live.
   String? get currentMinute {
     if (!isLive) return null;

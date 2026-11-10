@@ -10,6 +10,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/match_model.dart';
+import 'bottom_sheets/match_reminder_sheet.dart';
 import 'bottom_sheets/watch_match_bottom_sheet.dart';
 import 'score_view.dart';
 import 'status_chip.dart';
@@ -389,55 +390,95 @@ class MatchCard extends ConsumerWidget {
 
     final textPrimary = AppColors.textPrimaryOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final remainingTime = match.remainingTimeUntilKickoff;
 
     return Semantics(
-      label: 'وقت انطلاق المباراة: $displayTime',
+      label: 'وقت انطلاق المباراة: $displayTime. ${remainingTime.isNotEmpty ? remainingTime : ""}',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: AppColors.surfaceElevatedOf(context),
-          borderRadius: AppRadii.fullRadius,
+          borderRadius: AppRadii.mdRadius,
           border: Border.all(
             color: isDark ? const Color(0xFF243657) : AppColors.borderOf(context),
             width: 0.8,
           ),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              displayTime,
-              style: AppTypography.scoreMedium(
-                color: textPrimary,
-              ).copyWith(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayTime,
+                  style: AppTypography.scoreMedium(
+                    color: textPrimary,
+                  ).copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                IconButton(
+                  iconSize: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  tooltip: isReminderSet ? 'إلغاء التنبيه' : 'تفعيل تنبيه المباراة',
+                  icon: Icon(
+                    isReminderSet
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_none_rounded,
+                    color: isReminderSet
+                        ? AppColors.electricCyan
+                        : AppColors.textSecondaryOf(context),
+                  ),
+                  onPressed: () async {
+                    HapticFeedback.lightImpact();
+                    if (isReminderSet) {
+                      await ref.read(matchReminderServiceProvider).toggleReminder(match);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إلغاء التنبيه للمباراة'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    } else {
+                      MatchReminderSheet.show(context, match: match);
+                    }
+                  },
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            IconButton(
-              iconSize: 16,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 36,
-                minHeight: 36,
+            if (remainingTime.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOf(context).withValues(alpha: 0.12),
+                  borderRadius: AppRadii.fullRadius,
+                  border: Border.all(
+                    color: AppColors.primaryOf(context).withValues(alpha: 0.25),
+                    width: 0.6,
+                  ),
+                ),
+                child: Text(
+                  remainingTime,
+                  style: AppTypography.caption(
+                    color: AppColors.primaryOf(context),
+                  ).copyWith(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-              tooltip: isReminderSet ? 'إلغاء التذكير' : 'تفعيل التذكير بالمباراة',
-              icon: Icon(
-                isReminderSet
-                    ? Icons.notifications_active_rounded
-                    : Icons.notifications_none_rounded,
-                color: isReminderSet
-                    ? AppColors.electricCyan
-                    : AppColors.textSecondaryOf(context),
-              ),
-              onPressed: () async {
-                HapticFeedback.lightImpact();
-                await ref
-                    .read(matchReminderServiceProvider)
-                    .toggleReminder(match);
-              },
-            ),
+            ],
           ],
         ),
       ),

@@ -35,7 +35,32 @@ class DateFormatter {
     return AppNumberFormat.toLatinNumerals(input);
   }
 
-  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in source timezone ([ApiConfig.sourceTimezone])
+  /// Extracts (hour, minute, second) components defensively from any 12h or 24h string.
+  /// Handles: "20:00:00", "08:00 م", "08:00 ص", "08:00 PM", "08:00 AM", "08:00"
+  static (int hour, int minute, int second) parseTimeComponents(String rawTime) {
+    final clean = rawTime.trim();
+    final isPM = clean.contains('م') || clean.toLowerCase().contains('pm');
+    final isAM = clean.contains('ص') || clean.toLowerCase().contains('am');
+
+    final match = RegExp(r'(\d{1,2}):(\d{2})(?::(\d{2}))?').firstMatch(clean);
+    if (match == null) {
+      return (0, 0, 0);
+    }
+
+    var hour = int.tryParse(match.group(1) ?? '0') ?? 0;
+    final minute = int.tryParse(match.group(2) ?? '0') ?? 0;
+    final second = int.tryParse(match.group(3) ?? '0') ?? 0;
+
+    if (isPM) {
+      if (hour < 12) hour += 12;
+    } else if (isAM) {
+      if (hour == 12) hour = 0;
+    }
+
+    return (hour, minute, second);
+  }
+
+  /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss or 12h with meridiem) in source timezone ([ApiConfig.sourceTimezone])
   /// using IANA data, converts to the device's local timezone, and formats as Arabic time string with Western numerals (e.g., "7:30 م").
   /// An optional [offsetHours] (clamped to [-3, +3]) adjusts for remote timezone/DST overrides without shifting date tabs.
   static String formatMatchTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
@@ -50,18 +75,15 @@ class DateFormatter {
 
     try {
       final dateParts = rawDate.trim().split('-');
-      final timeParts = rawTime.trim().split(':');
-
       final year = int.parse(dateParts[0]);
       final month = int.parse(dateParts[1]);
       final day = int.parse(dateParts[2]);
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-      final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
+
+      final (hour, minute, second) = parseTimeComponents(rawTime);
 
       // Construct TZDateTime using the single source timezone constant (NO hardcoded offset)
       final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
-      final cairoTZDateTime = tz.TZDateTime(
+      final sourceTZDateTime = tz.TZDateTime(
         sourceLocation,
         year,
         month,
@@ -72,7 +94,7 @@ class DateFormatter {
       );
 
       // Convert to local device timezone
-      var localDateTime = cairoTZDateTime.toLocal();
+      var localDateTime = sourceTZDateTime.toLocal();
 
       if (effectiveOffset != 0) {
         final clamped = effectiveOffset.clamp(-3, 3);
@@ -83,14 +105,16 @@ class DateFormatter {
       return AppNumberFormat.toLatinNumerals(formatted);
     } catch (_) {
       try {
-        var hour = int.tryParse(rawTime.substring(0, 2)) ?? 0;
-        final minute = rawTime.substring(2, 5);
+        final (hour, minute, _) = parseTimeComponents(rawTime);
+        var adjustedHour = hour;
         if (effectiveOffset != 0) {
-          hour = (hour + effectiveOffset.clamp(-3, 3)) % 24;
-          if (hour < 0) hour += 24;
+          adjustedHour = (adjustedHour + effectiveOffset.clamp(-3, 3)) % 24;
+          if (adjustedHour < 0) adjustedHour += 24;
         }
-        final hourStr = hour.toString().padLeft(2, '0');
-        return AppNumberFormat.toLatinNumerals('$hourStr$minute');
+        final period = adjustedHour >= 12 ? 'م' : 'ص';
+        final displayHour = adjustedHour % 12 == 0 ? 12 : adjustedHour % 12;
+        final minStr = minute.toString().padLeft(2, '0');
+        return AppNumberFormat.toLatinNumerals('$displayHour:$minStr $period');
       } catch (_) {
         return AppNumberFormat.toLatinNumerals(rawTime.substring(0, 5));
       }
@@ -112,14 +136,11 @@ class DateFormatter {
 
     try {
       final dateParts = rawDate.trim().split('-');
-      final timeParts = rawTime.trim().split(':');
-
       final year = int.parse(dateParts[0]);
       final month = int.parse(dateParts[1]);
       final day = int.parse(dateParts[2]);
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-      final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
+
+      final (hour, minute, second) = parseTimeComponents(rawTime);
 
       final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
       final sourceTZDateTime = tz.TZDateTime(
@@ -149,6 +170,47 @@ class DateFormatter {
         return null;
       }
     }
+  }
+
+  /// Formats remaining time until kickoff into concise Arabic text:
+  /// - e.g. "متبقي 2 س و 15 د"
+  /// - e.g. "متبقي 45 دقيقة"
+  /// - e.g. "متبقي 4 س"
+  /// - e.g. "متبقي 1 يوم و 3 س"
+  /// Returns empty string if match has already started or datetime is null.
+  static String formatRemainingKickoff(DateTime? kickoff, {DateTime? now}) {
+    if (kickoff == null) return '';
+    final current = now ?? DateTime.now();
+    final diff = kickoff.difference(current);
+    if (diff.isNegative || diff == Duration.zero) {
+      return '';
+    }
+
+    final totalHours = diff.inHours;
+    final totalMinutes = diff.inMinutes;
+    final remMinutes = totalMinutes % 60;
+
+    if (totalHours >= 24) {
+      final days = diff.inDays;
+      final remHours = totalHours % 24;
+      if (remHours == 0) {
+        return toArabicNumerals('بعد $days أيام');
+      }
+      return toArabicNumerals('متبقي $days يوم و $remHours س');
+    }
+
+    if (totalHours > 0) {
+      if (remMinutes == 0) {
+        return toArabicNumerals('متبقي $totalHours س');
+      }
+      return toArabicNumerals('متبقي $totalHours س و $remMinutes د');
+    }
+
+    if (totalMinutes > 0) {
+      return toArabicNumerals('متبقي $totalMinutes دقيقة');
+    }
+
+    return 'تبدأ خلال لحظات';
   }
 
   /// Debug-only helper: logs kickoff in source timezone vs device local.

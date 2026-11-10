@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shoot_live/core/theme/app_colors.dart';
-import 'package:shoot_live/core/theme/app_theme.dart';
 import 'package:shoot_live/data/models/theme_config_model.dart';
 import 'package:shoot_live/data/models/tv_channel_model.dart';
 import 'package:shoot_live/data/repositories/tv_channels_repository.dart';
