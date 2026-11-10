@@ -7,6 +7,7 @@ import '../models/match_info_model.dart';
 import '../models/match_event_model.dart';
 import '../models/match_lineup_model.dart';
 import '../models/match_statistics_model.dart';
+import '../models/standings_model.dart';
 
 /// Represents a cached match result with metadata regarding staleness.
 class MatchesCacheResult {
@@ -50,6 +51,7 @@ class MatchesCacheService {
   static const String _prefixEvents = 'cache_events_v2_';
   static const String _prefixStats = 'cache_stats_v2_';
   static const String _prefixLineup = 'cache_lineup_v2_';
+  static const String _prefixStandings = 'cache_standings_v2_';
 
   /// Determines the TTL duration based on target date string (YYYY-MM-DD).
   Duration getTtlForDate(String dateStr) {
@@ -278,5 +280,32 @@ class MatchesCacheService {
       );
     } catch (_) {}
     return null;
+  }
+
+  Future<void> saveStandings(dynamic matchOrLeagueId, dynamic data) async {
+    try {
+      final key = '$_prefixStandings$matchOrLeagueId';
+      final payload = {
+        'cached_at': DateTime.now().millisecondsSinceEpoch,
+        'data': data,
+      };
+      await prefs.setString(key, jsonEncode(payload));
+    } catch (e) {
+      debugPrint('[MatchesCache] Error saving standings cache: $e');
+    }
+  }
+
+  List<StandingRowModel>? getCachedStandings(dynamic matchOrLeagueId) {
+    try {
+      final key = '$_prefixStandings$matchOrLeagueId';
+      final rawJson = prefs.getString(key);
+      if (rawJson == null) return null;
+      final decoded = jsonDecode(rawJson);
+      final data = decoded['data'];
+      return StandingRowModel.fromResponse(data);
+    } catch (e) {
+      debugPrint('[MatchesCache] Error reading standings cache: $e');
+      return null;
+    }
   }
 }

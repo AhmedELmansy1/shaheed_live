@@ -45,9 +45,6 @@ class AppLogo extends StatelessWidget {
       return emblem;
     }
 
-    final textPrimary =
-        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-
     final typography = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: isHorizontal
@@ -56,42 +53,80 @@ class AppLogo extends StatelessWidget {
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              AppConstants.appName,
-              style: GoogleFonts.cairo(
-                fontSize: size * 0.32,
-                fontWeight: FontWeight.w900,
-                color: textPrimary,
-                height: 1.15,
-                letterSpacing: -0.2,
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: isDark
+                    ? [Colors.white, const Color(0xFFE2E8F0)]
+                    : [AppColors.lightTextPrimary, const Color(0xFF1E293B)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ).createShader(bounds),
+              child: Text(
+                AppConstants.appName,
+                style: GoogleFonts.cairo(
+                  fontSize: size * 0.34,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.15,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
             const SizedBox(width: 6),
             Container(
-              width: size * 0.09,
-              height: size * 0.09,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF3B30),
-                shape: BoxShape.circle,
+              padding: EdgeInsets.symmetric(
+                horizontal: size * 0.08,
+                vertical: size * 0.02,
+              ),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF3B30), Color(0xFFFF2D55)],
+                ),
+                borderRadius: BorderRadius.circular(size * 0.06),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFFFF3B30),
-                    blurRadius: 6,
+                    color: const Color(0xFFFF3B30).withValues(alpha: 0.5),
+                    blurRadius: 8,
                     spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: size * 0.05,
+                    height: size * 0.05,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: size * 0.12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.0,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
+        const SizedBox(height: 2),
         Text(
-          AppConstants.appTitle,
+          AppConstants.appTitle.toUpperCase(),
           style: GoogleFonts.cairo(
-            fontSize: size * 0.16,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            letterSpacing: 1.5,
+            fontSize: size * 0.14,
+            fontWeight: FontWeight.w800,
+            color: isDark ? AppColors.electricCyan : AppColors.primary,
+            letterSpacing: 2.2,
             height: 1.1,
           ),
         ),

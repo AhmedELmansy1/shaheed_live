@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_constants.dart';
+import '../../core/services/floating_score_manager.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
@@ -32,6 +33,7 @@ import 'tabs/news_tab.dart';
 import 'tabs/standings_tab.dart';
 import 'tabs/statistics_tab.dart';
 import 'widgets/poll_card.dart';
+import 'widgets/live_match_reactions_bar.dart';
 import 'widgets/stream_report_sheet.dart';
 
 /// Premium Match Details Screen in "Paper × Ink × Vermilion".
@@ -163,6 +165,25 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
           centerTitle: true,
           shape: Border(bottom: BorderSide(color: border, width: 1.0)),
           actions: [
+            // Pin Floating Live Score Bubble
+            IconButton(
+              icon: Icon(
+                FloatingScoreManager.instance.pinnedMatchId == match.id
+                    ? Icons.push_pin_rounded
+                    : Icons.push_pin_outlined,
+                color: FloatingScoreManager.instance.pinnedMatchId == match.id
+                    ? AppColors.neonEmerald
+                    : textPrimary,
+                size: 20,
+              ),
+              tooltip: 'تثبيت النتيجة العائمة على الشاشة',
+              onPressed: () {
+                setState(() {
+                  FloatingScoreManager.instance.toggle(context, match);
+                });
+              },
+            ),
+
             // Share Match Action
             IconButton(
               icon: Icon(Icons.share_rounded, color: textSecondary, size: 20),
@@ -318,7 +339,10 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                 ),
               ),
 
-              // 4. Persistent Bottom Banner Ad (Match Details Placement)
+              // 4. Live Match Reactions Bar
+              LiveMatchReactionsBar(matchId: match.id),
+
+              // 5. Persistent Bottom Banner Ad (Match Details Placement)
               const BannerAdWidget(placement: BannerPlacement.matchDetails),
             ],
           ),

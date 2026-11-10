@@ -38,6 +38,7 @@ class MatchEventModel {
   final int stoppageMinute;
   final String? playerName;
   final String? assistPlayerName;
+  final String? videoUrl;
 
   const MatchEventModel({
     required this.eventId,
@@ -48,7 +49,13 @@ class MatchEventModel {
     this.stoppageMinute = 0,
     this.playerName,
     this.assistPlayerName,
+    this.videoUrl,
   });
+
+  bool get isGoal =>
+      eventType == MatchEventType.goal ||
+      eventType == MatchEventType.ownGoal ||
+      eventType == MatchEventType.penaltyScored;
 
   factory MatchEventModel.fromMap(Map<String, dynamic> map) {
     // Delegate event type mapping to EventMapper for full type coverage
@@ -71,6 +78,12 @@ class MatchEventModel {
       api.MatchEventKind.other => MatchEventType.unknown,
     };
 
+    final rawVideo = (map['video_url'] ?? map['video'] ?? map['highlight_url'] ?? map['clip_url'])?.toString().trim();
+    final videoUrl = (rawVideo != null && rawVideo.isNotEmpty && rawVideo != 'null') ? rawVideo : null;
+
+    final rawPlayer = parsed.player.isNotEmpty ? parsed.player : (map['player_name'] ?? map['player'])?.toString().trim();
+    final rawAssist = parsed.relatedPlayer.isNotEmpty ? parsed.relatedPlayer : (map['assist_player_name'] ?? map['assist_player'])?.toString().trim();
+
     return MatchEventModel(
       eventId: parsed.id,
       teamId: parsed.teamId,
@@ -78,9 +91,9 @@ class MatchEventModel {
       statusName: parsed.label,
       minute: parsed.minute ~/ 100,
       stoppageMinute: parsed.minute % 100,
-      playerName: parsed.player.isNotEmpty ? parsed.player : null,
-      assistPlayerName:
-          parsed.relatedPlayer.isNotEmpty ? parsed.relatedPlayer : null,
+      playerName: (rawPlayer != null && rawPlayer.isNotEmpty && rawPlayer != 'null') ? rawPlayer : null,
+      assistPlayerName: (rawAssist != null && rawAssist.isNotEmpty && rawAssist != 'null') ? rawAssist : null,
+      videoUrl: videoUrl,
     );
   }
 

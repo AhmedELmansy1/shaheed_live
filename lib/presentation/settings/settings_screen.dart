@@ -208,6 +208,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   String _getGoalSoundLabel(String sound) {
     switch (sound) {
+      case 'arabic_goal':
+        return 'معلق عربي حماسي: جوووول!';
+      case 'stadium_horn':
+        return 'بوق أهداف الملاعب الأوروبية (Goal Horn)';
       case 'whistle':
         return 'صافرة الحكم الكروية (افتراضي)';
       case 'cheer':
@@ -227,7 +231,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final border = AppColors.borderOf(context);
 
     final sounds = [
-      (key: 'whistle', title: 'صافرة الحكم الكروية', desc: 'نغمة كروية أصيلة بصوت صافرة الحكم الرسمية'),
+      (key: 'arabic_goal', title: 'معلق عربي حماسي: جوووول!', desc: 'صرخة المعلق الرياضي الشهيرة "هدف.. هدف.. جوووول!"'),
+      (key: 'stadium_horn', title: 'بوق أهداف الملاعب الأوروبية', desc: 'صوت بوق الاستادات الأوروبية الصاخب مع هتاف المدرجات'),
+      (key: 'whistle', title: 'صافرة الحكم الكروية (افتراضي)', desc: 'نغمة كروية أصيلة بصوت صافرة الحكم الرسمية'),
       (key: 'cheer', title: 'هتاف الجمهور والمعلق', desc: 'حماس المدرجات وهتاف الهدف الكروي'),
       (key: 'system', title: 'نغمة النظام الافتراضية', desc: 'نغمة الإشعارات القياسية لنظام الهاتف'),
       (key: 'silent', title: 'صامت (اهتزاز فقط)', desc: 'تنبيه بصري مع اهتزاز دون صوت'),

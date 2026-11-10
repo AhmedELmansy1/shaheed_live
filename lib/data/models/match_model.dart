@@ -150,18 +150,39 @@ class MatchModel {
   String getRemainingTimeUntilKickoff({int offsetHours = 0}) =>
       DateFormatter.formatRemainingKickoff(getKickoffDateTime(offsetHours: offsetHours));
 
-  /// Returns the formatted live minute or status (e.g. "٤٥'", "٩٠+٤'", "استراحة"), or null if not live.
+  /// Returns the formatted live minute or status (e.g. "45'", "90+4'", "استراحة"), or null if not live.
   String? get currentMinute {
     if (!isLive) return null;
-    if (adminTitle == null || adminTitle!.trim().isEmpty) return null;
-    final trimmed = adminTitle!.trim();
-    if (trimmed == 'لم تبدأ' ||
-        trimmed == 'انتهت' ||
-        trimmed == 'تأجلت' ||
-        trimmed == 'ملغاة') {
-      return null;
+    if (status == MatchStatus.paused) {
+      return 'استراحة';
     }
-    return DateFormatter.toArabicNumerals(trimmed);
+    if (adminTitle != null && adminTitle!.trim().isNotEmpty) {
+      final trimmed = adminTitle!.trim();
+      if (trimmed != 'لم تبدأ' &&
+          trimmed != 'انتهت' &&
+          trimmed != 'تأجلت' &&
+          trimmed != 'ملغاة' &&
+          trimmed != 'مباشر') {
+        return DateFormatter.toArabicNumerals(trimmed);
+      }
+    }
+    // Dynamic real-time elapsed match minute calculation based on kickoff time
+    if (kickoffDateTime != null) {
+      final elapsed = DateTime.now().difference(kickoffDateTime!).inMinutes;
+      if (elapsed >= 0 && elapsed <= 130) {
+        if (elapsed > 45 && elapsed <= 60) {
+          return 'استراحة';
+        } else if (elapsed > 60) {
+          final s2 = elapsed - 15;
+          return s2 > 90 ? "90+${s2 - 90}'" : "$s2'";
+        } else {
+          return "${elapsed == 0 ? 1 : elapsed}'";
+        }
+      }
+    }
+    return adminTitle != null && adminTitle!.trim().isNotEmpty
+        ? DateFormatter.toArabicNumerals(adminTitle!.trim())
+        : null;
   }
 
   String get statusName {
@@ -264,6 +285,19 @@ class MatchModel {
     final rawCommentator =
         (map['commentator'] ?? map['commentator_name'])?.toString().trim();
 
+    final rawLiveMinute = map['live_minute'] ?? map['time_minute'] ?? map['minute'];
+    String? resolvedAdminTitle = adminTitleStr;
+    if ((resolvedAdminTitle == null || resolvedAdminTitle.isEmpty) && isActuallyLive) {
+      if (computedStatus == MatchStatus.paused) {
+        resolvedAdminTitle = 'استراحة';
+      } else if (rawLiveMinute != null) {
+        final parsedMin = int.tryParse(rawLiveMinute.toString());
+        if (parsedMin != null && parsedMin > 0) {
+          resolvedAdminTitle = "$parsedMin'";
+        }
+      }
+    }
+
     return MatchModel(
       matchId: parseMatchId(map['match_id'] ?? map['id']),
       matchDate: map['match_date'] as String?,
@@ -276,7 +310,7 @@ class MatchModel {
       homeScore: parseScore(map['home_scores']),
       awayScore: parseScore(map['away_scores']),
       adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
-      adminTitle: adminTitleStr,
+      adminTitle: resolvedAdminTitle,
       eventStatus: (map['event_status'] as String?)?.toLowerCase(),
       channel: (rawChannel != null && rawChannel.isNotEmpty && rawChannel != 'null')
           ? rawChannel

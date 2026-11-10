@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api/match_score_api.dart';
+import '../../../data/cache/matches_cache_service.dart';
 import '../../../data/models/match_event_model.dart';
 import '../../../data/models/match_info_model.dart';
 import '../../../data/models/match_lineup_model.dart';
@@ -101,14 +102,24 @@ final ysscoresSourceProvider = Provider<YsscoresSource>((ref) {
 final matchStandingsProvider =
     FutureProvider.family<List<StandingRowModel>, int>((ref, matchId) async {
   final source = ref.watch(ysscoresSourceProvider);
+  final cache = MatchesCacheService.currentInstance;
   try {
     final raw = await source.rawLeagueRank(matchId);
-    return StandingRowModel.fromResponse(raw);
+    final rows = StandingRowModel.fromResponse(raw);
+    if (rows.isNotEmpty) {
+      await cache?.saveStandings(matchId, raw);
+    }
+    return rows;
   } catch (e) {
     developer.log(
       '[MatchStandings] Error fetching standings: $e',
       name: 'Standings',
     );
+    // Offline / Network drop fallback: serve cached standings instantly
+    final cached = cache?.getCachedStandings(matchId);
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
     return [];
   }
 });

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
@@ -202,6 +204,42 @@ class EventsTab extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+          if (event.isGoal) ...[
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: () => _handleWatchGoal(context, event),
+              borderRadius: BorderRadius.circular(AppRadii.full),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.neonEmerald.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  border: Border.all(
+                    color: AppColors.neonEmerald.withValues(alpha: 0.4),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 13,
+                      color: AppColors.neonEmerald,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'شاهد الهدف 🎥',
+                      style: AppTypography.caption(color: AppColors.neonEmerald).copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -360,6 +398,23 @@ class EventsTab extends ConsumerWidget {
           color: AppColors.textSecondaryOf(context),
           size: 15,
         );
+    }
+  }
+
+  void _handleWatchGoal(BuildContext context, MatchEventModel event) async {
+    HapticFeedback.lightImpact();
+    if (event.videoUrl != null && event.videoUrl!.isNotEmpty) {
+      final uri = Uri.tryParse(event.videoUrl!);
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    // Search YouTube/web for the verified goal clip
+    final query = 'هدف ${event.playerName ?? ""} ${event.formattedMinute}';
+    final searchUri = Uri.parse('https://www.youtube.com/results?search_query=${Uri.encodeComponent(query)}');
+    if (await canLaunchUrl(searchUri)) {
+      await launchUrl(searchUri, mode: LaunchMode.externalApplication);
     }
   }
 }
