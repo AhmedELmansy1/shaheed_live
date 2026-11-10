@@ -227,7 +227,7 @@ class ThemeConfigModel {
             vermilionText: primaryColor,
           );
         case SeasonalPreset.defaultDark:
-          break;
+          return AppThemeColors.dark;
       }
     }
 

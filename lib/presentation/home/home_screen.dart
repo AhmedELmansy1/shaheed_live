@@ -36,6 +36,7 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/sponsorship_banner_widget.dart';
 import 'widgets/breaking_news_ticker.dart';
 import 'widgets/instant_notification_banner.dart';
+import 'widgets/quick_tv_channels_strip.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
@@ -501,6 +502,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         parent: BouncingScrollPhysics(),
       ),
       children: [
+        // Live TV Channels Strip (catalog managed via dashboard tv_channels)
+        const Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.sm),
+          child: QuickTvChannelsStrip(),
+        ),
+
         // 1. Featured / Hero Match Card
         if (featuredMatch != null) ...[
           Padding(

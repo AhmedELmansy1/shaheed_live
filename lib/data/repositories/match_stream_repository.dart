@@ -53,18 +53,18 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
   }
 
   @override
-  Stream<MatchStreamModel?> listenToMatchStream(int matchId) {
+  Stream<MatchStreamModel?> listenToMatchStream(int matchId) async* {
     try {
       final fs = _firestore;
       if (fs == null) {
         debugPrint('[MatchStreamRepo] Firestore unavailable.');
-        return Stream.value(null);
+        yield null;
+        return;
       }
 
-      // Proactively trigger anonymous authentication without stalling snapshot subscription
-      _ensureAuth();
+      await _ensureAuth();
 
-      return fs
+      yield* fs
           .collection('match_streams')
           .doc(matchId.toString())
           .snapshots()
@@ -75,17 +75,12 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
             return MatchStreamModel.fromMap(docSnap.data()!, matchId);
           })
           .handleError((error) {
-            if (error is FirebaseException && error.code == 'permission-denied') {
-              debugPrint('[MatchStreamRepo] 🔒 PERMISSION DENIED reading match_streams/$matchId. Retrying authentication...');
-              _ensureAuth();
-            } else {
-              debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
-            }
+            debugPrint('[MatchStreamRepo] Snapshot error for match $matchId: $error');
             return null;
           });
     } catch (e) {
       debugPrint('[MatchStreamRepo] Exception setting up stream listener: $e');
-      return Stream.value(null);
+      yield null;
     }
   }
 
