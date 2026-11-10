@@ -59,7 +59,11 @@ class TeamInfo {
         map['team_name'] ??
         map['ar_title'] ??
         map['team_title'] ??
-        map['short_title'];
+        map['short_title'] ??
+        map['club_name'] ??
+        map['team'] ??
+        map['ar_name'] ??
+        map['full_name'];
     final titleStr = titleCandidate?.toString().trim() ?? '';
     final cleanTitle =
         (titleStr.isNotEmpty && titleStr != 'null') ? titleStr : 'فريق غير محدد';
@@ -197,10 +201,10 @@ class MatchModel {
       return 0;
     }
 
-    var homeTeam = TeamInfo.fromMap(map['home_team']);
-    if (homeTeam.title == 'فريق غير محدد' && map['home_name'] != null) {
-      final hName = map['home_name'].toString().trim();
-      if (hName.isNotEmpty) {
+    var homeTeam = TeamInfo.fromMap(map['home_team'] ?? map['homeTeam'] ?? map['first_team'] ?? map['team1']);
+    if (homeTeam.title == 'فريق غير محدد') {
+      final hName = (map['home_name'] ?? map['home_title'] ?? map['team1_name'] ?? map['home'])?.toString().trim();
+      if (hName != null && hName.isNotEmpty && hName != 'null') {
         homeTeam = TeamInfo(
           rowId: homeTeam.rowId != 0 ? homeTeam.rowId : (map['home_id'] ?? 0),
           title: hName,
@@ -209,10 +213,10 @@ class MatchModel {
       }
     }
 
-    var awayTeam = TeamInfo.fromMap(map['away_team']);
-    if (awayTeam.title == 'فريق غير محدد' && map['away_name'] != null) {
-      final aName = map['away_name'].toString().trim();
-      if (aName.isNotEmpty) {
+    var awayTeam = TeamInfo.fromMap(map['away_team'] ?? map['awayTeam'] ?? map['second_team'] ?? map['team2']);
+    if (awayTeam.title == 'فريق غير محدد') {
+      final aName = (map['away_name'] ?? map['away_title'] ?? map['team2_name'] ?? map['away'])?.toString().trim();
+      if (aName != null && aName.isNotEmpty && aName != 'null') {
         awayTeam = TeamInfo(
           rowId: awayTeam.rowId != 0 ? awayTeam.rowId : (map['away_id'] ?? 0),
           title: aName,

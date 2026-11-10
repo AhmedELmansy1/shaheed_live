@@ -234,15 +234,24 @@ class _StreamReportBottomSheetState
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Optional comment
+          // User comment input field
+          Text(
+            'تفاصيل الملاحظة أو البلاغ:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: context.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
           TextField(
             controller: _commentController,
             maxLength: 250,
-            maxLines: 2,
-            style: TextStyle(fontSize: 12, color: context.textPrimary),
+            maxLines: 3,
+            style: TextStyle(fontSize: 13, color: context.textPrimary),
             decoration: InputDecoration(
-              hintText: 'ملاحظة إضافية توضح المشكلة (اختياري)...',
-              hintStyle: TextStyle(fontSize: 11, color: context.textMuted),
+              hintText: 'اكتب هنا تفاصيل البلاغ أو أي ملاحظة تود إيصالها للإدارة...',
+              hintStyle: TextStyle(fontSize: 12, color: context.textMuted),
               filled: true,
               fillColor: context.surfaceElevated,
               border: OutlineInputBorder(
@@ -257,7 +266,7 @@ class _StreamReportBottomSheetState
                 borderRadius: AppRadii.smRadius,
                 borderSide: BorderSide(color: context.vermilion),
               ),
-              contentPadding: const EdgeInsets.all(AppSpacing.sm),
+              contentPadding: const EdgeInsets.all(AppSpacing.md),
             ),
           ),
 

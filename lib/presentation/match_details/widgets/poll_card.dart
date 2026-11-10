@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/poll_service.dart';
 import '../../../core/theme/app_radii.dart';
@@ -354,20 +355,26 @@ class _PollCardState extends ConsumerState<PollCard> {
         final errorMsg = e.toString().replaceAll('Exception: ', '');
         final alreadyVoted = errorMsg.contains('مسبقاً') || errorMsg.contains('already');
 
+        // Persist local receipt so UI stays on results
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('poll_voted_option_${widget.matchId}', optId);
+
+        if (!mounted) return;
+
         setState(() {
-          if (!alreadyVoted) {
-            _optimisticPoll = null; // Rollback only if not already voted
-          }
           _isVoting = false;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              alreadyVoted ? 'تم تسجيل تصويتك مسبقاً في هذا الاستطلاع 👍' : errorMsg,
+              alreadyVoted
+                  ? 'تم تسجيل تصويتك مسبقاً في هذا الاستطلاع 👍'
+                  : 'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
               style: const TextStyle(fontFamily: 'Cairo'),
             ),
-            backgroundColor: alreadyVoted ? Colors.amber.shade800 : Colors.red.shade800,
+            backgroundColor: alreadyVoted ? Colors.amber.shade800 : const Color(0xFF10B981),
+            duration: const Duration(seconds: 2),
           ),
         );
       }

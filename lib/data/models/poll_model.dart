@@ -19,8 +19,8 @@ class PollOption {
     }
 
     return PollOption(
-      id: (map['id'] as String?) ?? 'opt_0',
-      label: (map['label'] as String?) ?? '',
+      id: map['id']?.toString() ?? 'opt_0',
+      label: map['label']?.toString() ?? '',
       votes: parseVotes(map['votes']),
     );
   }
@@ -92,10 +92,10 @@ class PollModel {
 
     return PollModel(
       matchId: (map['match_id']?.toString()) ?? docId,
-      question: (map['question'] as String?) ?? 'من تتوقع أن يفوز بمباراة اليوم؟',
+      question: (map['question']?.toString()) ?? 'من تتوقع أن يفوز بمباراة اليوم؟',
       options: optionsList,
       totalVotes: parseTotal(map['total_votes']),
-      enabled: (map['enabled'] as bool?) ?? true,
+      enabled: map['enabled'] == true || map['enabled'] == null || map['enabled'] == 1,
       userVotedOptionId: userVotedOptionId,
     );
   }

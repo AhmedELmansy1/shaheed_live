@@ -90,7 +90,7 @@ void main() {
           textDirection: TextDirection.rtl,
           child: MediaQuery(
             data: MediaQueryData(
-              size: surfaceSize ?? const Size(400, 800),
+              size: surfaceSize ?? const Size(400, 1400),
               textScaler: TextScaler.linear(textScaleFactor),
             ),
             child: const Scaffold(body: HomeScreen()),
@@ -136,6 +136,10 @@ void main() {
 
   group('HomeScreen Redesign — Populated & Cached Data States', () {
     testWidgets('Renders DaySelector, HeroMatchCard, SectionHeader, and MatchCard in Light Theme', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(createHomeScreenWidget(
         overrides: [
           homeSectionDataProvider.overrideWith((ref) => AsyncValue.data(sampleSectionData)),
@@ -157,6 +161,10 @@ void main() {
     });
 
     testWidgets('Renders DaySelector, HeroMatchCard, and MatchCard in Dark Theme', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(createHomeScreenWidget(
         overrides: [
           homeSectionDataProvider.overrideWith((ref) => AsyncValue.data(sampleSectionData)),

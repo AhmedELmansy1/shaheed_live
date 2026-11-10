@@ -1,49 +1,62 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Design Token Typography scale for the "Paper × Ink × Vermilion" design system.
+/// Design Token Typography — "Midnight Stadium".
 ///
-/// Features:
-/// - Arabic-first with bundled 'Cairo' font family (zero runtime downloads).
-/// - Tabular figures for score numerals and timestamps (no jitter during live updates).
-/// - High legibility on both Paper (light) and Ink (dark) backgrounds.
+/// Font: Cairo (variable, bundled). Arabic-first, full RTL.
+/// Scale aligned to spec; tabular figures on score numerals prevent
+/// layout jitter during live score updates.
 class AppTypography {
   static const String fontFamily = 'Cairo';
 
-  // Display Styles
-  static TextStyle displayLarge({Color? color}) {
+  // ─── Display ──────────────────────────────────────────────────────────────
+
+  /// 34sp / lh 1.17 / w800 — Hero titles.
+  static TextStyle display({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
-      fontSize: 32,
+      fontSize: 34,
       fontWeight: FontWeight.w800,
       color: color,
-      height: 1.2,
+      height: 1.17,
       letterSpacing: -0.5,
     );
   }
 
-  static TextStyle displayMedium({Color? color}) {
+  /// Alias kept for backward-compat.
+  static TextStyle displayLarge({Color? color}) => display(color: color);
+
+  // ─── Headline ─────────────────────────────────────────────────────────────
+
+  /// 24sp / lh 1.33 / w700 — Section headers.
+  static TextStyle headline({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
       fontSize: 24,
       fontWeight: FontWeight.w700,
       color: color,
-      height: 1.25,
+      height: 1.33,
       letterSpacing: -0.3,
     );
   }
 
-  // Titles
-  static TextStyle titleLarge({Color? color}) {
+  static TextStyle displayMedium({Color? color}) => headline(color: color);
+
+  // ─── Title ────────────────────────────────────────────────────────────────
+
+  /// 18sp / lh 1.44 / w700 — Card titles, screen titles.
+  static TextStyle title({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: FontWeight.w700,
       color: color,
-      height: 1.25,
+      height: 1.44,
       letterSpacing: 0.0,
     );
   }
+
+  static TextStyle titleLarge({Color? color}) => title(color: color);
 
   static TextStyle titleMedium({Color? color}) {
     return TextStyle(
@@ -51,7 +64,7 @@ class AppTypography {
       fontSize: 16,
       fontWeight: FontWeight.w600,
       color: color,
-      height: 1.3,
+      height: 1.38,
       letterSpacing: 0.0,
     );
   }
@@ -62,22 +75,26 @@ class AppTypography {
       fontSize: 14,
       fontWeight: FontWeight.w600,
       color: color,
-      height: 1.3,
+      height: 1.36,
       letterSpacing: 0.0,
     );
   }
 
-  // Body
-  static TextStyle bodyLarge({Color? color}) {
+  // ─── Body ─────────────────────────────────────────────────────────────────
+
+  /// 15sp / lh 1.60 / w500 — Match rows, main text.
+  static TextStyle body({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
       fontSize: 15,
       fontWeight: FontWeight.w500,
       color: color,
-      height: 1.4,
+      height: 1.60,
       letterSpacing: 0.0,
     );
   }
+
+  static TextStyle bodyLarge({Color? color}) => body(color: color);
 
   static TextStyle bodyMedium({Color? color}) {
     return TextStyle(
@@ -85,7 +102,7 @@ class AppTypography {
       fontSize: 14,
       fontWeight: FontWeight.w400,
       color: color,
-      height: 1.35,
+      height: 1.50,
       letterSpacing: 0.0,
     );
   }
@@ -96,22 +113,28 @@ class AppTypography {
       fontSize: 12,
       fontWeight: FontWeight.w400,
       color: color,
-      height: 1.35,
+      height: 1.33,
       letterSpacing: 0.0,
     );
   }
 
-  // Labels & Badges
-  static TextStyle labelLarge({Color? color}) {
+  // ─── Label ────────────────────────────────────────────────────────────────
+
+  /// 13sp / lh 1.38 / w600 — Badges, chips, button text.
+  static TextStyle label({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
       fontSize: 13,
       fontWeight: FontWeight.w600,
       color: color,
-      height: 1.2,
+      height: 1.38,
       letterSpacing: 0.1,
     );
   }
+
+  static TextStyle labelLarge({Color? color}) => label(color: color);
+
+  static TextStyle labelMedium({Color? color}) => label(color: color);
 
   static TextStyle labelSmall({Color? color}) {
     return TextStyle(
@@ -119,25 +142,42 @@ class AppTypography {
       fontSize: 11,
       fontWeight: FontWeight.w600,
       color: color,
-      height: 1.2,
+      height: 1.27,
       letterSpacing: 0.2,
     );
   }
 
-  // Score Numerals — Tabular figures prevent layout shifting during live score increments
-  static TextStyle scoreHeadline({Color? color}) => scoreLarge(color: color);
+  // ─── Caption ──────────────────────────────────────────────────────────────
 
-  static TextStyle scoreLarge({Color? color}) {
+  /// 12sp / lh 1.33 / w500 — Timestamps, meta info.
+  static TextStyle caption({Color? color}) {
+    return TextStyle(
+      fontFamily: fontFamily,
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      color: color,
+      height: 1.33,
+      letterSpacing: 0.0,
+    );
+  }
+
+  // ─── Score Numerals ───────────────────────────────────────────────────────
+
+  /// 28sp / lh 1.14 / w800 / tabular figures — Live scores, never jitters.
+  static TextStyle score({Color? color}) {
     return TextStyle(
       fontFamily: fontFamily,
       fontSize: 28,
       fontWeight: FontWeight.w800,
       color: color,
-      height: 1.1,
+      height: 1.14,
       letterSpacing: 0.5,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
+
+  static TextStyle scoreLarge({Color? color}) => score(color: color);
+  static TextStyle scoreHeadline({Color? color}) => score(color: color);
 
   static TextStyle scoreMedium({Color? color}) {
     return TextStyle(
@@ -157,13 +197,13 @@ class AppTypography {
       fontSize: 16,
       fontWeight: FontWeight.w700,
       color: color,
-      height: 1.2,
+      height: 1.25,
       letterSpacing: 0.5,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 
-  // Backward compatibility alias for previous displayScore
+  /// Backward-compat alias.
   static TextStyle displayScore({
     Color color = AppColors.darkTextPrimary,
     double size = 30,
@@ -179,23 +219,24 @@ class AppTypography {
     );
   }
 
-  // Backward compatibility aliases for existing screens
-  static TextStyle caption({Color? color}) => bodySmall(color: color);
-  static TextStyle label({Color? color}) => labelLarge(color: color);
-  static TextStyle labelMedium({Color? color}) => labelLarge(color: color);
+  // ─── Material TextTheme ───────────────────────────────────────────────────
 
-  // Material TextTheme generator
   static TextTheme textTheme(Color textPrimary, Color textSecondary) {
     return TextTheme(
-      displayLarge: displayLarge(color: textPrimary),
-      displayMedium: displayMedium(color: textPrimary),
-      titleLarge: titleLarge(color: textPrimary),
+      displayLarge: display(color: textPrimary),
+      displayMedium: headline(color: textPrimary),
+      displaySmall: title(color: textPrimary),
+      headlineLarge: headline(color: textPrimary),
+      headlineMedium: title(color: textPrimary),
+      headlineSmall: titleMedium(color: textPrimary),
+      titleLarge: title(color: textPrimary),
       titleMedium: titleMedium(color: textPrimary),
       titleSmall: titleSmall(color: textPrimary),
-      bodyLarge: bodyLarge(color: textPrimary),
+      bodyLarge: body(color: textPrimary),
       bodyMedium: bodyMedium(color: textSecondary),
-      bodySmall: bodySmall(color: textSecondary),
-      labelLarge: labelLarge(color: textPrimary),
+      bodySmall: caption(color: textSecondary),
+      labelLarge: label(color: textPrimary),
+      labelMedium: label(color: textSecondary),
       labelSmall: labelSmall(color: textSecondary),
     );
   }

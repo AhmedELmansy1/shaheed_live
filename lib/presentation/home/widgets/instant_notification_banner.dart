@@ -69,7 +69,7 @@ class _InstantNotificationBannerState
         final title = data['title']?.toString() ?? 'إشعار جديد';
         final body = data['body']?.toString() ?? '';
         final matchId = data['match_id']?.toString();
-        final clickUrl = data['click_url']?.toString();
+        final clickUrl = (data['click_url'] ?? data['click_action_url'])?.toString();
 
         final textPrimary = AppColors.textPrimaryOf(context);
         final textSecondary = AppColors.textSecondaryOf(context);

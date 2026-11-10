@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
+import '../../presentation/diagnostics/design_gallery_screen.dart';
 import '../../presentation/diagnostics/diagnostics_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
 import '../../presentation/home/home_screen.dart';
@@ -167,6 +168,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             );
           }
           return const DiagnosticsScreen();
+        },
+      ),
+      // Design Gallery (enabled only via --dart-define=ENABLE_DIAGNOSTICS=true)
+      GoRoute(
+        path: '/design-gallery',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          if (!kEnableDiagnostics) {
+            return const Scaffold(
+              body: Center(child: Text('Diagnostics disabled in this build.')),
+            );
+          }
+          return const DesignGalleryScreen();
         },
       ),
     ],

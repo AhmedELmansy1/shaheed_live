@@ -30,3 +30,4 @@ class DataSaverNotifier extends Notifier<bool> {
     await setEnabled(!state);
   }
 }
+

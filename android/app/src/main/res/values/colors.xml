@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launch_bg_color">#F7F4EE</color>
-    <color name="notification_accent">#E5482D</color>
+    <!-- Midnight Stadium dark launch background — solid color, no logo -->
+    <color name="launch_bg_color">#0A0F1E</color>
+    <!-- Primary electric blue for notification accent -->
+    <color name="notification_accent">#3D7BFF</color>
 </resources>

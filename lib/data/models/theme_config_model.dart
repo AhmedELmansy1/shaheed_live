@@ -206,11 +206,41 @@ class ThemeConfigModel {
       return isDark ? AppThemeColors.dark : AppThemeColors.light;
     }
 
+    // 1. If a known preset is selected, use the dedicated high-contrast preset palette
+    if (isDark) {
+      switch (preset) {
+        case SeasonalPreset.ramadan:
+          return AppThemeColors.ramadanDark;
+        case SeasonalPreset.championsLeague:
+          return AppThemeColors.championsLeagueDark;
+        case SeasonalPreset.golden:
+          return AppThemeColors.goldenDark;
+        case SeasonalPreset.classico:
+          return AppThemeColors.dark.copyWith(
+            primary: primaryColor,
+            primaryContainer: primaryColor.withValues(alpha: 0.2),
+            onPrimary: Colors.white,
+            live: primaryColor,
+            upcoming: accentColor,
+            upcomingText: accentColor,
+            vermilion: primaryColor,
+            vermilionText: primaryColor,
+          );
+        case SeasonalPreset.defaultDark:
+          break;
+      }
+    }
+
+    // 2. Fallback / Custom color overrides
     final base = isDark ? AppThemeColors.dark : AppThemeColors.light;
     final primary = primaryColor;
     final accent = accentColor;
 
     return base.copyWith(
+      primary: primary,
+      primaryContainer: primary.withValues(alpha: 0.2),
+      onPrimary: Colors.white,
+      live: primary,
       vermilion: primary,
       vermilionText: isDark
           ? primary
