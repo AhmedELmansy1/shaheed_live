@@ -32,5 +32,8 @@
 - **Phase 3:** Remaining screens (Leagues, League Details, Favorites, Onboarding/Team Selection, Settings, About Developer, Notification Permission, Force Update) + final motion polish.
 
 ## Known Issues / Notes
-- None. All 268 tests pass and 0 analysis issues exist.
+- **Android Release Build Verified**: Clean `flutter build apk --release` succeeded (exit code 0). Output: `build\app\outputs\flutter-apk\app-release.apk` (80,672,842 bytes / 76.9 MB).
+- **Resource Fix**: Repaired corrupted prolog in `android/app/src/main/res/drawable/ic_launcher_monochrome.xml` (stray header bytes replaced with clean UTF-8 XML declaration and `<vector>` root).
+- **Test Suite**: 282 tests passed, 2 skipped, 0 failed.
+- **Analysis**: 0 issues found across `lib` and `test`.
 
