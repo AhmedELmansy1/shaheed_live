@@ -24,8 +24,8 @@ class ScoreView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hScore = AppNumberFormat.formatScore(homeScore);
-    final aScore = AppNumberFormat.formatScore(awayScore);
+    final hScore = AppNumberFormat.tryFormatScore(homeScore);
+    final aScore = AppNumberFormat.tryFormatScore(awayScore);
 
     final scoreColor = isLive
         ? AppColors.primaryOf(context)
@@ -44,6 +44,17 @@ class ScoreView extends StatelessWidget {
       fontSize: fontSize * 0.7,
       fontWeight: FontWeight.w600,
     );
+
+    // If score is missing for a live or finished match, show dash with semantic label
+    if (hScore == null || aScore == null) {
+      return Semantics(
+        label: 'النتيجة غير متوفرة بعد',
+        child: Text(
+          '—',
+          style: numberStyle,
+        ),
+      );
+    }
 
     return Semantics(
       label: 'النتيجة: $hScore مقابل $aScore',

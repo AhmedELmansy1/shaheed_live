@@ -1,0 +1,30 @@
+{
+  "match_id": 11920752,
+  "match_date": "2026-11-09",
+  "match_time": "00:00:00",
+  "live": 0,
+  "status": "4",
+  "event_status": "finished",
+  "status_text": "انتهت المباراة",
+  "live_minute": null,
+  "forced_status": null,
+  "admin_badge": null,
+  "admin_title": null,
+  "home_scores": 0,
+  "away_scores": 0,
+  "championship": {
+    "id": 62474482,
+    "title": "كأس مصر",
+    "image": "https://imgs.ysscores.com/championship/48/1931696032876.png"
+  },
+  "home_team": {
+    "row_id": 205190,
+    "title": "وادي دجلة",
+    "image": "https://imgs.ysscores.com/teams/64/2161728755640.png"
+  },
+  "away_team": {
+    "row_id": 316480,
+    "title": "كهرباء الإسماعيلية",
+    "image": "https://imgs.ysscores.com/teams/64/2391753649516.png"
+  }
+}

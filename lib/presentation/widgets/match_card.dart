@@ -289,7 +289,37 @@ class MatchCard extends ConsumerWidget {
     bool isUpcoming,
     bool isReminderSet,
   ) {
-    if (isLive || isFinished) {
+    // 1. Postponed or Cancelled: show status text with semantic label
+    if (match.status == MatchStatus.postponed ||
+        match.status == MatchStatus.cancelled) {
+      final statusLabel =
+          match.status == MatchStatus.postponed ? 'تأجلت' : 'ألغيت';
+      return Semantics(
+        label: 'حالة المباراة: $statusLabel',
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: AppColors.warningOf(context).withValues(alpha: 0.12),
+            borderRadius: AppRadii.smRadius,
+            border: Border.all(
+              color: AppColors.warningOf(context).withValues(alpha: 0.35),
+              width: 0.8,
+            ),
+          ),
+          child: Text(
+            statusLabel,
+            style: AppTypography.caption(
+              color: AppColors.warningOf(context),
+            ).copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 2. Live, Paused (half-time), or Finished: show ScoreView (real numbers or '—')
+    if (isLive || isFinished || match.status == MatchStatus.paused) {
       return ScoreView(
         homeScore: match.homeScore,
         awayScore: match.awayScore,
@@ -299,46 +329,61 @@ class MatchCard extends ConsumerWidget {
       );
     }
 
-    // Upcoming Match: Kickoff time + Reminder Toggle Button (minimum 48dp touch target)
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          match.formattedLocalTime.isNotEmpty
-              ? match.formattedLocalTime
-              : '— : —',
-          style: AppTypography.scoreMedium(
-            color: AppColors.secondaryOf(context),
-          ).copyWith(
-            fontSize: 15.0,
-            fontWeight: FontWeight.w700,
+    // 3. Upcoming / Not started: show kickoff time (never 0:0, never placeholder dots)
+    final rawKickoff = match.formattedLocalTime.trim();
+    final displayTime = (rawKickoff.isNotEmpty &&
+            rawKickoff != '— : —' &&
+            rawKickoff != '0:0' &&
+            rawKickoff != '00:00:00' &&
+            rawKickoff != '· : ·' &&
+            rawKickoff != '٠ : ٠')
+        ? rawKickoff
+        : (match.matchTime != null &&
+                match.matchTime!.isNotEmpty &&
+                match.matchTime != '00:00:00'
+            ? match.matchTime!.substring(0, 5)
+            : '— : —');
+
+    return Semantics(
+      label: 'وقت انطلاق المباراة: $displayTime',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            displayTime,
+            style: AppTypography.scoreMedium(
+              color: AppColors.secondaryOf(context),
+            ).copyWith(
+              fontSize: 15.0,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        IconButton(
-          iconSize: 18,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(
-            minWidth: 44,
-            minHeight: 44,
+          const SizedBox(width: AppSpacing.xs),
+          IconButton(
+            iconSize: 18,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 44,
+              minHeight: 44,
+            ),
+            tooltip: isReminderSet ? 'إلغاء التذكير' : 'تفعيل التذكير بالمباراة',
+            icon: Icon(
+              isReminderSet
+                  ? Icons.notifications_active_rounded
+                  : Icons.notifications_none_rounded,
+              color: isReminderSet
+                  ? AppColors.primaryOf(context)
+                  : AppColors.textSecondaryOf(context),
+            ),
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await ref
+                  .read(matchReminderServiceProvider)
+                  .toggleReminder(match);
+            },
           ),
-          tooltip: isReminderSet ? 'إلغاء التذكير' : 'تفعيل التذكير بالمباراة',
-          icon: Icon(
-            isReminderSet
-                ? Icons.notifications_active_rounded
-                : Icons.notifications_none_rounded,
-            color: isReminderSet
-                ? AppColors.primaryOf(context)
-                : AppColors.textSecondaryOf(context),
-          ),
-          onPressed: () async {
-            HapticFeedback.lightImpact();
-            await ref
-                .read(matchReminderServiceProvider)
-                .toggleReminder(match);
-          },
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

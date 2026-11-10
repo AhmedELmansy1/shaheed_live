@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../core/utils/date_formatter.dart';
 import '../api/match_score_api.dart' as api;
 
@@ -68,6 +70,10 @@ class TeamInfo {
     final cleanTitle =
         (titleStr.isNotEmpty && titleStr != 'null') ? titleStr : 'فريق غير محدد';
     final imageStr = (map['image'] ?? map['logo'] ?? map['team_image'])?.toString();
+
+    if (kDebugMode && cleanTitle == 'فريق غير محدد') {
+      debugPrint('[TeamInfo] Warning: team title missing for rowId=$rowId (candidate was: "$titleCandidate"). Fallback triggered.');
+    }
 
     return TeamInfo(
       rowId: rowId,
@@ -205,7 +211,14 @@ class MatchModel {
 
     var homeTeam = TeamInfo.fromMap(map['home_team'] ?? map['homeTeam'] ?? map['first_team'] ?? map['team1']);
     if (homeTeam.title == 'فريق غير محدد') {
-      final hName = (map['home_name'] ?? map['home_title'] ?? map['team1_name'] ?? map['home'])?.toString().trim();
+      final hName = (map['home_name'] ??
+              map['home_title'] ??
+              map['team1_name'] ??
+              map['first_team_name'] ??
+              map['home'] ??
+              map['home_form']?['team_name'])
+          ?.toString()
+          .trim();
       if (hName != null && hName.isNotEmpty && hName != 'null') {
         homeTeam = TeamInfo(
           rowId: homeTeam.rowId != 0 ? homeTeam.rowId : (map['home_id'] ?? 0),
@@ -217,7 +230,14 @@ class MatchModel {
 
     var awayTeam = TeamInfo.fromMap(map['away_team'] ?? map['awayTeam'] ?? map['second_team'] ?? map['team2']);
     if (awayTeam.title == 'فريق غير محدد') {
-      final aName = (map['away_name'] ?? map['away_title'] ?? map['team2_name'] ?? map['away'])?.toString().trim();
+      final aName = (map['away_name'] ??
+              map['away_title'] ??
+              map['team2_name'] ??
+              map['second_team_name'] ??
+              map['away'] ??
+              map['away_form']?['team_name'])
+          ?.toString()
+          .trim();
       if (aName != null && aName.isNotEmpty && aName != 'null') {
         awayTeam = TeamInfo(
           rowId: awayTeam.rowId != 0 ? awayTeam.rowId : (map['away_id'] ?? 0),
@@ -225,6 +245,12 @@ class MatchModel {
           image: awayTeam.image ?? map['away_image']?.toString(),
         );
       }
+    }
+
+    if (kDebugMode &&
+        (homeTeam.title == 'فريق غير محدد' || awayTeam.title == 'فريق غير محدد')) {
+      final mId = map['match_id'] ?? map['id'];
+      debugPrint('[MatchModel] Match #$mId: team name fallback triggered (home="${homeTeam.title}", away="${awayTeam.title}").');
     }
 
     final rawChannel =

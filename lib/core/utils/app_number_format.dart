@@ -32,11 +32,17 @@ class AppNumberFormat {
   }
 
   /// Formats a single team score as Latin digits (e.g. "0", "2", "1").
-  static String formatScore(dynamic score) {
-    if (score == null) return '0';
+  /// Returns null if [score] is null, empty, '-', or 'null' (missing score).
+  static String? tryFormatScore(dynamic score) {
+    if (score == null) return null;
     final str = toLatinNumerals(score).trim();
-    if (str.isEmpty || str == '-' || str == 'null') return '0';
+    if (str.isEmpty || str == '-' || str == 'null') return null;
     return str;
+  }
+
+  /// Formats a single team score as Latin digits (e.g. "0", "2", "1").
+  static String formatScore(dynamic score) {
+    return tryFormatScore(score) ?? '0';
   }
 
   /// Formats a score pair (e.g. "0 - 0", "2 - 1").
