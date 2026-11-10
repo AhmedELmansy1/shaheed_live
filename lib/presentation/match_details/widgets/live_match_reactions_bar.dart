@@ -284,3 +284,4 @@ class _AnimatedParticleState extends State<_AnimatedParticle>
     );
   }
 }
+

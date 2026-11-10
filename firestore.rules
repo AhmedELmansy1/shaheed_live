@@ -86,5 +86,19 @@ service cloud.firestore {
         request.resource.data.server_name is string && request.resource.data.server_name.size() <= 100 &&
         request.resource.data.created_at == request.time;
     }
+
+    // 7. Live TV Channels Catalog
+    // - Public read for client apps to display live TV channels list
+    // - Writes (create/update/delete) allowed ONLY for verified administrators
+    match /tv_channels/{channelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 8. Administrator Action Audit Logs
+    // - Strict admin-only access for viewing and recording dashboard activities
+    match /admin_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
