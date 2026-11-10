@@ -43,11 +43,13 @@ import 'widgets/stream_report_sheet.dart';
 class MatchDetailsScreen extends ConsumerStatefulWidget {
   final String matchId;
   final MatchModel? initialMatch;
+  final int initialTabIndex;
 
   const MatchDetailsScreen({
     super.key,
     required this.matchId,
     this.initialMatch,
+    this.initialTabIndex = 0,
   });
 
   @override
@@ -138,7 +140,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
 
     return DefaultTabController(
       length: 7,
-      initialIndex: 0, // Events tab by default
+      initialIndex: widget.initialTabIndex,
       child: Scaffold(
         backgroundColor: bg,
         appBar: AppBar(
@@ -201,21 +203,22 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                 },
               ),
 
-            // Report Stream Issue Action
-            IconButton(
-              icon: const Icon(Icons.flag_outlined, color: Colors.amber, size: 20),
-              tooltip: 'إبلاغ عن مشكلة في البث',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                StreamReportBottomSheet.show(
-                  context,
-                  matchId: match.id,
-                  matchTitle: '${match.homeTeam.title} vs ${match.awayTeam.title}',
-                  serverId: 'match_details',
-                  serverName: 'صفحة تفاصيل المباراة',
-                );
-              },
-            ),
+            // Report Stream Issue Action (only in private streaming builds)
+            if (AppConstants.enableStreaming)
+              IconButton(
+                icon: const Icon(Icons.flag_outlined, color: Colors.amber, size: 20),
+                tooltip: 'إبلاغ عن مشكلة في البث',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  StreamReportBottomSheet.show(
+                    context,
+                    matchId: match.id,
+                    matchTitle: '${match.homeTeam.title} vs ${match.awayTeam.title}',
+                    serverId: 'match_details',
+                    serverName: 'صفحة تفاصيل المباراة',
+                  );
+                },
+              ),
             const SizedBox(width: AppSpacing.xs),
           ],
         ),

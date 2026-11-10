@@ -119,8 +119,10 @@ class MatchModel {
   String get id => matchId.toString();
   dynamic get homeTeamId => homeTeam.rowId;
   dynamic get awayTeamId => awayTeam.rowId;
-  String get homeTeamName => homeTeam.title;
-  String get awayTeamName => awayTeam.title;
+  String get homeTeamName =>
+      homeTeam.title.trim().isNotEmpty ? homeTeam.title.trim() : 'فريق غير محدد';
+  String get awayTeamName =>
+      awayTeam.title.trim().isNotEmpty ? awayTeam.title.trim() : 'فريق غير محدد';
   String? get homeTeamLogo => homeTeam.image;
   String? get awayTeamLogo => awayTeam.image;
   String get leagueName => championship.title;

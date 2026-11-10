@@ -1,4 +1,6 @@
 tags:
   integration:
     skip: "Requires running local Next.js server on http://localhost:3000. Run with: flutter test --tags integration"
+  preview:
+    skip: "Preview tests generate golden preview PNGs. Run with: flutter test --tags preview --update-goldens"
 

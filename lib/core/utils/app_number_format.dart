@@ -98,3 +98,4 @@ class AppNumberFormat {
     return toLatinNumerals(value).trim();
   }
 }
+
