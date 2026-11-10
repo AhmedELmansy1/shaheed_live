@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 
-/// Editorial Score View displaying tabular Eastern Arabic numerals with semantic labels.
+/// Editorial Score View displaying tabular Latin digits with semantic labels.
 class ScoreView extends StatelessWidget {
   final dynamic homeScore;
   final dynamic awayScore;
@@ -24,11 +24,8 @@ class ScoreView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rawHome = homeScore != null ? homeScore.toString() : '0';
-    final rawAway = awayScore != null ? awayScore.toString() : '0';
-
-    final hScore = DateFormatter.toArabicNumerals(rawHome);
-    final aScore = DateFormatter.toArabicNumerals(rawAway);
+    final hScore = AppNumberFormat.formatScore(homeScore);
+    final aScore = AppNumberFormat.formatScore(awayScore);
 
     final scoreColor = isLive
         ? AppColors.primaryOf(context)

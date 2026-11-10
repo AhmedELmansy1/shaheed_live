@@ -76,8 +76,8 @@ void main() {
       expect(find.text('ليفربول'), findsOneWidget);
       expect(find.text('مانشستر سيتي'), findsOneWidget);
       expect(find.byType(LiveBadge), findsOneWidget);
-      expect(find.text('٢'), findsOneWidget);
-      expect(find.text('١'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
     });
 
     testWidgets('Upcoming MatchCard renders kickoff time and reminder bell icon', (tester) async {
@@ -98,8 +98,8 @@ void main() {
       expect(find.text('برشلونة'), findsOneWidget);
       expect(find.text('أتلتيكو مدريد'), findsOneWidget);
       expect(find.text('انتهت'), findsOneWidget);
-      expect(find.text('٣'), findsOneWidget);
-      expect(find.text('٠'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('0'), findsOneWidget);
     });
   });
 
@@ -117,15 +117,15 @@ void main() {
       expect(find.text('انتهت'), findsOneWidget);
     });
 
-    testWidgets('ScoreView renders Arabic numerals and colon separator with semantic label', (tester) async {
+    testWidgets('ScoreView renders Latin digits and colon separator with semantic label', (tester) async {
       await tester.pumpWidget(createTestWidget(const ScoreView(
         homeScore: '3',
         awayScore: '1',
         isLive: true,
       )));
 
-      expect(find.text('٣'), findsOneWidget);
-      expect(find.text('١'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
       expect(find.text(':'), findsOneWidget);
     });
   });

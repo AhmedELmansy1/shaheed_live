@@ -104,7 +104,7 @@ void main() {
       expect(penaltyGoal.playerName, 'إيدي نيكيتاه');
       expect(penaltyGoal.minute, 90);
       expect(penaltyGoal.stoppageMinute, 5);
-      expect(penaltyGoal.formattedMinute, '٩٠+٥\'');
+      expect(penaltyGoal.formattedMinute, '90+5\'');
 
       // Verify regular goals: Alexander Isak (89') and Alexis Mac Allister (40')
       final goals = events.where((e) => e.eventType == MatchEventType.goal).toList();

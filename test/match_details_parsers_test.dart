@@ -143,7 +143,7 @@ void main() {
       expect(penalty.eventType, MatchEventType.penaltyScored);
       expect(penalty.minute, 90);
       expect(penalty.stoppageMinute, 5);
-      expect(penalty.formattedMinute, contains('٩٠+٥'));
+      expect(penalty.formattedMinute, '90+5\'');
     });
   });
 }

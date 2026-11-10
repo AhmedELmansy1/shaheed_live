@@ -5,7 +5,7 @@ import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 
 /// Refined, editorial Live Status Badge in the "Paper × Ink × Vermilion" design system.
 ///
@@ -74,7 +74,7 @@ class _LiveBadgeState extends State<LiveBadge>
         rawMinute != 'انتهت';
 
     final displayText =
-        hasMinute ? DateFormatter.toArabicNumerals(rawMinute) : 'مباشر';
+        hasMinute ? AppNumberFormat.formatMinute(rawMinute) : 'مباشر';
 
     final fontSize = widget.isLarge ? 12.0 : 10.5;
     final dotSize = widget.isLarge ? 7.0 : 5.5;

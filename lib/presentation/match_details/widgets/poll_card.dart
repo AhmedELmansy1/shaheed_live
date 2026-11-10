@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/poll_service.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/theme_extensions.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/app_number_format.dart';
 import '../../../data/models/poll_model.dart';
 
 /// Interactive Poll Card rendered inside Match Details.
@@ -89,7 +88,7 @@ class _PollCardState extends ConsumerState<PollCard> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'إجمالي المشاركات: ${DateFormatter.toArabicNumerals(activePoll.totalVotes.toString())}',
+                          'إجمالي المشاركات: ${AppNumberFormat.formatCount(activePoll.totalVotes)}',
                           style: TextStyle(
                             fontSize: 11,
                             color: context.textMuted,
@@ -312,11 +311,11 @@ class _PollCardState extends ConsumerState<PollCard> {
 
   Future<void> _submitVote(PollModel currentPoll) async {
     final optId = _selectedOptionId;
-    if (optId == null) return;
+    if (optId == null || _isVoting) return;
 
     setState(() {
       _isVoting = true;
-      // Optimistic state
+      // Optimistic state (NOT persisted locally until server confirms)
       final updatedOptions = currentPoll.options.map((o) {
         if (o.id == optId) return o.copyWith(votes: o.votes + 1);
         return o;
@@ -340,44 +339,61 @@ class _PollCardState extends ConsumerState<PollCard> {
           _isVoting = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
-              style: TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: Color(0xFF10B981),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final errorMsg = e.toString().replaceAll('Exception: ', '');
-        final alreadyVoted = errorMsg.contains('مسبقاً') || errorMsg.contains('already');
-
-        // Persist local receipt so UI stays on results
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('poll_voted_option_${widget.matchId}', optId);
-
-        if (!mounted) return;
-
-        setState(() {
-          _isVoting = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              alreadyVoted
-                  ? 'تم تسجيل تصويتك مسبقاً في هذا الاستطلاع 👍'
-                  : 'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
-              style: const TextStyle(fontFamily: 'Cairo'),
+            content: const Text(
+              'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
+              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
             ),
-            backgroundColor: alreadyVoted ? Colors.amber.shade800 : const Color(0xFF10B981),
+            backgroundColor: context.primary,
             duration: const Duration(seconds: 2),
           ),
         );
       }
+    } on PollAlreadyVotedException catch (alreadyVotedErr) {
+      if (!mounted) return;
+      // On 409: mark voted locally, roll back optimistic state and refetch server poll
+      setState(() {
+        _optimisticPoll = null;
+        _isVoting = false;
+      });
+      ref.invalidate(matchPollStreamProvider(widget.matchId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            alreadyVotedErr.message,
+            style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: context.primary,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      // On failure (5xx, timeout, network error): ROLL BACK optimistic percentages completely
+      setState(() {
+        _optimisticPoll = null;
+        _isVoting = false;
+      });
+
+      final displayMsg = e is PollVoteException
+          ? e.message
+          : 'تعذّر تسجيل صوتك، حاول مرة أخرى';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            displayMsg,
+            style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: context.vermilion,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'إعادة المحاولة',
+            textColor: Colors.white,
+            onPressed: () => _submitVote(currentPoll),
+          ),
+        ),
+      );
     }
   }
 }

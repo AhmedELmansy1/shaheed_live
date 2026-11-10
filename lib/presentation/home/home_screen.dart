@@ -16,7 +16,7 @@ import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../../data/models/sponsorship_model.dart';
 import '../update/widgets/soft_update_banner.dart';
@@ -570,7 +570,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   child: Text(
-                    '${DateFormatter.toArabicNumerals(favoriteMatches.length.toString())} مباريات',
+                    '${AppNumberFormat.formatCount(favoriteMatches.length)} مباريات',
                     style: AppTypography.labelSmall(color: AppColors.gold).copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -622,9 +622,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   child: Text(
-                    DateFormatter.toArabicNumerals(
-                      liveMatches.length.toString(),
-                    ),
+                    AppNumberFormat.formatCount(liveMatches.length),
                     style: AppTypography.labelSmall(
                       color: AppColors.vermilionTextOf(context),
                     ).copyWith(

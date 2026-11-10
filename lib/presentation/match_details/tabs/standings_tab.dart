@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/app_number_format.dart';
 import '../../../data/models/standings_model.dart';
 import '../../widgets/app_empty_state.dart';
 import '../../widgets/app_error_state.dart';
@@ -219,7 +219,7 @@ class StandingsTab extends ConsumerWidget {
                 const SizedBox(width: 3),
                 Expanded(
                   child: Text(
-                    DateFormatter.toArabicNumerals('${row.rank}'),
+                    AppNumberFormat.formatStanding('${row.rank}'),
                     style: AppTypography.labelMedium(
                       color: isMatchTeam ? primary : textSecondary,
                     ).copyWith(
@@ -299,7 +299,7 @@ class StandingsTab extends ConsumerWidget {
     return SizedBox(
       width: 34,
       child: Text(
-        DateFormatter.toArabicNumerals('$val'),
+        AppNumberFormat.formatStanding(val),
         textAlign: TextAlign.center,
         style: AppTypography.labelMedium(color: color).copyWith(
           fontSize: 12,

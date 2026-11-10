@@ -1,4 +1,4 @@
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 import '../api/match_score_api.dart' as api;
 
 /// Extended event type enum covering all types from EventMapper.
@@ -85,9 +85,6 @@ class MatchEventModel {
   }
 
   String get formattedMinute {
-    if (stoppageMinute > 0) {
-      return DateFormatter.toArabicNumerals('$minute+$stoppageMinute\'');
-    }
-    return DateFormatter.toArabicNumerals('$minute\'');
+    return AppNumberFormat.formatMinute(minute, stoppageMinute > 0 ? stoppageMinute : null);
   }
 }

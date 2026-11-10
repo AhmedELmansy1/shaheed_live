@@ -75,12 +75,12 @@ class _StreamReportBottomSheetState
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'تم استلام بلاغك بنجاح وسيعمل الفريق الفني على إصلاحه فورا',
+          SnackBar(
+            content: const Text(
+              'تم استلام بلاغك بنجاح وسيعمل الفريق الفني على إصلاحه فوراً',
               style: TextStyle(fontFamily: 'Cairo'),
             ),
-            backgroundColor: Color(0xFF10B981),
+            backgroundColor: context.primary,
           ),
         );
       }

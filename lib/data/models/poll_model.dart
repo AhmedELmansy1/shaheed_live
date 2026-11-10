@@ -1,4 +1,4 @@
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 
 /// Single option inside a match poll.
 class PollOption {
@@ -65,7 +65,7 @@ class PollModel {
 
   String formattedPercentageOf(PollOption option) {
     final pct = percentageOf(option);
-    return DateFormatter.toArabicNumerals('$pct%');
+    return AppNumberFormat.formatPercentage(pct);
   }
 
   factory PollModel.fromMap(Map<String, dynamic> map, String docId, {String? userVotedOptionId}) {

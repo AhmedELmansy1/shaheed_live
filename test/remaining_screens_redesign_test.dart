@@ -155,9 +155,9 @@ void main() {
       expect(find.text('مانشستر سيتي'), findsOneWidget);
       expect(find.text('الفريق'), findsOneWidget);
       expect(find.text('نقاط'), findsOneWidget);
-      // Eastern Arabic numerals
-      expect(find.text('٢٥'), findsOneWidget);
-      expect(find.text('٢٣'), findsOneWidget);
+      // Latin tabular numerals standard
+      expect(find.text('25'), findsOneWidget);
+      expect(find.text('23'), findsOneWidget);
     });
 
     testWidgets('StandingsTab renders AppErrorState with retry on error', (tester) async {

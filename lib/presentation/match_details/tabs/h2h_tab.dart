@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/app_number_format.dart';
 import '../../../data/models/match_info_model.dart';
 import '../../../data/models/match_model.dart';
 import '../../widgets/app_card.dart';
@@ -200,7 +200,7 @@ class H2HTab extends ConsumerWidget {
     return Column(
       children: [
         Text(
-          DateFormatter.toArabicNumerals(value.toString()),
+          AppNumberFormat.formatStat(value),
           style: AppTypography.titleMedium(color: color).copyWith(
             fontWeight: FontWeight.w800,
           ),

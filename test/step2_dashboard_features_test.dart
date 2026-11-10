@@ -105,10 +105,10 @@ void main() {
         );
 
         expect(poll.percentageOf(poll.options[0]), 25);
-        expect(poll.formattedPercentageOf(poll.options[0]), '٢٥%');
+        expect(poll.formattedPercentageOf(poll.options[0]), '25%');
 
         expect(poll.percentageOf(poll.options[2]), 50);
-        expect(poll.formattedPercentageOf(poll.options[2]), '٥٠%');
+        expect(poll.formattedPercentageOf(poll.options[2]), '50%');
 
         expect(poll.hasUserVoted, isFalse);
         final votedPoll = poll.copyWith(userVotedOptionId: 'opt_3');

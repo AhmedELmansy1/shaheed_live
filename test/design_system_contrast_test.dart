@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -102,6 +103,55 @@ void main() {
         );
       }
     });
+
+    test('Static analysis: Zero green tokens or hex literals across lib/', () {
+      final libDir = Directory('lib');
+      expect(libDir.existsSync(), isTrue, reason: 'lib directory must exist');
+
+      final dartFiles = libDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'));
+
+      final greenMaterialRegex = RegExp(r'\bColors\.(green|lightGreen|teal|lime)\b');
+      final greenHexRegex = RegExp(r'0x(?:[0-9a-fA-F]{2})?([0-9a-fA-F]{6})\b', caseSensitive: false);
+
+      final violations = <String>[];
+
+      for (final file in dartFiles) {
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+
+          // Check Colors.green* / teal / lime
+          final match = greenMaterialRegex.firstMatch(line);
+          if (match != null) {
+            violations.add('${file.path}:${i + 1} uses ${match.group(0)}');
+          }
+
+          // Check Color hex literals
+          if (line.contains('Color(') || line.contains('0x')) {
+            for (final hexMatch in greenHexRegex.allMatches(line)) {
+              final hexStr = hexMatch.group(1)!;
+              final r = int.parse(hexStr.substring(0, 2), radix: 16);
+              final g = int.parse(hexStr.substring(2, 4), radix: 16);
+              final b = int.parse(hexStr.substring(4, 6), radix: 16);
+              final color = Color.fromARGB(255, r, g, b);
+              if (_isGreenHue(color)) {
+                violations.add('${file.path}:${i + 1} has green hex #$hexStr ($line)');
+              }
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Found green references in code:\n${violations.join('\n')}',
+      );
+    });
   });
 }
-

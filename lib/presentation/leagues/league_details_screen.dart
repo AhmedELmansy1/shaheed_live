@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/app_number_format.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
@@ -795,7 +796,7 @@ class _LeagueDetailsScreenState extends ConsumerState<LeagueDetailsScreen>
                 const SizedBox(width: 3),
                 Expanded(
                   child: Text(
-                    DateFormatter.toArabicNumerals('${row.rank}'),
+                    AppNumberFormat.formatStanding('${row.rank}'),
                     style: TextStyle(
                       color: isFollowedTeam ? primary : textSecondary,
                       fontSize: 12,
@@ -870,7 +871,7 @@ class _LeagueDetailsScreenState extends ConsumerState<LeagueDetailsScreen>
     return SizedBox(
       width: 32,
       child: Text(
-        DateFormatter.toArabicNumerals('$val'),
+        AppNumberFormat.formatStanding(val),
         textAlign: TextAlign.center,
         style: TextStyle(
           color: color,

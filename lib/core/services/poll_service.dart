@@ -10,6 +10,71 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/poll_model.dart';
 import '../config/env_config.dart';
 
+/// Diagnostics holder for the last match poll voting attempt.
+///
+/// Strictly stores only URL path, HTTP status, timestamp, error classification,
+/// and success flag. Auth tokens, user IDs, and PII are strictly prohibited.
+class PollVoteDiagnostics {
+  static final PollVoteDiagnostics instance = PollVoteDiagnostics._();
+  PollVoteDiagnostics._();
+
+  DateTime? lastAttemptTime;
+  String? urlPath;
+  int? statusCode;
+  String? errorClass;
+  bool? isSuccess;
+
+  void record({
+    required String path,
+    int? status,
+    String? error,
+    required bool success,
+  }) {
+    lastAttemptTime = DateTime.now();
+    urlPath = path;
+    statusCode = status;
+    errorClass = error;
+    isSuccess = success;
+  }
+}
+
+/// Base typed exception for poll voting operations.
+abstract class PollVoteException implements Exception {
+  final String message;
+  final int? statusCode;
+  final String? errorClass;
+
+  const PollVoteException(this.message, {this.statusCode, this.errorClass});
+
+  @override
+  String toString() => message;
+}
+
+class PollAlreadyVotedException extends PollVoteException {
+  const PollAlreadyVotedException([super.message = 'تم تسجيل تصويتك في هذا الاستطلاع مسبقاً'])
+      : super(statusCode: 409, errorClass: 'ALREADY_VOTED');
+}
+
+class PollRateLimitedException extends PollVoteException {
+  const PollRateLimitedException([super.message = 'حاول بعد قليل'])
+      : super(statusCode: 429, errorClass: 'RATE_LIMITED');
+}
+
+class PollUnauthorizedException extends PollVoteException {
+  const PollUnauthorizedException([super.message = 'يجب تسجيل الدخول للمشاركة في التصويت'])
+      : super(statusCode: 401, errorClass: 'UNAUTHORIZED');
+}
+
+class PollServerException extends PollVoteException {
+  const PollServerException([super.message = 'تعذّر تسجيل صوتك، حاول مرة أخرى', int? statusCode])
+      : super(statusCode: statusCode, errorClass: 'SERVER_ERROR');
+}
+
+class PollNetworkException extends PollVoteException {
+  const PollNetworkException([super.message = 'تعذّر تسجيل صوتك، تحقق من اتصالك بالإنترنت'])
+      : super(statusCode: null, errorClass: 'NETWORK_ERROR');
+}
+
 /// Service managing Match Poll real-time observations and atomic server-side voting.
 class PollService {
   final FirebaseFirestore? _explicitFirestore;
@@ -91,15 +156,32 @@ class PollService {
   }
 
   /// Casts a vote through the secure backend route `POST /api/polls/vote`.
-  /// Guarantees token verification, atomic transaction, and local receipt persistence.
+  ///
+  /// Guarantees:
+  /// - `Accept: application/json` header.
+  /// - Defensive response body decoding that prevents type errors on HTML/text pages.
+  /// - Status code mapping: 200 -> success; 409 -> ALREADY_VOTED; 401 -> token refresh & retry;
+  ///   429 -> RATE_LIMITED; 5xx/network -> SERVER_ERROR/NETWORK_ERROR.
+  /// - Diagnostic tracking without tokens or PII.
   Future<PollModel> vote({
     required String matchId,
     required String optionId,
   }) async {
+    final url = '${EnvConfig.dashboardBaseUrl}/api/polls/vote';
+    final parsedUri = Uri.tryParse(url);
+    final diagnosticsPath = parsedUri != null && parsedUri.path.isNotEmpty ? parsedUri.path : '/api/polls/vote';
+
     // 1. Handle Demo Mode locally
     if (EnvConfig.isDemoMode) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localReceiptKey(matchId), optionId);
+
+      PollVoteDiagnostics.instance.record(
+        path: diagnosticsPath,
+        status: 200,
+        error: null,
+        success: true,
+      );
 
       return PollModel(
         matchId: matchId,
@@ -124,75 +206,159 @@ class PollService {
         currentUser = credential.user;
       } catch (authErr) {
         debugPrint('[PollService] Anonymous sign-in failed: $authErr');
-        throw Exception('يجب تسجيل الدخول أو الاتصال بالإنترنت للمشاركة في التصويت');
+        PollVoteDiagnostics.instance.record(
+          path: diagnosticsPath,
+          status: 401,
+          error: 'AUTH_SIGNIN_FAILED',
+          success: false,
+        );
+        throw const PollUnauthorizedException('يجب تسجيل الدخول أو الاتصال بالإنترنت للمشاركة في التصويت');
       }
     }
 
-    if (currentUser == null) {
-      throw Exception('تعذر الحصول على حساب مستخدم نشط');
-    }
+    String? idToken;
+    try {
+      idToken = await currentUser?.getIdToken();
+    } catch (_) {}
 
-    final idToken = await currentUser.getIdToken();
-    final url = '${EnvConfig.dashboardBaseUrl}/api/polls/vote';
+    final payload = {
+      'match_id': matchId,
+      'option_id': optionId,
+    };
 
-    debugPrint('[PollService] Submitting vote to: $url for match: $matchId, opt: $optionId');
+    Map<String, String> buildHeaders(String? token) => {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
 
     Response response;
     try {
       response = await _dio.post(
         url,
-        data: {
-          'match_id': matchId,
-          'option_id': optionId,
-        },
+        data: payload,
         options: Options(
-          headers: {
-            'Authorization': 'Bearer $idToken',
-            'Content-Type': 'application/json',
-          },
-          responseType: ResponseType.json,
-          validateStatus: (status) => status != null && status < 500,
+          headers: buildHeaders(idToken),
+          responseType: ResponseType.plain,
+          validateStatus: (status) => true,
         ),
       );
     } catch (netErr) {
       debugPrint('[PollService] Network error posting vote: $netErr');
-      throw Exception('تعذر الاتصال بخادم التصويت، يرجى التحقق من اتصالك بالإنترنت');
+      PollVoteDiagnostics.instance.record(
+        path: diagnosticsPath,
+        status: null,
+        error: 'NETWORK_ERROR',
+        success: false,
+      );
+      throw const PollNetworkException('تعذّر تسجيل صوتك، تحقق من اتصالك بالإنترنت');
     }
 
-    // Safely parse response data whether returned as Map, String, or dynamic
-    dynamic responseBody = response.data;
-    if (responseBody is String) {
+    // 3. Handle 401 with Single Token Refresh & Retry
+    if (response.statusCode == 401 && currentUser != null) {
       try {
-        responseBody = jsonDecode(responseBody);
+        idToken = await currentUser.getIdToken(true);
+        response = await _dio.post(
+          url,
+          data: payload,
+          options: Options(
+            headers: buildHeaders(idToken),
+            responseType: ResponseType.plain,
+            validateStatus: (status) => true,
+          ),
+        );
       } catch (_) {
-        responseBody = null;
+        // If retry fails at network level, continue to response evaluation
       }
     }
 
-    if (response.statusCode == 200 && responseBody is Map) {
-      // Save local receipt to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_localReceiptKey(matchId), optionId);
+    // 4. Safely parse response body (handles HTML, text, and JSON without throwing TypeError)
+    Map<String, dynamic>? decodedMap;
+    final rawData = response.data;
+    if (rawData is Map) {
+      decodedMap = Map<String, dynamic>.from(rawData);
+    } else if (rawData is String) {
+      final trimmed = rawData.trim();
+      if (trimmed.startsWith('{')) {
+        try {
+          final parsed = jsonDecode(trimmed);
+          if (parsed is Map) {
+            decodedMap = Map<String, dynamic>.from(parsed);
+          }
+        } catch (_) {
+          decodedMap = null;
+        }
+      }
+    }
 
-      final rawPoll = responseBody['poll'];
+    final int status = response.statusCode ?? 500;
+    final String? serverError = decodedMap?['error']?.toString();
+
+    // 5. Evaluate Status Code
+    if (status == 200 && decodedMap != null) {
+      final rawPoll = decodedMap['poll'];
       if (rawPoll is Map) {
+        // Persist local receipt on verified server success
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_localReceiptKey(matchId), optionId);
+
+        PollVoteDiagnostics.instance.record(
+          path: diagnosticsPath,
+          status: 200,
+          error: null,
+          success: true,
+        );
+
         final pollData = Map<String, dynamic>.from(rawPoll);
         return PollModel.fromMap(pollData, matchId, userVotedOptionId: optionId);
       }
     }
 
-    String errorMsg = 'حدث خطأ أثناء تسجيل التصويت (كود ${response.statusCode})';
-    if (responseBody is Map && responseBody['error'] != null) {
-      errorMsg = responseBody['error'].toString();
-    } else if (response.statusCode == 409) {
-      errorMsg = 'تم تسجيل تصويتك في هذا الاستطلاع مسبقاً';
-    } else if (response.statusCode == 403) {
-      errorMsg = 'هذا الاستطلاع مغلق حالياً';
-    } else if (response.statusCode == 401) {
-      errorMsg = 'يجب تسجيل الدخول للمشاركة في التصويت';
+    if (status == 409) {
+      // Server confirmed user has already voted
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_localReceiptKey(matchId), optionId);
+
+      PollVoteDiagnostics.instance.record(
+        path: diagnosticsPath,
+        status: 409,
+        error: 'ALREADY_VOTED',
+        success: false,
+      );
+      throw PollAlreadyVotedException(serverError ?? 'تم تسجيل تصويتك في هذا الاستطلاع مسبقاً');
     }
 
-    throw Exception(errorMsg);
+    if (status == 401) {
+      PollVoteDiagnostics.instance.record(
+        path: diagnosticsPath,
+        status: 401,
+        error: 'UNAUTHORIZED',
+        success: false,
+      );
+      throw PollUnauthorizedException(serverError ?? 'يجب تسجيل الدخول للمشاركة في التصويت');
+    }
+
+    if (status == 429) {
+      PollVoteDiagnostics.instance.record(
+        path: diagnosticsPath,
+        status: 429,
+        error: 'RATE_LIMITED',
+        success: false,
+      );
+      throw PollRateLimitedException(serverError ?? 'حاول بعد قليل');
+    }
+
+    // 5xx or unhandled status
+    PollVoteDiagnostics.instance.record(
+      path: diagnosticsPath,
+      status: status,
+      error: 'SERVER_ERROR',
+      success: false,
+    );
+    throw PollServerException(
+      serverError ?? 'تعذّر تسجيل صوتك، حاول مرة أخرى',
+      status,
+    );
   }
 }
 
@@ -205,4 +371,3 @@ final matchPollStreamProvider = StreamProvider.family<PollModel?, String>((ref, 
   final service = ref.watch(pollServiceProvider);
   return service.streamPoll(matchId);
 });
-

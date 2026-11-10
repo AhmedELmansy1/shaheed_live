@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/utils/date_formatter.dart';
+import '../../core/utils/app_number_format.dart';
 
 /// Editorial Section Header grouping fixtures by Competition / League.
 class SectionHeader extends StatelessWidget {
@@ -117,7 +117,7 @@ class SectionHeader extends StatelessWidget {
                     border: Border.all(color: border, width: 1.0),
                   ),
                   child: Text(
-                    '${DateFormatter.toArabicNumerals(count.toString())} مباريات',
+                    '${AppNumberFormat.formatCount(count)} مباريات',
                     style: AppTypography.labelSmall(color: textSecondary)
                         .copyWith(
                       fontSize: 11,

@@ -13,12 +13,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/fcm_service.dart';
 import '../../core/services/firebase_ready_provider.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/poll_service.dart';
 import '../../core/services/remote_config_service.dart';
 import '../../core/services/sync_queue_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/app_number_format.dart';
 import '../widgets/app_card.dart';
 
 /// Hidden diagnostics feature flag, enabled only when `--dart-define=ENABLE_DIAGNOSTICS=true` is passed.
@@ -444,7 +446,7 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
                                     fontSize: 12,
                                     color: isDenied
                                         ? Colors.redAccent
-                                        : (isSuccess ? Colors.green : textMuted),
+                                        : (isSuccess ? AppColors.primary : textMuted),
                                     fontWeight: isDenied || isSuccess ? FontWeight.w600 : FontWeight.normal,
                                   ),
                                 ),
@@ -549,6 +551,56 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
+                // Last Match Poll Vote Attempt
+                _buildSectionHeader('آخر محاولة تصويت استطلاع (Match Poll Vote)'),
+                AppCard(
+                  child: Builder(
+                    builder: (context) {
+                      final diag = PollVoteDiagnostics.instance;
+                      if (diag.lastAttemptTime == null) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'لم يتم تسجيل أي محاولة تصويت خلال هذه الجلسة.',
+                            style: AppTypography.bodySmall(color: textMuted),
+                          ),
+                        );
+                      }
+
+                      final timeStr = AppNumberFormat.formatTime(
+                        '${diag.lastAttemptTime!.hour.toString().padLeft(2, '0')}:${diag.lastAttemptTime!.minute.toString().padLeft(2, '0')}:${diag.lastAttemptTime!.second.toString().padLeft(2, '0')}',
+                      );
+
+                      final isSuccess = diag.isSuccess == true;
+                      final statusDisplay = diag.statusCode != null
+                          ? '${diag.statusCode}'
+                          : 'خطأ اتصال (Network Error)';
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('مسار الخادم (Endpoint Path)', diag.urlPath ?? '/api/polls/vote'),
+                          _buildDivider(border),
+                          _buildInfoRow(
+                            'حالة الاستجابة (HTTP Status)',
+                            statusDisplay,
+                            isHighlighted: isSuccess,
+                          ),
+                          _buildDivider(border),
+                          _buildInfoRow('توقيت المحاولة (Time)', timeStr),
+                          _buildDivider(border),
+                          _buildInfoRow(
+                            'تصنيف النتيجة (Result Class)',
+                            diag.errorClass ?? (isSuccess ? 'نجاح (Success)' : 'فشل غير محدد'),
+                            isHighlighted: isSuccess,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
                 // Remote Config Snapshot
                 _buildSectionHeader('بيانات config/app_settings المسحوبة'),
                 AppCard(
@@ -604,7 +656,7 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
           Text(
             value,
             style: AppTypography.labelMedium().copyWith(
-              color: isHighlighted ? Colors.green : null,
+              color: isHighlighted ? AppColors.primary : null,
               fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
             ),
           ),

@@ -6,7 +6,7 @@ import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/app_number_format.dart';
 import '../../widgets/app_empty_state.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/matches_skeleton.dart';
@@ -144,7 +144,7 @@ class _StatComparisonCard extends StatelessWidget {
             children: [
               // Home Value (Right side in RTL)
               Text(
-                DateFormatter.toArabicNumerals(data.homeDisplay),
+                AppNumberFormat.formatStat(data.homeDisplay),
                 style: AppTypography.scoreHeadline(
                   color: isHomeHigher ? vermilion : textPrimary,
                 ).copyWith(
@@ -172,7 +172,7 @@ class _StatComparisonCard extends StatelessWidget {
 
               // Away Value (Left side in RTL)
               Text(
-                DateFormatter.toArabicNumerals(data.awayDisplay),
+                AppNumberFormat.formatStat(data.awayDisplay),
                 style: AppTypography.scoreHeadline(
                   color: isAwayHigher ? vermilion : textPrimary,
                 ).copyWith(
