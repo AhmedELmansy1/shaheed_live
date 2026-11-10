@@ -787,10 +787,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     final unselectedBg = isLight
         ? AppColors.lightSurfaceHigh
-        : AppColors.darkSurfaceHigh;
+        : const Color(0xFF141F36);
     final unselectedBorder = isLight
         ? AppColors.lightBorder
-        : AppColors.darkBorder;
+        : const Color(0xFF1E2D4A);
     final unselectedColor = isLight
         ? AppColors.lightTextSecondary
         : AppColors.darkTextSecondary;
@@ -803,32 +803,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         },
         child: AnimatedContainer(
           duration: AppMotion.fast,
-          constraints: const BoxConstraints(minHeight: 52),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.15)
-                : unselectedBg,
-            borderRadius: BorderRadius.circular(AppRadii.sm),
+            color: isSelected ? null : unselectedBg,
+            gradient: isSelected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.electricBlue.withValues(alpha: 0.22),
+                      AppColors.electricCyan.withValues(alpha: 0.10),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppColors.primary : unselectedBorder,
-              width: isSelected ? 1.5 : 1,
+              color: isSelected ? AppColors.electricCyan : unselectedBorder,
+              width: isSelected ? 1.4 : 1,
             ),
+            boxShadow: [
+              if (isSelected)
+                BoxShadow(
+                  color: AppColors.electricCyan.withValues(alpha: 0.14),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? AppColors.primary : unselectedColor,
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.electricCyan.withValues(alpha: 0.18)
+                      : (isLight ? Colors.black.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected ? AppColors.electricCyan : unselectedColor,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 label,
                 style: AppTypography.caption(
-                  color: isSelected ? AppColors.primary : unselectedColor,
+                  color: isSelected ? AppColors.electricCyan : unselectedColor,
+                ).copyWith(
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ],

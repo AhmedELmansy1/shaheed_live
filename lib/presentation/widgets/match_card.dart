@@ -15,17 +15,22 @@ import 'score_view.dart';
 import 'status_chip.dart';
 import 'team_logo.dart';
 
-/// Clean, editorial Match Card in the "Paper × Ink × Vermilion" design system.
+/// Broadcast-strip Match Card in the "Dark Sports Broadcast" design system.
 ///
 /// Distinct visual states:
-/// - **Live**: Crisp vermilion accent edge, tabular figures, pulsating live minute badge.
-/// - **Upcoming**: Deep cobalt kickoff time, reminder notification bell with 48dp target.
+/// - **Live**: Neon emerald glowing accent edge, tabular figures, pulsating minute badge.
+/// - **Upcoming**: Crisp kickoff time pill, reminder notification bell with 44dp target.
 /// - **Finished**: Restrained slate status, final scores.
 /// - **RTL Correctness**: Directional layout (Home on right, Away on left).
 class MatchCard extends ConsumerWidget {
   final MatchModel match;
+  final bool showLeagueHeader;
 
-  const MatchCard({super.key, required this.match});
+  const MatchCard({
+    super.key,
+    required this.match,
+    this.showLeagueHeader = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,8 +43,9 @@ class MatchCard extends ConsumerWidget {
         : false;
 
     final surfaceColor = AppColors.surfaceOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isLive
-        ? AppColors.primaryOf(context).withValues(alpha: 0.6)
+        ? AppColors.neonEmerald.withValues(alpha: 0.6)
         : AppColors.borderOf(context);
 
     final textPrimary = AppColors.textPrimaryOf(context);
@@ -62,7 +68,15 @@ class MatchCard extends ConsumerWidget {
             width: isLive ? 1.5 : 1.0,
           ),
           boxShadow: [
-            if (Theme.of(context).brightness == Brightness.light)
+            if (isDark)
+              BoxShadow(
+                color: isLive
+                    ? AppColors.neonEmerald.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.22),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              )
+            else
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 6,
@@ -84,7 +98,7 @@ class MatchCard extends ConsumerWidget {
             },
             child: Stack(
               children: [
-                // Live Vermilion Accent Line on Leading Edge (RTL right)
+                // Live Neon Emerald Accent Line on Leading Edge (RTL right)
                 if (isLive)
                   PositionedDirectional(
                     top: 8,
@@ -93,99 +107,126 @@ class MatchCard extends ConsumerWidget {
                     child: Container(
                       width: 3.5,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryOf(context),
+                        color: AppColors.neonEmerald,
                         borderRadius: const BorderRadiusDirectional.horizontal(
                           end: Radius.circular(3),
                         ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x6600E676),
+                            blurRadius: 6,
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.md,
+                    AppSpacing.md + 2,
+                    AppSpacing.sm + 2,
+                    AppSpacing.md + 2,
+                    AppSpacing.sm + 2,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Sub-header: League info & Status pill
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // League Name & Round
-                          Expanded(
-                            child: Text(
-                              match.leagueName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.bodySmall(
-                                color: textSecondary,
-                              ).copyWith(
-                                fontWeight: FontWeight.w600,
+                      // Optional Micro Header: Only when ungrouped or standalone
+                      if (showLeagueHeader) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevatedOf(context),
+                                borderRadius: AppRadii.fullRadius,
+                                border: Border.all(
+                                  color: AppColors.borderOf(context),
+                                  width: 0.6,
+                                ),
+                              ),
+                              child: Text(
+                                match.leagueName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.caption(
+                                  color: textSecondary,
+                                ).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 10.5,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isLive) ...[
-                                InkWell(
-                                  borderRadius: AppRadii.smRadius,
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    WatchMatchBottomSheet.show(
-                                      context,
-                                      matchId: match.matchId,
-                                      match: match,
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.vermilion.withValues(alpha: 0.15),
-                                      borderRadius: AppRadii.smRadius,
-                                      border: Border.all(
-                                        color: AppColors.vermilion.withValues(alpha: 0.5),
-                                        width: 0.8,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.live_tv_rounded,
-                                          size: 13,
-                                          color: AppColors.vermilion,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'مشاهدة الآن 🔴',
-                                          style: AppTypography.caption(
-                                            color: AppColors.vermilion,
-                                          ).copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
+                            StatusChip(match: match, isCompact: true),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xs + 2),
+                      ],
+
+                      // Top Row for Live/Watch match pill (when league header is not shown)
+                      if (!showLeagueHeader && (isLive || match.adminTitle != null)) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (isLive) ...[
+                              InkWell(
+                                borderRadius: AppRadii.smRadius,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  WatchMatchBottomSheet.show(
+                                    context,
+                                    matchId: match.matchId,
+                                    match: match,
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.coralCrimson.withValues(alpha: 0.15),
+                                    borderRadius: AppRadii.fullRadius,
+                                    border: Border.all(
+                                      color: AppColors.coralCrimson.withValues(alpha: 0.4),
+                                      width: 0.8,
                                     ),
                                   ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.live_tv_rounded,
+                                        size: 12,
+                                        color: AppColors.coralCrimson,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'مشاهدة الآن',
+                                        style: AppTypography.caption(
+                                          color: AppColors.coralCrimson,
+                                        ).copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(width: 6),
-                              ],
-                              StatusChip(match: match, isCompact: true),
-                            ],
-                          ),
-                        ],
-                      ),
+                              ),
+                            ] else
+                              const SizedBox.shrink(),
+                            StatusChip(match: match, isCompact: true),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                      ],
 
-                      const SizedBox(height: AppSpacing.md),
-
-                      // Match Teams & Score Center
+                      // Main Broadcast Strip: Home Team | Center Score/Time Pill | Away Team
                       Row(
                         children: [
                           // Home Team (Leading in RTL)
@@ -211,8 +252,9 @@ class MatchCard extends ConsumerWidget {
                                           : textPrimary,
                                     ).copyWith(
                                       fontWeight: isLive
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
+                                          ? FontWeight.w800
+                                          : FontWeight.w700,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -220,10 +262,10 @@ class MatchCard extends ConsumerWidget {
                             ),
                           ),
 
-                          // Center Status / Score
+                          // Center Status / Score Pill
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
+                              horizontal: AppSpacing.xs,
                             ),
                             child: _buildCenterScoreOrTime(
                               context,
@@ -253,8 +295,9 @@ class MatchCard extends ConsumerWidget {
                                           : textPrimary,
                                     ).copyWith(
                                       fontWeight: isLive
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
+                                          ? FontWeight.w800
+                                          : FontWeight.w700,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -344,45 +387,59 @@ class MatchCard extends ConsumerWidget {
             ? match.matchTime!.substring(0, 5)
             : '— : —');
 
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Semantics(
       label: 'وقت انطلاق المباراة: $displayTime',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            displayTime,
-            style: AppTypography.scoreMedium(
-              color: AppColors.secondaryOf(context),
-            ).copyWith(
-              fontSize: 15.0,
-              fontWeight: FontWeight.w700,
-            ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevatedOf(context),
+          borderRadius: AppRadii.fullRadius,
+          border: Border.all(
+            color: isDark ? const Color(0xFF243657) : AppColors.borderOf(context),
+            width: 0.8,
           ),
-          const SizedBox(width: AppSpacing.xs),
-          IconButton(
-            iconSize: 18,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 44,
-              minHeight: 44,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displayTime,
+              style: AppTypography.scoreMedium(
+                color: textPrimary,
+              ).copyWith(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            tooltip: isReminderSet ? 'إلغاء التذكير' : 'تفعيل التذكير بالمباراة',
-            icon: Icon(
-              isReminderSet
-                  ? Icons.notifications_active_rounded
-                  : Icons.notifications_none_rounded,
-              color: isReminderSet
-                  ? AppColors.primaryOf(context)
-                  : AppColors.textSecondaryOf(context),
+            const SizedBox(width: 4),
+            IconButton(
+              iconSize: 16,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: 36,
+              ),
+              tooltip: isReminderSet ? 'إلغاء التذكير' : 'تفعيل التذكير بالمباراة',
+              icon: Icon(
+                isReminderSet
+                    ? Icons.notifications_active_rounded
+                    : Icons.notifications_none_rounded,
+                color: isReminderSet
+                    ? AppColors.electricCyan
+                    : AppColors.textSecondaryOf(context),
+              ),
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await ref
+                    .read(matchReminderServiceProvider)
+                    .toggleReminder(match);
+              },
             ),
-            onPressed: () async {
-              HapticFeedback.lightImpact();
-              await ref
-                  .read(matchReminderServiceProvider)
-                  .toggleReminder(match);
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

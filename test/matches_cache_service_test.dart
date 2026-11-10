@@ -52,7 +52,7 @@ void main() {
       expect(result.matches.first.matchId, 1001);
       expect(result.matches.first.homeTeamName, 'Real Madrid');
       expect(result.matches.first.awayTeamName, 'Barcelona');
-      expect(result.matches.first.homeScore, '٢');
+      expect(result.matches.first.homeScore, '2');
       expect(result.isExpired, isFalse);
     });
 

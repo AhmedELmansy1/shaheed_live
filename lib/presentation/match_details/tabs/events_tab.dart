@@ -126,7 +126,16 @@ class EventsTab extends ConsumerWidget {
     final surface = AppColors.surfaceOf(context);
     final border = AppColors.borderOf(context);
 
-    final eventBadge = _buildEventIcon(context, event);
+    // Determine semantic accent color for the event
+    final Color accentColor = switch (event.eventType) {
+      MatchEventType.goal || MatchEventType.penaltyScored => AppColors.neonEmerald,
+      MatchEventType.redCard || MatchEventType.secondYellow || MatchEventType.penaltyMissed => AppColors.coralCrimson,
+      MatchEventType.yellowCard => AppColors.metallicGold,
+      MatchEventType.substitution || MatchEventType.crossbar || MatchEventType.save || MatchEventType.missedChance => AppColors.electricCyan,
+      _ => AppColors.primaryOf(context),
+    };
+
+    final eventBadge = _buildEventIcon(context, event, accentColor);
 
     final contentWidget = Container(
       padding: const EdgeInsets.symmetric(
@@ -137,6 +146,14 @@ class EventsTab extends ConsumerWidget {
         color: surface,
         borderRadius: AppRadii.mdRadius,
         border: Border.all(color: border, width: 1.0),
+        boxShadow: [
+          if (Theme.of(context).brightness == Brightness.dark)
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
       ),
       child: Column(
         crossAxisAlignment:
@@ -189,15 +206,25 @@ class EventsTab extends ConsumerWidget {
       ),
     );
 
-    // Minute Indicator (Middle Axis)
+    // Glowing Minute Indicator (Middle Axis)
     final minuteWidget = Container(
-      width: 44,
+      width: 48,
       height: 28,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.surfaceElevatedOf(context),
         borderRadius: AppRadii.fullRadius,
-        border: Border.all(color: border, width: 1.0),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.5),
+          width: 1.0,
+        ),
+        boxShadow: [
+          if (Theme.of(context).brightness == Brightness.dark)
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.25),
+              blurRadius: 8,
+            ),
+        ],
       ),
       child: Text(
         event.formattedMinute,
@@ -233,25 +260,25 @@ class EventsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildEventIcon(BuildContext context, MatchEventModel event) {
+  Widget _buildEventIcon(BuildContext context, MatchEventModel event, Color accentColor) {
     switch (event.eventType) {
       case MatchEventType.goal:
       case MatchEventType.penaltyScored:
         return const Icon(
           Icons.sports_soccer_rounded,
-          color: AppColors.vermilion,
+          color: AppColors.neonEmerald,
           size: 16,
         );
       case MatchEventType.ownGoal:
         return Icon(
           Icons.sports_soccer_rounded,
-          color: AppColors.finishedOf(context),
+          color: AppColors.coralCrimson,
           size: 16,
         );
       case MatchEventType.penaltyMissed:
         return const Icon(
           Icons.highlight_off_rounded,
-          color: Color(0xFFDC2626),
+          color: AppColors.coralCrimson,
           size: 16,
         );
       case MatchEventType.yellowCard:
@@ -259,8 +286,14 @@ class EventsTab extends ConsumerWidget {
           width: 10,
           height: 14,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAB308),
+            color: AppColors.metallicGold,
             borderRadius: BorderRadius.circular(2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66FFB300),
+                blurRadius: 4,
+              ),
+            ],
           ),
         );
       case MatchEventType.redCard:
@@ -268,8 +301,14 @@ class EventsTab extends ConsumerWidget {
           width: 10,
           height: 14,
           decoration: BoxDecoration(
-            color: const Color(0xFFDC2626),
+            color: AppColors.coralCrimson,
             borderRadius: BorderRadius.circular(2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66FF3D57),
+                blurRadius: 4,
+              ),
+            ],
           ),
         );
       case MatchEventType.secondYellow:
@@ -280,7 +319,7 @@ class EventsTab extends ConsumerWidget {
               width: 9,
               height: 13,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAB308),
+                color: AppColors.metallicGold,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -289,7 +328,7 @@ class EventsTab extends ConsumerWidget {
               width: 9,
               height: 13,
               decoration: BoxDecoration(
-                color: const Color(0xFFDC2626),
+                color: AppColors.coralCrimson,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -298,13 +337,21 @@ class EventsTab extends ConsumerWidget {
       case MatchEventType.substitution:
         return const Icon(
           Icons.swap_horiz_rounded,
-          color: Color(0xFF3B5BDB),
+          color: AppColors.electricCyan,
           size: 17,
         );
       case MatchEventType.varDisallowed:
         return const Icon(
           Icons.tv_rounded,
-          color: Color(0xFF3B5BDB),
+          color: AppColors.coralCrimson,
+          size: 16,
+        );
+      case MatchEventType.crossbar:
+      case MatchEventType.save:
+      case MatchEventType.missedChance:
+        return Icon(
+          Icons.sports_rounded,
+          color: accentColor,
           size: 16,
         );
       default:

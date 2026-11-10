@@ -87,4 +87,22 @@ class MatchEventModel {
   String get formattedMinute {
     return AppNumberFormat.formatMinute(minute, stoppageMinute > 0 ? stoppageMinute : null);
   }
+
+  /// Sortable minute value for timeline chronological ordering.
+  /// Milestones have dedicated values to sit cleanly between match periods:
+  /// - Full Time (انتهت المباراة): 9999 (top of reverse-chronological list)
+  /// - Half Time (نهاية الشوط الأول): 4550 (between 45+X' and 46')
+  /// - Kickoff (بدأت المباراة): -1 (bottom of reverse-chronological list)
+  int get sortMinute {
+    if (eventType == MatchEventType.periodMarker) {
+      final name = statusName.trim();
+      if (name.contains('انتهت')) return 9999;
+      if (name.contains('الشوط الإضافي الثاني')) return 9998;
+      if (name.contains('الشوط الإضافي الأول')) return 9050;
+      if (name.contains('الشوط الأول') || name.contains('استراحة')) return 4550;
+      if (name.contains('بدأت')) return -1;
+      return minute > 0 ? (minute * 100 + stoppageMinute) : 0;
+    }
+    return minute * 100 + stoppageMinute;
+  }
 }

@@ -49,7 +49,7 @@ class LineupTab extends ConsumerWidget {
           alignment: Alignment.center,
           child: Text(
             player.number > 0
-                ? DateFormatter.toArabicNumerals('${player.number}')
+                ? '${player.number}'
                 : player.initials,
             style: AppTypography.scoreLarge(color: teamColor).copyWith(
               fontSize: (size * 0.44).clamp(14.0, 20.0),
@@ -104,6 +104,7 @@ class LineupTab extends ConsumerWidget {
                     context,
                     label: 'الأرض',
                     formation: lineup.homeLineup.formation,
+                    isHome: true,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -112,6 +113,7 @@ class LineupTab extends ConsumerWidget {
                     context,
                     label: 'الضيف',
                     formation: lineup.awayLineup.formation,
+                    isHome: false,
                   ),
                 ),
               ],
@@ -233,11 +235,13 @@ class LineupTab extends ConsumerWidget {
     BuildContext context, {
     required String label,
     required String? formation,
+    bool isHome = true,
   }) {
     final surface = AppColors.surfaceOf(context);
-    final border = AppColors.borderOf(context);
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isHome ? AppColors.electricCyan : AppColors.coralCrimson;
 
     final displayFormation = formation != null && formation.isNotEmpty
         ? DateFormatter.toArabicNumerals(formation)
@@ -245,20 +249,42 @@ class LineupTab extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm + 2,
-        vertical: AppSpacing.xs,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs + 2,
       ),
       decoration: BoxDecoration(
-        color: surface,
+        color: isDark ? const Color(0xFF141F36) : surface,
         borderRadius: AppRadii.fullRadius,
-        border: Border.all(color: border, width: 1.0),
+        border: Border.all(
+          color: isDark ? accent.withValues(alpha: 0.45) : AppColors.borderOf(context),
+          width: 1.0,
+        ),
+        boxShadow: [
+          if (isDark)
+            BoxShadow(
+              color: accent.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accent,
+            ),
+          ),
+          const SizedBox(width: 6),
           Text(
             '$label: ',
-            style: AppTypography.labelSmall(color: textSecondary),
+            style: AppTypography.labelSmall(color: textSecondary).copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Flexible(
             child: Text(
@@ -421,7 +447,7 @@ class LineupTab extends ConsumerWidget {
   }
 }
 
-/// Tactile, neutral football pitch visualization without neon glow or green turf.
+/// Realistic dark emerald tactical football pitch visualization.
 class NeutralPitchView extends StatelessWidget {
   final TeamLineupData homeData;
   final TeamLineupData awayData;
@@ -435,16 +461,32 @@ class NeutralPitchView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pitchBg = isDark ? const Color(0xFF13161E) : const Color(0xFFEBE6DD);
-    final borderColor = AppColors.borderOf(context);
 
     return ClipRRect(
       borderRadius: AppRadii.lgRadius,
       child: Container(
         decoration: BoxDecoration(
-          color: pitchBg,
           borderRadius: AppRadii.lgRadius,
-          border: Border.all(color: borderColor, width: 1.0),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0B281B),
+              Color(0xFF0F3624),
+              Color(0xFF0B281B),
+            ],
+          ),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1E4D38) : const Color(0xFF2A684C),
+            width: 1.2,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A00E676),
+              blurRadius: 16,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -456,9 +498,7 @@ class NeutralPitchView extends StatelessWidget {
 
             return CustomPaint(
               painter: NeutralPitchPainter(
-                lineColor: isDark
-                    ? Colors.white.withValues(alpha: 0.18)
-                    : Colors.black.withValues(alpha: 0.14),
+                lineColor: Colors.white.withValues(alpha: 0.45),
               ),
               child: Stack(
                 children: [
@@ -572,21 +612,26 @@ class NeutralPitchView extends StatelessWidget {
     required double nameMaxWidth,
   }) {
     final teamColor = isHome
-        ? AppColors.primaryOf(context)
-        : AppColors.secondaryOf(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+        ? AppColors.electricCyan
+        : AppColors.coralCrimson;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Node Avatar
+        // Node Avatar with team glow ring
         Container(
           width: avatarSize,
           height: avatarSize,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E232E) : Colors.white,
+            color: const Color(0xFF141F36),
             shape: BoxShape.circle,
             border: Border.all(color: teamColor, width: 2.0),
+            boxShadow: [
+              BoxShadow(
+                color: teamColor.withValues(alpha: 0.35),
+                blurRadius: 8,
+              ),
+            ],
           ),
           clipBehavior: Clip.antiAlias,
           alignment: Alignment.center,
@@ -605,21 +650,20 @@ class NeutralPitchView extends StatelessWidget {
         ),
         const SizedBox(height: 2),
 
-        // Name Capsule
+        // High-contrast Name Capsule
         Container(
           constraints: BoxConstraints(maxWidth: nameMaxWidth),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.0),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.6)
-                : Colors.white.withValues(alpha: 0.85),
+            color: Colors.black.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
           ),
           child: Text(
             player.name,
             style: TextStyle(
               fontFamily: 'Cairo',
-              color: isDark ? Colors.white : const Color(0xFF14161C),
+              color: Colors.white,
               fontSize: nameFontSize,
               fontWeight: FontWeight.w700,
             ),
@@ -678,7 +722,7 @@ class NeutralPitchView extends StatelessWidget {
   }
 }
 
-/// CustomPainter for neutral, ink-style pitch markings (NO green).
+/// CustomPainter for realistic tactical turf markings with alternating lawn stripes.
 class NeutralPitchPainter extends CustomPainter {
   final Color lineColor;
 
@@ -686,6 +730,21 @@ class NeutralPitchPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 1. Draw alternating turf lawn stripes
+    final stripeHeight = size.height / 10;
+    final stripePaint = Paint()..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 10; i++) {
+      if (i.isEven) {
+        stripePaint.color = Colors.white.withValues(alpha: 0.035);
+        canvas.drawRect(
+          Rect.fromLTWH(0, i * stripeHeight, size.width, stripeHeight),
+          stripePaint,
+        );
+      }
+    }
+
+    // 2. Pitch markings
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = 1.2
@@ -694,16 +753,19 @@ class NeutralPitchPainter extends CustomPainter {
     final rect = Rect.fromLTWH(8, 8, size.width - 16, size.height - 16);
     canvas.drawRect(rect, paint);
 
+    // Halfway Line
     final centerY = size.height / 2;
     canvas.drawLine(Offset(8, centerY), Offset(size.width - 8, centerY), paint);
 
-    canvas.drawCircle(Offset(size.width / 2, centerY), 40, paint);
+    // Center Circle & Spot
+    canvas.drawCircle(Offset(size.width / 2, centerY), 42, paint);
     final fillPaint = Paint()
       ..color = lineColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(size.width / 2, centerY), 3, fillPaint);
 
-    final boxWidth = size.width * 0.52;
+    // Penalty Boxes (18-yard)
+    final boxWidth = size.width * 0.54;
     final boxHeight = 65.0;
     final boxLeft = (size.width - boxWidth) / 2;
 
@@ -712,6 +774,27 @@ class NeutralPitchPainter extends CustomPainter {
       Rect.fromLTWH(boxLeft, size.height - 8 - boxHeight, boxWidth, boxHeight),
       paint,
     );
+
+    // Goal Areas (6-yard)
+    final smallBoxWidth = size.width * 0.28;
+    final smallBoxHeight = 24.0;
+    final smallBoxLeft = (size.width - smallBoxWidth) / 2;
+
+    canvas.drawRect(Rect.fromLTWH(smallBoxLeft, 8, smallBoxWidth, smallBoxHeight), paint);
+    canvas.drawRect(
+      Rect.fromLTWH(smallBoxLeft, size.height - 8 - smallBoxHeight, smallBoxWidth, smallBoxHeight),
+      paint,
+    );
+
+    // Penalty Spots
+    canvas.drawCircle(Offset(size.width / 2, 8 + 48), 2.5, fillPaint);
+    canvas.drawCircle(Offset(size.width / 2, size.height - 8 - 48), 2.5, fillPaint);
+
+    // Corner Arcs (8dp radius)
+    canvas.drawArc(const Rect.fromLTWH(0, 0, 16, 16), 0, 1.57, false, paint);
+    canvas.drawArc(Rect.fromLTWH(size.width - 16, 0, 16, 16), 1.57, 1.57, false, paint);
+    canvas.drawArc(Rect.fromLTWH(0, size.height - 16, 16, 16), 4.71, 1.57, false, paint);
+    canvas.drawArc(Rect.fromLTWH(size.width - 16, size.height - 16, 16, 16), 3.14, 1.57, false, paint);
   }
 
   @override

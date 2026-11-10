@@ -63,8 +63,7 @@ class _LiveBadgeState extends State<LiveBadge>
 
   @override
   Widget build(BuildContext context) {
-    final vermilion = AppColors.primaryOf(context);
-    final vermilionText = AppColors.vermilionTextOf(context);
+    final emerald = AppColors.neonEmerald;
     final isReducedMotion = AppMotion.isReducedMotion(context);
 
     final rawMinute = widget.minuteText?.trim();
@@ -85,10 +84,10 @@ class _LiveBadgeState extends State<LiveBadge>
         vertical: widget.isLarge ? AppSpacing.xs : AppSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: vermilion.withValues(alpha: 0.12),
+        color: emerald.withValues(alpha: 0.14),
         borderRadius: AppRadii.fullRadius,
         border: Border.all(
-          color: vermilion.withValues(alpha: 0.35),
+          color: emerald.withValues(alpha: 0.5),
           width: 1.0,
         ),
       ),
@@ -102,7 +101,7 @@ class _LiveBadgeState extends State<LiveBadge>
               width: dotSize,
               height: dotSize,
               decoration: BoxDecoration(
-                color: vermilion,
+                color: emerald,
                 shape: BoxShape.circle,
               ),
             )
@@ -114,10 +113,16 @@ class _LiveBadgeState extends State<LiveBadge>
                   width: dotSize,
                   height: dotSize,
                   decoration: BoxDecoration(
-                    color: vermilion.withValues(
+                    color: emerald.withValues(
                       alpha: _opacityAnimation.value,
                     ),
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: emerald.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 );
               },
@@ -125,9 +130,9 @@ class _LiveBadgeState extends State<LiveBadge>
           const SizedBox(width: AppSpacing.xs),
           Text(
             displayText,
-            style: AppTypography.labelSmall(color: vermilionText).copyWith(
+            style: AppTypography.labelSmall(color: emerald).copyWith(
               fontSize: fontSize,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

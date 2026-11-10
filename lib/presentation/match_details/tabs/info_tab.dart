@@ -46,12 +46,20 @@ class InfoTab extends ConsumerWidget {
             ? info!.refereeName!.trim()
             : null;
 
-        final channel = (info?.channel?.trim().isNotEmpty ?? false)
-            ? info!.channel!.trim()
+        final rawChannel = info?.channel?.trim() ?? '';
+        final channel = (rawChannel.isNotEmpty &&
+                rawChannel != 'التفاصيل' &&
+                rawChannel != 'تفاصيل' &&
+                rawChannel != 'معلومات')
+            ? rawChannel
             : null;
 
-        final commentator = (info?.commentator?.trim().isNotEmpty ?? false)
-            ? info!.commentator!.trim()
+        final rawCommentator = info?.commentator?.trim() ?? '';
+        final commentator = (rawCommentator.isNotEmpty &&
+                rawCommentator != 'التفاصيل' &&
+                rawCommentator != 'تفاصيل' &&
+                rawCommentator != 'معلومات')
+            ? rawCommentator
             : null;
 
         final round = (info?.round?.trim().isNotEmpty ?? false)

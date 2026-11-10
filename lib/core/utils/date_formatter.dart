@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/api/match_score_api.dart';
+import 'app_number_format.dart';
 
 /// Date and time formatting utility using IANA timezone database.
 ///
@@ -28,19 +29,14 @@ class DateFormatter {
   /// Global kickoff offset hours dynamically synced with dashboard theme/DST configuration.
   static int globalKickoffOffsetHours = 0;
 
-  /// Converts any string containing English digits (0-9) to Eastern Arabic digits (٠-٩).
+  /// Formats string to ensure standard Latin/Western digits (0-9).
+  /// Enforces crisp tabular numerals across all sports times, dates, and metrics.
   static String toArabicNumerals(String input) {
-    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    String result = input;
-    for (int i = 0; i < english.length; i++) {
-      result = result.replaceAll(english[i], arabic[i]);
-    }
-    return result;
+    return AppNumberFormat.toLatinNumerals(input);
   }
 
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in source timezone ([ApiConfig.sourceTimezone])
-  /// using IANA data, converts to the device's local timezone, and formats as Arabic time string (e.g., "٧:٣٠ م").
+  /// using IANA data, converts to the device's local timezone, and formats as Arabic time string with Western numerals (e.g., "7:30 م").
   /// An optional [offsetHours] (clamped to [-3, +3]) adjusts for remote timezone/DST overrides without shifting date tabs.
   static String formatMatchTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
     if (rawDate == null ||
@@ -84,7 +80,7 @@ class DateFormatter {
       }
 
       final formatted = DateFormat('h:mm a', 'ar').format(localDateTime);
-      return toArabicNumerals(formatted);
+      return AppNumberFormat.toLatinNumerals(formatted);
     } catch (_) {
       try {
         var hour = int.tryParse(rawTime.substring(0, 2)) ?? 0;
@@ -94,9 +90,9 @@ class DateFormatter {
           if (hour < 0) hour += 24;
         }
         final hourStr = hour.toString().padLeft(2, '0');
-        return toArabicNumerals('$hourStr$minute');
+        return AppNumberFormat.toLatinNumerals('$hourStr$minute');
       } catch (_) {
-        return toArabicNumerals(rawTime.substring(0, 5));
+        return AppNumberFormat.toLatinNumerals(rawTime.substring(0, 5));
       }
     }
   }
@@ -195,15 +191,15 @@ class DateFormatter {
     return '$y-$m-$d';
   }
 
-  /// Formats a [DateTime] for screen header display (e.g. "الثلاثاء، ٢٢ سبتمبر ٢٠٢٦").
+  /// Formats a [DateTime] for screen header display (e.g. "الثلاثاء، 22 سبتمبر 2026").
   static String formatDisplayDate(DateTime dateTime) {
     final formatted = DateFormat('EEEE، d MMMM yyyy', 'ar').format(dateTime);
-    return toArabicNumerals(formatted);
+    return AppNumberFormat.toLatinNumerals(formatted);
   }
 
-  /// Formats a [DateTime] for compact date tab display (e.g. "٢٢ سبتمبر").
+  /// Formats a [DateTime] for compact date tab display (e.g. "22 سبتمبر").
   static String formatShortDate(DateTime dateTime) {
     final formatted = DateFormat('d MMMM', 'ar').format(dateTime);
-    return toArabicNumerals(formatted);
+    return AppNumberFormat.toLatinNumerals(formatted);
   }
 }

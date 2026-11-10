@@ -120,8 +120,10 @@ class _StatComparisonCard extends StatelessWidget {
     final border = AppColors.borderOf(context);
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
-    final vermilion = AppColors.primaryOf(context);
     final isReducedMotion = AppMotion.isReducedMotion(context);
+
+    final homeColor = AppColors.electricCyan;
+    final awayColor = AppColors.coralCrimson;
 
     final total = data.homeValue + data.awayValue;
     final homeFraction = total > 0 ? (data.homeValue / total).clamp(0.05, 0.95) : 0.5;
@@ -130,7 +132,10 @@ class _StatComparisonCard extends StatelessWidget {
     final isAwayHigher = data.awayValue > data.homeValue;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
       decoration: BoxDecoration(
         color: surface,
         borderRadius: AppRadii.lgRadius,
@@ -143,14 +148,12 @@ class _StatComparisonCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Home Value (Right side in RTL)
-              Text(
-                AppNumberFormat.formatStat(data.homeDisplay),
-                style: AppTypography.scoreHeadline(
-                  color: isHomeHigher ? vermilion : textPrimary,
-                ).copyWith(
-                  fontSize: 16,
-                  fontWeight: isHomeHigher ? FontWeight.w800 : FontWeight.w600,
-                ),
+              _buildValuePill(
+                context,
+                value: data.homeDisplay,
+                color: homeColor,
+                isWinner: isHomeHigher,
+                defaultColor: textPrimary,
               ),
 
               // Metric Label
@@ -171,20 +174,18 @@ class _StatComparisonCard extends StatelessWidget {
               ),
 
               // Away Value (Left side in RTL)
-              Text(
-                AppNumberFormat.formatStat(data.awayDisplay),
-                style: AppTypography.scoreHeadline(
-                  color: isAwayHigher ? vermilion : textPrimary,
-                ).copyWith(
-                  fontSize: 16,
-                  fontWeight: isAwayHigher ? FontWeight.w800 : FontWeight.w600,
-                ),
+              _buildValuePill(
+                context,
+                value: data.awayDisplay,
+                color: awayColor,
+                isWinner: isAwayHigher,
+                defaultColor: textPrimary,
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
 
-          // Two-Sided Proportional Bar
+          // Two-Sided Dual-Opposing Proportional Bar
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: isReducedMotion ? 1.0 : 0.0, end: 1.0),
             duration: AppMotion.medium,
@@ -193,22 +194,32 @@ class _StatComparisonCard extends StatelessWidget {
               return ClipRRect(
                 borderRadius: AppRadii.fullRadius,
                 child: SizedBox(
-                  height: 6,
+                  height: 7,
                   child: Row(
                     children: [
-                      // Home side fraction (Right in RTL)
+                      // Home side fraction (Right in RTL): Electric Cyan
                       Expanded(
                         flex: ((homeFraction * animProgress) * 100).round().clamp(1, 100),
                         child: Container(
-                          color: isHomeHigher ? vermilion : textSecondary.withValues(alpha: 0.35),
+                          decoration: BoxDecoration(
+                            color: isHomeHigher ? homeColor : homeColor.withValues(alpha: 0.35),
+                            borderRadius: const BorderRadiusDirectional.horizontal(
+                              start: Radius.circular(3.5),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 2), // 2px center divider seam
-                      // Away side fraction (Left in RTL)
+                      const SizedBox(width: 3), // Center divider seam
+                      // Away side fraction (Left in RTL): Coral Crimson
                       Expanded(
                         flex: (((1.0 - homeFraction) * animProgress) * 100).round().clamp(1, 100),
                         child: Container(
-                          color: isAwayHigher ? vermilion : textSecondary.withValues(alpha: 0.35),
+                          decoration: BoxDecoration(
+                            color: isAwayHigher ? awayColor : awayColor.withValues(alpha: 0.35),
+                            borderRadius: const BorderRadiusDirectional.horizontal(
+                              end: Radius.circular(3.5),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -218,6 +229,45 @@ class _StatComparisonCard extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildValuePill(
+    BuildContext context, {
+    required String value,
+    required Color color,
+    required bool isWinner,
+    required Color defaultColor,
+  }) {
+    final formatted = AppNumberFormat.formatStat(value);
+
+    if (isWinner) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: AppRadii.smRadius,
+          border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
+        ),
+        child: Text(
+          formatted,
+          style: AppTypography.scoreHeadline(color: color).copyWith(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Text(
+        formatted,
+        style: AppTypography.scoreHeadline(color: defaultColor).copyWith(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

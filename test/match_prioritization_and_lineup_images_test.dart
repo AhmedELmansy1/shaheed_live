@@ -374,10 +374,10 @@ void main() {
         ),
       );
 
-      // No network image should be present, fallback number '٧' rendered
+      // No network image should be present, fallback number '7' rendered
       expect(find.byType(CachedNetworkImage), findsNothing);
       expect(find.text('كريستيانو رونالدو'), findsOneWidget);
-      expect(find.text('٧'), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
     });
 
     test('LineupPlayer.fromMap parses photoUrl from multiple key candidates', () {

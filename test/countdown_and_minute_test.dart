@@ -11,7 +11,7 @@ void main() {
   });
 
   group('MatchModel Minute & Status parsing', () {
-    test('extracts Eastern Arabic minute for live match', () {
+    test('extracts Western Latin tabular minute for live match', () {
       final match = MatchModel.fromMap({
         'match_id': 101,
         'live': 1,
@@ -23,7 +23,7 @@ void main() {
 
       expect(match.isLive, isTrue);
       expect(match.status, equals(MatchStatus.live));
-      expect(match.currentMinute, equals("٦٧'"));
+      expect(match.currentMinute, equals("67'"));
     });
 
     test('extracts injury time minute correctly', () {
@@ -37,7 +37,7 @@ void main() {
       });
 
       expect(match.isLive, isTrue);
-      expect(match.currentMinute, equals("٤٥+٢'"));
+      expect(match.currentMinute, equals("45+2'"));
     });
 
     test('handles halftime pause correctly', () {

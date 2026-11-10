@@ -18,6 +18,8 @@ class AppButton extends StatefulWidget {
   final bool isLoading;
   final double? width;
   final EdgeInsetsGeometry? padding;
+  final Gradient? gradient;
+  final List<BoxShadow>? boxShadow;
 
   const AppButton({
     super.key,
@@ -28,6 +30,8 @@ class AppButton extends StatefulWidget {
     this.isLoading = false,
     this.width,
     this.padding,
+    this.gradient,
+    this.boxShadow,
   });
 
   @override
@@ -110,11 +114,15 @@ class _AppButtonState extends State<AppButton>
       width: widget.width,
       height: 48,
       decoration: BoxDecoration(
-        color: widget.onPressed != null ? bg : bg.withValues(alpha: 0.4),
+        color: widget.gradient != null
+            ? null
+            : (widget.onPressed != null ? bg : bg.withValues(alpha: 0.4)),
+        gradient: widget.onPressed != null ? widget.gradient : null,
         borderRadius: AppRadii.fullRadius,
         border: borderColor != null
             ? Border.all(color: borderColor, width: 1.0)
             : null,
+        boxShadow: widget.onPressed != null ? widget.boxShadow : null,
       ),
       child: Material(
         color: Colors.transparent,

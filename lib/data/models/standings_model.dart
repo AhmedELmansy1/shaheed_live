@@ -31,6 +31,38 @@ class StandingRowModel {
     this.color,
   });
 
+  StandingRowModel copyWith({
+    int? rank,
+    int? teamId,
+    String? teamName,
+    String? teamLogo,
+    int? played,
+    int? won,
+    int? drawn,
+    int? lost,
+    int? goalsFor,
+    int? goalsAgainst,
+    int? goalDiff,
+    int? points,
+    String? color,
+  }) {
+    return StandingRowModel(
+      rank: rank ?? this.rank,
+      teamId: teamId ?? this.teamId,
+      teamName: teamName ?? this.teamName,
+      teamLogo: teamLogo ?? this.teamLogo,
+      played: played ?? this.played,
+      won: won ?? this.won,
+      drawn: drawn ?? this.drawn,
+      lost: lost ?? this.lost,
+      goalsFor: goalsFor ?? this.goalsFor,
+      goalsAgainst: goalsAgainst ?? this.goalsAgainst,
+      goalDiff: goalDiff ?? this.goalDiff,
+      points: points ?? this.points,
+      color: color ?? this.color,
+    );
+  }
+
   factory StandingRowModel.fromMap(Map<String, dynamic> map, {int? fallbackRank}) {
     final teamNameObj = map['team_name'];
     String title = '';
@@ -43,10 +75,18 @@ class StandingRowModel {
       title = (map['name'] ?? '').toString();
     }
 
-    final parsedRank = int.tryParse(map['last_stand']?.toString() ?? '') ??
-        int.tryParse(map['standing']?.toString() ?? '') ??
-        fallbackRank ??
-        0;
+    if (logo == null || logo.isEmpty) {
+      logo = map['image']?.toString() ?? map['logo']?.toString() ?? map['team_logo']?.toString();
+    }
+
+    // Upstream API often returns standing: 0 and last_stand: null; real rank is fallbackRank (map key)
+    final parsedStanding = int.tryParse(map['standing']?.toString() ?? '');
+    final parsedLastStand = int.tryParse(map['last_stand']?.toString() ?? '');
+    final parsedRank = (parsedLastStand != null && parsedLastStand > 0)
+        ? parsedLastStand
+        : ((parsedStanding != null && parsedStanding > 0)
+            ? parsedStanding
+            : (fallbackRank != null && fallbackRank > 0 ? fallbackRank : 0));
 
     final teamId = int.tryParse(map['team_id']?.toString() ?? '') ??
         (teamNameObj is Map ? int.tryParse(teamNameObj['row_id']?.toString() ?? '') : null) ??
@@ -102,12 +142,10 @@ class StandingRowModel {
             }
           }
         }
-      } else if (data.containsKey('1') || data.containsKey('play')) {
-        if (data.containsKey('team_id') || data.containsKey('play')) {
-          rows.add(StandingRowModel.fromMap(data));
-        } else {
-          parseMapOfRows(data);
-        }
+      } else if (data.containsKey('team_id') || data.containsKey('play')) {
+        rows.add(StandingRowModel.fromMap(data));
+      } else if (data.keys.any((k) => int.tryParse(k.toString()) != null)) {
+        parseMapOfRows(data);
       }
     } else if (data is List) {
       for (final item in data) {
@@ -128,6 +166,17 @@ class StandingRowModel {
       return b.points.compareTo(a.points);
     });
 
-    return rows;
+    // Ensure strictly positive 1-based ranks (if rank is 0, assign index + 1)
+    final sanitizedRows = <StandingRowModel>[];
+    for (int i = 0; i < rows.length; i++) {
+      final r = rows[i];
+      if (r.rank <= 0) {
+        sanitizedRows.add(r.copyWith(rank: i + 1));
+      } else {
+        sanitizedRows.add(r);
+      }
+    }
+
+    return sanitizedRows;
   }
 }

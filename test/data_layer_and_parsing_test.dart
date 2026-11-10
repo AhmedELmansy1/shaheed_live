@@ -64,8 +64,8 @@ void main() {
       expect(match.homeTeamName, 'إنتر ميامي');
       expect(match.awayTeamName, 'شارلوت');
       expect(match.leagueName, 'الدوري الأمريكي لكرة القدم');
-      expect(match.homeScore, '٢');
-      expect(match.awayScore, '١');
+      expect(match.homeScore, '2');
+      expect(match.awayScore, '1');
       expect(match.isLive, false);
       expect(match.status, MatchStatus.finished);
     });

@@ -19,12 +19,12 @@ void main() {
       expect(result.remainingTime, equals(const Duration(hours: 2)));
 
       final naturalArabic = StreamAvailabilityHelper.formatNaturalArabicCountdown(result.remainingTime!);
-      expect(naturalArabic, equals('٢ ساعات'));
+      expect(naturalArabic, equals('2 ساعات'));
 
       final naturalArabic2 = StreamAvailabilityHelper.formatNaturalArabicCountdown(
         const Duration(hours: 1, minutes: 24),
       );
-      expect(naturalArabic2, equals('ساعة و ٢٤ دقيقة'));
+      expect(naturalArabic2, equals('ساعة و 24 دقيقة'));
     });
 
     test('Test 2: Match starts in 3 minutes, no stream -> PREPARING_STREAM', () {

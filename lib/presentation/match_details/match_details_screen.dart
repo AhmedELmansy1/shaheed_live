@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/app_constants.dart';
 import '../../core/services/match_reminder_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -101,6 +102,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
     final primary = AppColors.primaryOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (match == null) {
       return Scaffold(
@@ -244,26 +246,43 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                 isMatchFinished: match.isFinished,
               ),
 
-              // 2. Clean Editorial Tab Bar
+              // 2. Modern Segmented Broadcast Tab Bar
               Container(
-                decoration: BoxDecoration(
-                  color: surface,
-                  border: Border(bottom: BorderSide(color: border, width: 1.0)),
+                color: surface,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 6,
                 ),
                 child: TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  indicatorColor: primary,
-                  indicatorWeight: 2.5,
-                  labelColor: primary,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: isDark
+                        ? AppColors.electricCyan.withValues(alpha: 0.14)
+                        : primary.withValues(alpha: 0.1),
+                    borderRadius: AppRadii.fullRadius,
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.electricCyan.withValues(alpha: 0.45)
+                          : primary.withValues(alpha: 0.4),
+                      width: 1.0,
+                    ),
+                  ),
+                  dividerColor: Colors.transparent,
+                  labelColor: isDark ? AppColors.electricCyan : primary,
                   unselectedLabelColor: textSecondary,
                   labelStyle: AppTypography.labelLarge(color: primary).copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
                   ),
                   unselectedLabelStyle:
                       AppTypography.labelLarge(color: textSecondary).copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
+                  padding: EdgeInsets.zero,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 14),
                   tabs: const [
                     Tab(text: 'الأحداث'),
                     Tab(text: 'التشكيلة'),
@@ -320,19 +339,19 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
     final primary = AppColors.primaryOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       color: surface,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: surfaceElevated,
-          borderRadius: AppRadii.lgRadius,
-          border: Border.all(color: border, width: 1.0),
+        decoration: AppDecorations.heroStadiumCard(
+          context: context,
+          isLive: match.isLive,
         ),
         child: Column(
           children: [
@@ -346,21 +365,43 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                   flex: 4,
                   child: Column(
                     children: [
-                      TeamLogo(
-                        logoUrl: match.homeTeamLogo,
-                        teamName: match.homeTeamName,
-                        size: 52,
-                        heroTag: 'details_home_${match.matchId}',
+                      Container(
+                        width: 66,
+                        height: 66,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark ? const Color(0x1F142344) : const Color(0x08000000),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.electricCyan.withValues(alpha: 0.3)
+                                : AppColors.lightBorder,
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            if (isDark)
+                              BoxShadow(
+                                color: AppColors.electricCyan.withValues(alpha: 0.12),
+                                blurRadius: 14,
+                              ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: TeamLogo(
+                          logoUrl: match.homeTeamLogo,
+                          teamName: match.homeTeamName,
+                          size: 54,
+                          heroTag: 'details_home_${match.matchId}',
+                        ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.xs + 2),
                       Text(
                         match.homeTeamName,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.titleSmall(color: textPrimary).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
                         ),
                       ),
                     ],
@@ -374,27 +415,39 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       StatusChip(match: match, isCompact: true),
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.xs + 2),
                       if (match.isLive || match.isFinished)
                         ScoreView(
                           homeScore: match.homeScore,
                           awayScore: match.awayScore,
                           isLive: match.isLive,
                           isFinished: match.isFinished,
-                          fontSize: 22,
+                          fontSize: 34,
                         )
                       else ...[
-                        Text(
-                          match.formattedLocalTime,
-                          style: AppTypography.scoreHeadline(color: textPrimary).copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: surfaceElevated,
+                            borderRadius: AppRadii.fullRadius,
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF263A64) : border,
+                            ),
+                          ),
+                          child: Text(
+                            match.formattedLocalTime,
+                            style: AppTypography.scoreHeadline(color: textPrimary).copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           DateFormatter.toArabicNumerals(match.displayDate),
-                          style: AppTypography.labelSmall(color: textSecondary),
+                          style: AppTypography.labelSmall(color: textSecondary).copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ],
@@ -406,21 +459,43 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                   flex: 4,
                   child: Column(
                     children: [
-                      TeamLogo(
-                        logoUrl: match.awayTeamLogo,
-                        teamName: match.awayTeamName,
-                        size: 52,
-                        heroTag: 'details_away_${match.matchId}',
+                      Container(
+                        width: 66,
+                        height: 66,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark ? const Color(0x1F142344) : const Color(0x08000000),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.coralCrimson.withValues(alpha: 0.3)
+                                : AppColors.lightBorder,
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            if (isDark)
+                              BoxShadow(
+                                color: AppColors.coralCrimson.withValues(alpha: 0.12),
+                                blurRadius: 14,
+                              ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: TeamLogo(
+                          logoUrl: match.awayTeamLogo,
+                          teamName: match.awayTeamName,
+                          size: 54,
+                          heroTag: 'details_away_${match.matchId}',
+                        ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.xs + 2),
                       Text(
                         match.awayTeamName,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.titleSmall(color: textPrimary).copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
                         ),
                       ),
                     ],

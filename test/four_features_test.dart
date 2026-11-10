@@ -53,8 +53,8 @@ void main() {
       );
 
       final text = MatchShareHelper.getShareText(match);
-      expect(text, contains('🔴 مباشر الآن: الأهلي ٢ - ١ الزمالك'));
-      expect(text, contains("الدقيقة ٦٧'"));
+      expect(text, contains('🔴 مباشر الآن: الأهلي 2 - 1 الزمالك'));
+      expect(text, contains("الدقيقة 67'"));
       expect(text, contains('الدوري المصري'));
       expect(text, contains('عبر تطبيق ${AppConstants.appName}'));
     });
@@ -74,7 +74,7 @@ void main() {
       );
 
       final text = MatchShareHelper.getShareText(match);
-      expect(text, contains('⚽ النتيجة النهائية: ريال مدريد ٣ - ٢ برشلونة'));
+      expect(text, contains('⚽ النتيجة النهائية: ريال مدريد 3 - 2 برشلونة'));
       expect(text, contains('الدوري الإسباني'));
       expect(text, contains('عبر تطبيق ${AppConstants.appName}'));
     });

@@ -10,14 +10,18 @@ import '../../../data/models/standings_model.dart';
 import '../../widgets/app_empty_state.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/matches_skeleton.dart';
+import '../../widgets/team_logo.dart';
 import '../providers/match_details_providers.dart';
 
-/// Editorial Standings Tab in "Paper × Ink × Vermilion".
+/// Broadcast Standings Tab in the "Dark Sports Broadcast" design system.
 ///
 /// Features:
-/// - Clean typography with tabular Arabic numerals.
-/// - Highlighted qualification / relegation zones using subtle neutral / accent tones (NO green).
-/// - Proper empty, error (with retry), and loading skeleton states.
+/// - Crisp typography with tabular Western numerals (0-9).
+/// - Real team crest logos via TeamLogo component.
+/// - Prominent tabular Points ('نقاط') and Goal Difference ('+/-') columns.
+/// - Highlighted qualification / relegation zones (UCL Blue, UEL Cyan, UECL Gold, Relegation Crimson).
+/// - Highlighted match teams with glowing row background & accent bar.
+/// - Responsive mobile layout fitting all key columns without accidental horizontal scroll cuts.
 class StandingsTab extends ConsumerWidget {
   final int matchId;
   final int? homeTeamId;
@@ -56,35 +60,41 @@ class StandingsTab extends ConsumerWidget {
         final surface = AppColors.surfaceOf(context);
         final border = AppColors.borderOf(context);
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: AppRadii.lgRadius,
-              border: Border.all(color: border, width: 1.0),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 460),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTableHeader(context),
-                    Divider(color: border, height: 1.0),
-                    ...rows.map((row) => _buildTableRow(context, row, rows.length)),
-                    Divider(color: border, height: 1.0),
-                    _buildTableLegend(context),
-                  ],
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final tableWidth = constraints.maxWidth > 400 ? constraints.maxWidth : 390.0;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.md,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: AppRadii.lgRadius,
+                  border: Border.all(color: border, width: 1.0),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTableHeader(context),
+                        Divider(color: border, height: 1.0),
+                        ...rows.map((row) => _buildTableRow(context, row, rows.length)),
+                        Divider(color: border, height: 1.0),
+                        _buildTableLegend(context),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -95,51 +105,50 @@ class StandingsTab extends ConsumerWidget {
     final surfaceElevated = AppColors.surfaceElevatedOf(context);
 
     return Container(
-      width: 480,
       color: surfaceElevated,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
+        horizontal: AppSpacing.xs + 2,
         vertical: AppSpacing.sm + 2,
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 32,
+            width: 28,
             child: Text(
               '#',
               style: AppTypography.labelSmall(color: textSecondary).copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: 4),
           Expanded(
-            flex: 4,
+            flex: 5,
             child: Text(
               'الفريق',
               style: AppTypography.labelSmall(color: textSecondary).copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          _buildColHeader(context, 'لعب'),
-          _buildColHeader(context, 'ف'),
-          _buildColHeader(context, 'ت'),
-          _buildColHeader(context, 'خ'),
-          _buildColHeader(context, '+/-'),
-          _buildColHeader(context, 'نقاط', isBold: true),
+          _buildColHeader(context, 'لعب', width: 26),
+          _buildColHeader(context, 'ف', width: 22),
+          _buildColHeader(context, 'ت', width: 22),
+          _buildColHeader(context, 'خ', width: 22),
+          _buildColHeader(context, '+/-', width: 28),
+          _buildColHeader(context, 'نقاط', width: 34, isBold: true),
         ],
       ),
     );
   }
 
-  Widget _buildColHeader(BuildContext context, String text, {bool isBold = false}) {
+  Widget _buildColHeader(BuildContext context, String text, {required double width, bool isBold = false}) {
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
 
     return SizedBox(
-      width: 34,
+      width: width,
       child: Text(
         text,
         textAlign: TextAlign.center,
@@ -147,6 +156,7 @@ class StandingsTab extends ConsumerWidget {
           color: isBold ? textPrimary : textSecondary,
         ).copyWith(
           fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
+          fontSize: 11,
         ),
       ),
     );
@@ -158,43 +168,41 @@ class StandingsTab extends ConsumerWidget {
     int totalRows,
   ) {
     final surface = AppColors.surfaceOf(context);
-    final surfaceElevated = AppColors.surfaceElevatedOf(context);
     final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
     final primary = AppColors.primaryOf(context);
-    final border = AppColors.borderOf(context);
 
     final isMatchTeam = (homeTeamId != null && row.teamId == homeTeamId) ||
         (awayTeamId != null && row.teamId == awayTeamId);
 
-    // Subtle qualification / relegation zone indicators (NO GREEN)
+    // Broadcast Zone colors
     Color? zoneColor;
-    if (row.rank == 1) {
-      // Champion: vermilion accent
-      zoneColor = primary;
-    } else if (row.rank <= 4) {
-      // Top 4 / Continental: subtle refined slate/indigo
-      zoneColor = Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF6C85F5)
-          : const Color(0xFF3B5BDB);
-    } else if (totalRows > 12 && row.rank > totalRows - 3) {
-      // Relegation: subtle warm coral
-      zoneColor = const Color(0xFFD9480F);
+    if (row.rank >= 1 && row.rank <= 4) {
+      // UEFA Champions League / Top 4: Electric Blue
+      zoneColor = AppColors.electricBlue;
+    } else if (row.rank == 5) {
+      // UEFA Europa League: Electric Cyan
+      zoneColor = AppColors.electricCyan;
+    } else if (row.rank == 6) {
+      // UEFA Conference League: Metallic Gold
+      zoneColor = AppColors.metallicGold;
+    } else if (totalRows > 10 && row.rank > totalRows - 3) {
+      // Relegation: Coral Crimson
+      zoneColor = AppColors.coralCrimson;
     }
 
     return Container(
-      width: 480,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.sm,
+        horizontal: AppSpacing.xs + 2,
+        vertical: AppSpacing.sm - 1,
       ),
       decoration: BoxDecoration(
         color: isMatchTeam
-            ? primary.withValues(alpha: 0.08)
+            ? primary.withValues(alpha: 0.12)
             : surface,
         border: isMatchTeam
-            ? Border(
-                right: BorderSide(color: primary, width: 3.0),
+            ? BorderDirectional(
+                start: BorderSide(color: AppColors.electricCyan, width: 3.5),
               )
             : null,
       ),
@@ -202,28 +210,35 @@ class StandingsTab extends ConsumerWidget {
         children: [
           // Rank + Zone Marker
           SizedBox(
-            width: 32,
+            width: 28,
             child: Row(
               children: [
                 if (zoneColor != null)
                   Container(
-                    width: 3,
+                    width: 3.0,
                     height: 16,
                     decoration: BoxDecoration(
                       color: zoneColor,
                       borderRadius: BorderRadius.circular(1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: zoneColor.withValues(alpha: 0.5),
+                          blurRadius: 3,
+                        ),
+                      ],
                     ),
                   )
                 else
-                  const SizedBox(width: 3),
-                const SizedBox(width: 3),
+                  const SizedBox(width: 3.0),
+                const SizedBox(width: 2),
                 Expanded(
                   child: Text(
                     AppNumberFormat.formatStanding('${row.rank}'),
                     style: AppTypography.labelMedium(
-                      color: isMatchTeam ? primary : textSecondary,
+                      color: isMatchTeam ? AppColors.electricCyan : textSecondary,
                     ).copyWith(
-                      fontWeight: isMatchTeam ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isMatchTeam ? FontWeight.w900 : FontWeight.w700,
+                      fontSize: 12,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -231,41 +246,29 @@ class StandingsTab extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: 4),
 
           // Team Crest + Name
           Expanded(
-            flex: 4,
+            flex: 5,
             child: Row(
               children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: surfaceElevated,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: border, width: 0.6),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    row.teamName.isNotEmpty ? row.teamName[0] : '•',
-                    style: AppTypography.labelSmall(color: textPrimary).copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                TeamLogo(
+                  logoUrl: row.teamLogo,
+                  teamName: row.teamName,
+                  size: 22,
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.xs + 2),
                 Expanded(
                   child: Text(
                     row.teamName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodySmall(
-                      color: isMatchTeam ? primary : textPrimary,
+                      color: isMatchTeam ? AppColors.electricCyan : textPrimary,
                     ).copyWith(
                       fontWeight: isMatchTeam ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 12.5,
+                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -274,16 +277,18 @@ class StandingsTab extends ConsumerWidget {
           ),
 
           // Numeric Columns
-          _buildStatCell(context, row.played, textSecondary),
-          _buildStatCell(context, row.won, textSecondary),
-          _buildStatCell(context, row.drawn, textSecondary),
-          _buildStatCell(context, row.lost, textSecondary),
-          _buildStatCell(context, row.goalDiff, textSecondary),
+          _buildStatCell(context, row.played, textSecondary, width: 26),
+          _buildStatCell(context, row.won, textSecondary, width: 22),
+          _buildStatCell(context, row.drawn, textSecondary, width: 22),
+          _buildStatCell(context, row.lost, textSecondary, width: 22),
+          _buildStatCell(context, row.goalDiff, textSecondary, width: 28),
           _buildStatCell(
             context,
             row.points,
-            isMatchTeam ? primary : textPrimary,
+            isMatchTeam ? AppColors.electricCyan : primary,
+            width: 34,
             isBold: true,
+            isPill: true,
           ),
         ],
       ),
@@ -294,18 +299,42 @@ class StandingsTab extends ConsumerWidget {
     BuildContext context,
     int val,
     Color color, {
+    required double width,
     bool isBold = false,
+    bool isPill = false,
   }) {
-    return SizedBox(
-      width: 34,
-      child: Text(
-        AppNumberFormat.formatStanding(val),
-        textAlign: TextAlign.center,
-        style: AppTypography.labelMedium(color: color).copyWith(
-          fontSize: 12,
-          fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
-        ),
+    final text = Text(
+      AppNumberFormat.formatStanding(val),
+      textAlign: TextAlign.center,
+      style: AppTypography.labelMedium(color: color).copyWith(
+        fontSize: isBold ? 12.5 : 11.5,
+        fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
       ),
+    );
+
+    if (isPill) {
+      return SizedBox(
+        width: width,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: AppRadii.smRadius,
+              border: Border.all(
+                color: color.withValues(alpha: 0.35),
+                width: 0.8,
+              ),
+            ),
+            child: text,
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: width,
+      child: text,
     );
   }
 
@@ -318,7 +347,7 @@ class StandingsTab extends ConsumerWidget {
         vertical: AppSpacing.sm,
       ),
       child: Text(
-        'المختصرات: لعب (عدد المباريات) • ف (فوز) • ت (تعادل) • خ (خسارة) • +/- (فارق الأهداف) • نقاط',
+        'المختصرات: لعب • ف (فوز) • ت (تعادل) • خ (خسارة) • +/- (فارق الأهداف) • نقاط',
         style: AppTypography.caption(color: textSecondary).copyWith(
           fontSize: 10.5,
         ),

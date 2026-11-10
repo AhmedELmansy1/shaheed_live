@@ -182,13 +182,38 @@ class H2HTab extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Stats counters: Wins / Draws / Losses
+          // Stats counters: 3 Distinct Stat Cards for Wins / Draws / Losses
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatPill('فوز', homeWins, AppColors.success, textSecondary),
-              _buildStatPill('تعادل', homeForm?.draws ?? 0, AppColors.gold, textSecondary),
-              _buildStatPill('هزيمة', homeForm?.losses ?? 0, AppColors.live, textSecondary),
+              Expanded(
+                child: _buildDistinctStatCard(
+                  context,
+                  label: 'فوز',
+                  value: homeWins,
+                  color: AppColors.neonEmerald,
+                  textSecondary: textSecondary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _buildDistinctStatCard(
+                  context,
+                  label: 'تعادل',
+                  value: homeForm?.draws ?? 0,
+                  color: AppColors.metallicGold,
+                  textSecondary: textSecondary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _buildDistinctStatCard(
+                  context,
+                  label: 'هزيمة',
+                  value: homeForm?.losses ?? 0,
+                  color: AppColors.coralCrimson,
+                  textSecondary: textSecondary,
+                ),
+              ),
             ],
           ),
         ],
@@ -196,20 +221,43 @@ class H2HTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatPill(String label, int value, Color color, Color textSecondary) {
-    return Column(
-      children: [
-        Text(
-          AppNumberFormat.formatStat(value),
-          style: AppTypography.titleMedium(color: color).copyWith(
-            fontWeight: FontWeight.w800,
+  Widget _buildDistinctStatCard(
+    BuildContext context, {
+    required String label,
+    required int value,
+    required Color color,
+    required Color textSecondary,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141F36) : color.withValues(alpha: 0.08),
+        borderRadius: AppRadii.mdRadius,
+        border: Border.all(
+          color: isDark ? color.withValues(alpha: 0.35) : color.withValues(alpha: 0.25),
+          width: 1.0,
+        ),
+      ),
+      child: Column(
+        children: [
+          Text(
+            AppNumberFormat.formatStat(value),
+            style: AppTypography.titleLarge(color: color).copyWith(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: AppTypography.caption(color: textSecondary),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTypography.caption(color: textSecondary).copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -238,7 +286,7 @@ class H2HTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'آخر ٥ مباريات: $teamName',
+                      'آخر 5 مباريات: $teamName',
                       style: AppTypography.bodyMedium(color: textPrimary).copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -299,36 +347,42 @@ class H2HTab extends ConsumerWidget {
 
     switch (result) {
       case 'win':
-        bg = AppColors.success;
+        bg = AppColors.neonEmerald;
         letter = 'ف';
         break;
       case 'lose':
-        bg = AppColors.live;
+        bg = AppColors.coralCrimson;
         letter = 'خ';
         break;
       case 'draw':
       default:
-        bg = AppColors.gold;
+        bg = AppColors.metallicGold;
         letter = 'ت';
         break;
     }
 
     return Container(
-      width: 22,
-      height: 22,
+      width: 24,
+      height: 24,
       margin: const EdgeInsets.symmetric(horizontal: 2),
       decoration: BoxDecoration(
         color: bg.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(AppRadii.full),
-        border: Border.all(color: bg.withValues(alpha: 0.5), width: 1),
+        border: Border.all(color: bg.withValues(alpha: 0.6), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: bg.withValues(alpha: 0.2),
+            blurRadius: 4,
+          ),
+        ],
       ),
       alignment: Alignment.center,
       child: Text(
         letter,
         style: TextStyle(
           color: bg,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );

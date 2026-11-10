@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../cache/matches_cache_service.dart';
 import '../models/match_event_model.dart';
 import '../models/match_info_model.dart';
@@ -264,21 +265,53 @@ class ApiMatchesRepository implements MatchesRepository {
     return [];
   }
 
-  List<MatchEventModel> _parseEvents(dynamic responseData) {
+  List<MatchEventModel> _parseEvents(dynamic responseData) =>
+      parseEvents(responseData);
+
+  @visibleForTesting
+  static List<MatchEventModel> parseEvents(dynamic responseData) {
+    List<dynamic> rawList = [];
     if (responseData is Map<String, dynamic>) {
       final eventsList = responseData['events'];
       if (eventsList is List) {
-        return eventsList
-            .whereType<Map<String, dynamic>>()
-            .map((item) => MatchEventModel.fromMap(item))
-            .toList();
+        rawList = eventsList;
       }
     } else if (responseData is List) {
-      return responseData
-          .whereType<Map<String, dynamic>>()
-          .map((item) => MatchEventModel.fromMap(item))
-          .toList();
+      rawList = responseData;
     }
-    return [];
+
+    if (rawList.isEmpty) return [];
+
+    final parsedEvents = rawList
+        .whereType<Map<String, dynamic>>()
+        .map((item) => MatchEventModel.fromMap(item))
+        .toList();
+
+    // 1. De-duplicate identical milestone markers and duplicate events
+    final seenPeriodMarkers = <String>{};
+    final seenEventIds = <int>{};
+    final uniqueEvents = <MatchEventModel>[];
+
+    for (final event in parsedEvents) {
+      if (event.eventType == MatchEventType.periodMarker) {
+        final key = event.statusName.trim();
+        if (key.isNotEmpty && seenPeriodMarkers.contains(key)) {
+          continue; // skip duplicate milestone (e.g. second "انتهت المباراة")
+        }
+        seenPeriodMarkers.add(key);
+        uniqueEvents.add(event);
+      } else {
+        if (event.eventId > 0 && seenEventIds.contains(event.eventId)) {
+          continue; // skip duplicate event ID
+        }
+        if (event.eventId > 0) seenEventIds.add(event.eventId);
+        uniqueEvents.add(event);
+      }
+    }
+
+    // 2. Sort strictly reverse-chronological (newest events at top, kickoff at bottom)
+    uniqueEvents.sort((a, b) => b.sortMinute.compareTo(a.sortMinute));
+
+    return uniqueEvents;
   }
 }
