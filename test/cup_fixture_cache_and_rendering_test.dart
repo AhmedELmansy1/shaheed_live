@@ -68,6 +68,17 @@ void main() {
       expect(restoredMatch.awayTeamName, equals('فريق غير محدد'));
       expect(restoredMatch.homeTeamName.isNotEmpty, isTrue);
       expect(restoredMatch.awayTeamName.isNotEmpty, isTrue);
+
+      // Self-healing: Cache must be marked as EXPIRED so repository refetches immediately
+      expect(cachedResult.isExpired, isTrue, reason: 'Cache containing fallback names must be marked expired');
+
+      // Subsequent fetch with real names overwrites the stale cache
+      await cacheService.saveMatches(testDate, [cupFixtureMap]);
+      final freshCached = cacheService.getCachedMatches(testDate);
+      expect(freshCached, isNotNull);
+      expect(freshCached!.matches.first.homeTeamName, equals('وادي دجلة'));
+      expect(freshCached.matches.first.awayTeamName, equals('كهرباء الإسماعيلية'));
+      expect(freshCached.isExpired, isFalse);
     });
   });
 
@@ -167,3 +178,4 @@ void main() {
     }
   });
 }
+

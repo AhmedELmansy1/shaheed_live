@@ -124,10 +124,22 @@ class MatchesCacheService {
 
       if (matches.isEmpty) return null;
 
+      // Self-Healing Cache Protection:
+      // If ANY cached match has an empty or fallback team name ('فريق غير محدد'),
+      // do NOT consider this cache valid/fresh. Mark as expired so the repository
+      // immediately re-fetches the real data from the network on the next request.
+      final hasFallbackNames = matches.any(
+        (m) =>
+            m.homeTeamName == 'فريق غير محدد' ||
+            m.awayTeamName == 'فريق غير محدد',
+      );
+
+      final isEffectivelyExpired = isExpired || hasFallbackNames;
+
       return MatchesCacheResult(
         matches: matches,
         cachedAt: cachedAt,
-        isExpired: isExpired,
+        isExpired: isEffectivelyExpired,
       );
     } catch (e) {
       debugPrint('[MatchesCache] Error reading cache for $dateStr: $e');
