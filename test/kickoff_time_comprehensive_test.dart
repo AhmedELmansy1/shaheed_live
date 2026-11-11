@@ -272,4 +272,149 @@ void main() {
       expect(ch3.defaultStreamUrl, equals('https://example.com/stream3.m3u8'));
     });
   });
+
+  group('8. Task 2 Kickoff Time & kickoff_known Matrix Verification', () {
+    test('kickoff_known = true: correctly maps to matchModel.kickoffKnown and isKickoffTimeKnown', () {
+      final match = MatchModel.fromMap({
+        'id': 101,
+        'match_date': '2026-11-15',
+        'match_time': '16:00:00',
+        'status': '0',
+        'kickoff_known': true,
+      });
+
+      expect(match.kickoffKnown, isTrue);
+      expect(match.isKickoffTimeKnown, isTrue);
+      expect(match.formattedLocalTime, isNot('غير محدد'));
+    });
+
+    test('kickoff_known = false: unstarted match displays "غير محدد"', () {
+      final match = MatchModel.fromMap({
+        'id': 102,
+        'match_date': '2026-11-15',
+        'match_time': '16:00:00',
+        'status': '0',
+        'kickoff_known': false,
+      });
+
+      expect(match.kickoffKnown, isFalse);
+      expect(match.isKickoffTimeKnown, isFalse);
+      expect(match.formattedLocalTime, equals('غير محدد'));
+    });
+
+    test('kickoff_known missing: falls back to KickoffTime.isTimeTbd(matchTime)', () {
+      final matchWithTime = MatchModel.fromMap({
+        'id': 103,
+        'match_date': '2026-11-15',
+        'match_time': '16:00:00',
+        'status': '0',
+      });
+      expect(matchWithTime.kickoffKnown, isNull);
+      expect(matchWithTime.isKickoffTimeKnown, isTrue);
+
+      final matchTbd = MatchModel.fromMap({
+        'id': 104,
+        'match_date': '2026-11-15',
+        'match_time': '00:00:00',
+        'status': '0',
+      });
+      expect(matchTbd.kickoffKnown, isNull);
+      expect(matchTbd.isKickoffTimeKnown, isFalse);
+    });
+
+    test('finished match with 00:00:00: preserves score and displays date instead of "غير محدد"', () {
+      final finishedMatch = MatchModel.fromMap({
+        'id': 105,
+        'match_date': '2026-11-08',
+        'match_time': '00:00:00',
+        'status': '4',
+        'event_status': 'finished',
+        'home_scores': 1,
+        'away_scores': 3,
+      });
+
+      expect(finishedMatch.status, equals(MatchStatus.finished));
+      expect(finishedMatch.homeScore, equals('1'));
+      expect(finishedMatch.awayScore, equals('3'));
+      expect(finishedMatch.formattedLocalTime, isNot('غير محدد'));
+      expect(finishedMatch.formattedLocalTime, contains('نوفمبر'));
+    });
+
+    test('live match with unknown kickoff: preserves live state and score, does not crash on minute calculation', () {
+      final liveMatch = MatchModel.fromMap({
+        'id': 106,
+        'match_date': '2026-11-11',
+        'match_time': '00:00:00',
+        'status': '1',
+        'live': 1,
+        'event_status': 'live',
+        'home_scores': 0,
+        'away_scores': 0,
+        'admin_title': 'مباشر',
+      });
+
+      expect(liveMatch.isLive, isTrue);
+      expect(liveMatch.status, equals(MatchStatus.live));
+      expect(liveMatch.homeScore, equals('0'));
+      expect(liveMatch.awayScore, equals('0'));
+      expect(liveMatch.statusName, equals('مباشر'));
+    });
+
+    test('upcoming match with unknown kickoff: displays "غير محدد" and null scores', () {
+      final upcoming = MatchModel.fromMap({
+        'id': 107,
+        'match_date': '2026-11-20',
+        'match_time': '00:00:00',
+        'status': '0',
+        'event_status': 'not_started',
+        'home_scores': 0,
+        'away_scores': 0,
+      });
+
+      expect(upcoming.status, equals(MatchStatus.notStarted));
+      expect(upcoming.homeScore, isNull);
+      expect(upcoming.awayScore, isNull);
+      expect(upcoming.formattedLocalTime, equals('غير محدد'));
+    });
+
+    test('postponed match: resolved cleanly as postponed with "تأجلت"', () {
+      final postponed = MatchModel.fromMap({
+        'id': 108,
+        'match_date': '2026-11-15',
+        'match_time': '18:00:00',
+        'event_status': 'postponed',
+        'admin_badge': 'postponed',
+      });
+
+      expect(postponed.status, equals(MatchStatus.postponed));
+      expect(postponed.statusName, equals('تأجلت'));
+    });
+
+    test('Egypt DST Transitions: verified against IANA database', () {
+      final cairo = tz.getLocation('Africa/Cairo');
+
+      // 1. Summer DST active (e.g. June 15, 2026): UTC+3 (offset = 3 hours = 10800000 ms)
+      final summerInstant = tz.TZDateTime(cairo, 2026, 6, 15, 12, 0);
+      expect(summerInstant.timeZoneOffset, equals(const Duration(hours: 3)));
+
+      // 2. Winter standard time active (e.g. December 15, 2026): UTC+2 (offset = 2 hours = 7200000 ms)
+      final winterInstant = tz.TZDateTime(cairo, 2026, 12, 15, 12, 0);
+      expect(winterInstant.timeZoneOffset, equals(const Duration(hours: 2)));
+
+      // 3. Verification of exact transition boundaries for 2026:
+      // In 2026, Egypt transitions to DST on Friday, April 24 at 00:00 -> 01:00.
+      final beforeSummer = tz.TZDateTime(cairo, 2026, 4, 23, 12, 0);
+      expect(beforeSummer.timeZoneOffset, equals(const Duration(hours: 2)));
+
+      final afterSummer = tz.TZDateTime(cairo, 2026, 4, 25, 12, 0);
+      expect(afterSummer.timeZoneOffset, equals(const Duration(hours: 3)));
+
+      // In 2026, Egypt transitions back to standard time on Thursday, October 29 at 24:00 (Oct 30 00:00).
+      final beforeWinter = tz.TZDateTime(cairo, 2026, 10, 28, 12, 0);
+      expect(beforeWinter.timeZoneOffset, equals(const Duration(hours: 3)));
+
+      final afterWinter = tz.TZDateTime(cairo, 2026, 10, 31, 12, 0);
+      expect(afterWinter.timeZoneOffset, equals(const Duration(hours: 2)));
+    });
+  });
 }
