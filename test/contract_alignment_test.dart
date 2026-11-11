@@ -480,6 +480,16 @@ void main() {
       expect(KickoffTime.isTrustedKickoffSource(null), isFalse);
     });
 
+    test('5. Vercel US-East feed (feed_local_africa_cairo) resolves 14:00 to 19:00 UTC (9:00 PM Egypt)', () {
+      final utc = KickoffTime.toUtc(
+        '2026-11-13',
+        '14:00:00',
+        kickoffTzSource: 'feed_local_africa_cairo',
+      );
+
+      expect(utc, equals(DateTime.utc(2026, 11, 13, 19, 0, 0)));
+    });
+
     test('5. MatchModel Diagnostics fields: computes difference between raw and Cairo UTC', () {
       final match = MatchModel.fromMap({
         'id': 777,

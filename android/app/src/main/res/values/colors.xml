@@ -4,4 +4,5 @@
     <color name="launch_bg_color">#0A0F1E</color>
     <!-- Primary electric blue for notification accent -->
     <color name="notification_accent">#3D7BFF</color>
+	<color name="ic_launcher_background">#0F172A</color>
 </resources>

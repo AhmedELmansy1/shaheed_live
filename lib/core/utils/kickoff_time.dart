@@ -106,8 +106,44 @@ class KickoffTime {
     }
   }
 
+  /// Parses raw match date and time in US Eastern Time (`America/New_York`).
+  /// Used when upstream feed originates from Vercel US-East hosting.
+  static tz.TZDateTime? parseUsEast(String? rawDate, String? rawTime) {
+    if (rawDate == null || rawDate.trim().isEmpty) return null;
+    if (isTimeTbd(rawTime)) return null;
+
+    _ensureTimezonesInitialized();
+
+    try {
+      final dateParts = rawDate.trim().split('-');
+      if (dateParts.length < 3) return null;
+
+      final year = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final day = int.parse(dateParts[2]);
+
+      final (hour, minute, second) = DateFormatter.parseTimeComponents(rawTime!);
+
+      final usEastLocation = tz.getLocation('America/New_York');
+      return tz.TZDateTime(
+        usEastLocation,
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+      );
+    } catch (e) {
+      debugPrint('[KickoffTime] Failed to parse US East kickoff: date=$rawDate, time=$rawTime: $e');
+      return null;
+    }
+  }
+
   /// Converts the match kickoff time to a true UTC instant.
   /// If [kickoffAt] is provided, it is trusted ONLY when [kickoffTzSource] equals 'ys_match_datetime_input'.
+  /// When [kickoffTzSource] equals 'feed_local_africa_cairo', the feed originates from Vercel US-East
+  /// where YsScores returns times in US Eastern Time (America/New_York), so it is parsed accordingly.
   /// For any other source or missing source, [kickoffAt] is ignored and date+time is parsed in Africa/Cairo.
   static DateTime? toUtc(
     String? rawDate,
@@ -124,6 +160,14 @@ class KickoffTime {
           return parsed.toUtc();
         }
       } catch (_) {}
+    }
+
+    if (kickoffTzSource != null &&
+        kickoffTzSource.trim().toLowerCase() == 'feed_local_africa_cairo') {
+      final usEastDt = parseUsEast(rawDate, rawTime);
+      if (usEastDt != null) {
+        return usEastDt.toUtc();
+      }
     }
 
     final cairoDt = parseCairo(rawDate, rawTime);
