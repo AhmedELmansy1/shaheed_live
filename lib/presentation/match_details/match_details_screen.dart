@@ -11,6 +11,7 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/kickoff_time.dart';
 import '../../core/utils/match_share_helper.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/match_stream_model.dart';
@@ -365,6 +366,17 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
     final primary = AppColors.primaryOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final info = ref.watch(matchInfoProvider(match.id)).asData?.value;
+    final displayKickoffTime = (info?.kickoffAt != null &&
+            KickoffTime.isTrustedKickoffSource(info?.kickoffTzSource))
+        ? KickoffTime.format(
+            match.matchDate,
+            match.matchTime,
+            kickoffAt: info!.kickoffAt,
+            kickoffTzSource: info.kickoffTzSource,
+          )
+        : match.formattedLocalTime;
+
     return Container(
       color: surface,
       padding: const EdgeInsets.symmetric(
@@ -459,7 +471,7 @@ class _MatchDetailsScreenState extends ConsumerState<MatchDetailsScreen> {
                             ),
                           ),
                           child: Text(
-                            match.formattedLocalTime,
+                            displayKickoffTime,
                             style: AppTypography.scoreHeadline(color: textPrimary).copyWith(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,

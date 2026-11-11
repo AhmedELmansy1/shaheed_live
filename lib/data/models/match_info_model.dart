@@ -69,6 +69,8 @@ class MatchInfoModel {
   final bool hasStatics;
   final TeamFormModel? homeForm;
   final TeamFormModel? awayForm;
+  final String? kickoffAt;
+  final String? kickoffTzSource;
 
   /// Known unannounced, empty, or placeholder strings from upstream feeds and dashboards.
   static const Set<String> knownPlaceholders = {
@@ -109,6 +111,8 @@ class MatchInfoModel {
     this.hasStatics = false,
     this.homeForm,
     this.awayForm,
+    this.kickoffAt,
+    this.kickoffTzSource,
   });
 
   factory MatchInfoModel.fromMap(Map<String, dynamic> map) {
@@ -159,6 +163,9 @@ class MatchInfoModel {
       awayForm: map['away_form'] is Map<String, dynamic>
           ? TeamFormModel.fromMap(map['away_form'] as Map<String, dynamic>)
           : null,
+      kickoffAt: (map['kickoff_at'] ?? map['kickoffAt'])?.toString().trim(),
+      kickoffTzSource:
+          (map['kickoff_tz_source'] ?? map['kickoffTzSource'])?.toString().trim(),
     );
   }
 }

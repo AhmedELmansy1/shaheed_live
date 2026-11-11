@@ -7,6 +7,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/kickoff_time.dart';
 import '../../../data/models/match_info_model.dart';
 import '../../../data/models/match_model.dart';
 import '../../widgets/app_error_state.dart';
@@ -143,7 +144,17 @@ class InfoTab extends ConsumerWidget {
                 _buildInfoRow(
                   context,
                   label: 'وقت الانطلاق',
-                  value: DateFormatter.toArabicNumerals(match.formattedLocalTime),
+                  value: DateFormatter.toArabicNumerals(
+                    (info?.kickoffAt != null &&
+                            KickoffTime.isTrustedKickoffSource(info?.kickoffTzSource))
+                        ? KickoffTime.format(
+                            match.matchDate,
+                            match.matchTime,
+                            kickoffAt: info!.kickoffAt,
+                            kickoffTzSource: info.kickoffTzSource,
+                          )
+                        : match.formattedLocalTime,
+                  ),
                   icon: Icons.schedule_rounded,
                 ),
                 if (match.statusName.isNotEmpty) ...[

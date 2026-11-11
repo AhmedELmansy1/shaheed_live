@@ -129,6 +129,48 @@ class MatchModel {
     this.kickoffKnown,
   });
 
+  MatchModel copyWith({
+    int? matchId,
+    String? matchDate,
+    String? matchTime,
+    bool? isLive,
+    MatchStatus? status,
+    ChampionshipInfo? championship,
+    TeamInfo? homeTeam,
+    TeamInfo? awayTeam,
+    String? homeScore,
+    String? awayScore,
+    String? adminBadge,
+    String? adminTitle,
+    String? eventStatus,
+    String? channel,
+    String? commentator,
+    String? kickoffAt,
+    String? kickoffTzSource,
+    bool? kickoffKnown,
+  }) {
+    return MatchModel(
+      matchId: matchId ?? this.matchId,
+      matchDate: matchDate ?? this.matchDate,
+      matchTime: matchTime ?? this.matchTime,
+      isLive: isLive ?? this.isLive,
+      status: status ?? this.status,
+      championship: championship ?? this.championship,
+      homeTeam: homeTeam ?? this.homeTeam,
+      awayTeam: awayTeam ?? this.awayTeam,
+      homeScore: homeScore ?? this.homeScore,
+      awayScore: awayScore ?? this.awayScore,
+      adminBadge: adminBadge ?? this.adminBadge,
+      adminTitle: adminTitle ?? this.adminTitle,
+      eventStatus: eventStatus ?? this.eventStatus,
+      channel: channel ?? this.channel,
+      commentator: commentator ?? this.commentator,
+      kickoffAt: kickoffAt ?? this.kickoffAt,
+      kickoffTzSource: kickoffTzSource ?? this.kickoffTzSource,
+      kickoffKnown: kickoffKnown ?? this.kickoffKnown,
+    );
+  }
+
   // Convenience Getters for presentation layer
   String get id => matchId.toString();
   dynamic get homeTeamId => homeTeam.rowId;
@@ -361,8 +403,20 @@ class MatchModel {
       championship: ChampionshipInfo.fromMap(map['championship']),
       homeTeam: homeTeam,
       awayTeam: awayTeam,
-      homeScore: computedStatus == MatchStatus.notStarted ? null : parseScore(map['home_scores']),
-      awayScore: computedStatus == MatchStatus.notStarted ? null : parseScore(map['away_scores']),
+      homeScore: computedStatus == MatchStatus.notStarted
+          ? null
+          : parseScore(map['home_scores'] ??
+              map['home_score'] ??
+              map['homeScore'] ??
+              map['first_team_score'] ??
+              map['score1']),
+      awayScore: computedStatus == MatchStatus.notStarted
+          ? null
+          : parseScore(map['away_scores'] ??
+              map['away_score'] ??
+              map['awayScore'] ??
+              map['second_team_score'] ??
+              map['score2']),
       adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
       adminTitle: resolvedAdminTitle,
       eventStatus: (map['event_status'] as String?)?.toLowerCase(),

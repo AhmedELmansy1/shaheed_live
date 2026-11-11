@@ -726,5 +726,52 @@ void main() {
       expect(validMatch.channel, equals('SSC Extra 1'));
       expect(validMatch.commentator, equals('فارس عوض'));
     });
+
+    test('4. MatchInfoModel parses kickoff_at and kickoff_tz_source', () {
+      final info = MatchInfoModel.fromMap({
+        'match_id': 5181797,
+        'kickoff_at': '2026-11-12T19:45:00.000Z',
+        'kickoff_tz_source': 'ys_match_datetime_input',
+      });
+
+      expect(info.matchId, equals(5181797));
+      expect(info.kickoffAt, equals('2026-11-12T19:45:00.000Z'));
+      expect(info.kickoffTzSource, equals('ys_match_datetime_input'));
+    });
+
+    test('5. MatchModel parses scores with flexible naming (home_score / away_score)', () {
+      final finishedMatch = MatchModel.fromMap({
+        'id': 6386040,
+        'status': '4',
+        'home_name': 'أنايتاسونا',
+        'away_name': 'ألافيس',
+        'home_score': 1,
+        'away_score': 6,
+      });
+
+      expect(finishedMatch.isFinished, isTrue);
+      expect(finishedMatch.homeScore, equals('1'));
+      expect(finishedMatch.awayScore, equals('6'));
+    });
+
+    test('6. MatchModel copyWith creates modified instance', () {
+      const match = MatchModel(
+        matchId: 100,
+        championship: ChampionshipInfo(id: 1, title: 'الدوري'),
+        homeTeam: TeamInfo(rowId: 1, title: 'فريق أ'),
+        awayTeam: TeamInfo(rowId: 2, title: 'فريق ب'),
+        isLive: false,
+        status: MatchStatus.notStarted,
+      );
+
+      final updated = match.copyWith(
+        kickoffAt: '2026-11-12T19:45:00.000Z',
+        kickoffTzSource: 'ys_match_datetime_input',
+      );
+
+      expect(updated.matchId, equals(100));
+      expect(updated.kickoffAt, equals('2026-11-12T19:45:00.000Z'));
+      expect(updated.kickoffTzSource, equals('ys_match_datetime_input'));
+    });
   });
 }
