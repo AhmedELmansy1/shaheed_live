@@ -7,6 +7,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../data/models/match_info_model.dart';
 import '../../../data/models/match_model.dart';
 import '../../widgets/app_error_state.dart';
 import '../../widgets/matches_skeleton.dart';
@@ -37,28 +38,24 @@ class InfoTab extends ConsumerWidget {
       data: (info) {
         final textPrimary = AppColors.textPrimaryOf(context);
 
-        // Collect available fields (filter out empty/null values)
-        final stadium = (info?.stadium?.trim().isNotEmpty ?? false)
-            ? info!.stadium!.trim()
+        // Collect available fields (filter out empty, null, and placeholder values)
+        final rawStadium = info?.stadium?.trim();
+        final stadium = (rawStadium != null && !MatchInfoModel.isPlaceholder(rawStadium))
+            ? rawStadium
             : null;
 
-        final referee = (info?.refereeName?.trim().isNotEmpty ?? false)
-            ? info!.refereeName!.trim()
+        final rawReferee = info?.refereeName?.trim();
+        final referee = (rawReferee != null && !MatchInfoModel.isPlaceholder(rawReferee))
+            ? rawReferee
             : null;
 
-        final rawChannel = info?.channel?.trim() ?? '';
-        final channel = (rawChannel.isNotEmpty &&
-                rawChannel != 'التفاصيل' &&
-                rawChannel != 'تفاصيل' &&
-                rawChannel != 'معلومات')
+        final rawChannel = info?.channel?.trim();
+        final channel = (rawChannel != null && !MatchInfoModel.isPlaceholder(rawChannel))
             ? rawChannel
             : null;
 
-        final rawCommentator = info?.commentator?.trim() ?? '';
-        final commentator = (rawCommentator.isNotEmpty &&
-                rawCommentator != 'التفاصيل' &&
-                rawCommentator != 'تفاصيل' &&
-                rawCommentator != 'معلومات')
+        final rawCommentator = info?.commentator?.trim();
+        final commentator = (rawCommentator != null && !MatchInfoModel.isPlaceholder(rawCommentator))
             ? rawCommentator
             : null;
 

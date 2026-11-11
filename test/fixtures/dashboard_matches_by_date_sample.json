@@ -1,0 +1,70 @@
+[
+  {
+    "match_id": 5795506,
+    "match_date": "2026-11-08",
+    "match_time": "00:00:00",
+    "live": 0,
+    "status": "4",
+    "event_status": "finished",
+    "status_text": "انتهت المباراة",
+    "live_minute": null,
+    "forced_status": null,
+    "admin_badge": null,
+    "admin_title": null,
+    "home_scores": 2,
+    "away_scores": 0,
+    "home_name": "برايتون",
+    "away_name": "برينتفورد",
+    "home_image": "https://imgs.ysscores.com/teams/64/2271696710594.png",
+    "away_image": "https://imgs.ysscores.com/teams/64/4791690118957.png",
+    "championship": {
+      "id": 937599,
+      "title": "الدوري الإنجليزي الممتاز",
+      "image": "https://imgs.ysscores.com/championship/48/3411694791422.png"
+    },
+    "home_team": {
+      "row_id": 10204,
+      "title": "برايتون",
+      "image": "https://imgs.ysscores.com/teams/64/2271696710594.png"
+    },
+    "away_team": {
+      "row_id": 9937,
+      "title": "برينتفورد",
+      "image": "https://imgs.ysscores.com/teams/64/4791690118957.png"
+    }
+  },
+  {
+    "match_id": 5795507,
+    "match_date": "2026-11-08",
+    "match_time": "00:00:00",
+    "live": 0,
+    "status": "4",
+    "event_status": "finished",
+    "status_text": "انتهت المباراة",
+    "live_minute": null,
+    "forced_status": null,
+    "admin_badge": null,
+    "admin_title": null,
+    "home_scores": 1,
+    "away_scores": 3,
+    "home_name": "كريستال بالاس",
+    "away_name": "ليفربول",
+    "home_image": "https://imgs.ysscores.com/teams/64/6121690118883.png",
+    "away_image": "https://imgs.ysscores.com/teams/64/4081724601375.png",
+    "championship": {
+      "id": 937599,
+      "title": "الدوري الإنجليزي الممتاز",
+      "image": "https://imgs.ysscores.com/championship/48/3411694791422.png"
+    },
+    "home_team": {
+      "row_id": 9826,
+      "title": "كريستال بالاس",
+      "image": "https://imgs.ysscores.com/teams/64/6121690118883.png"
+    },
+    "away_team": {
+      "row_id": 8650,
+      "title": "ليفربول",
+      "image": "https://imgs.ysscores.com/teams/64/4081724601375.png"
+    }
+  }
+]

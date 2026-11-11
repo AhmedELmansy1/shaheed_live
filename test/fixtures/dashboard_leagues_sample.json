@@ -1,0 +1,20 @@
+{
+  "leagues": [
+    {
+      "id": 943009,
+      "title": "الدوري المصري",
+      "logo": "",
+      "country": "مصر",
+      "is_popular": true,
+      "display_order": 1
+    },
+    {
+      "id": 937599,
+      "title": "الدوري الإنجليزي الممتاز",
+      "logo": "https://imgs.ysscores.com/championship/48/3411694791422.png",
+      "country": "إنجلترا",
+      "is_popular": true,
+      "display_order": 2
+    }
+  ]
+}

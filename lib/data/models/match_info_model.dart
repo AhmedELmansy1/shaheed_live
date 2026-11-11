@@ -70,6 +70,31 @@ class MatchInfoModel {
   final TeamFormModel? homeForm;
   final TeamFormModel? awayForm;
 
+  /// Known unannounced, empty, or placeholder strings from upstream feeds and dashboards.
+  static const Set<String> knownPlaceholders = {
+    '',
+    '-',
+    '--',
+    '---',
+    '----',
+    '—',
+    'null',
+    'undefined',
+    'غير محدد',
+    'التفاصيل',
+    'تفاصيل',
+    'معلومات',
+    'لا يوجد',
+    'لم يحدد',
+  };
+
+  /// Evaluates whether a raw string is empty, null, or a recognized placeholder.
+  static bool isPlaceholder(String? val) {
+    if (val == null) return true;
+    final clean = val.trim().toLowerCase();
+    return knownPlaceholders.contains(clean);
+  }
+
   const MatchInfoModel({
     required this.matchId,
     this.stadium,
@@ -93,7 +118,7 @@ class MatchInfoModel {
     String? cleanString(dynamic v) {
       if (v == null) return null;
       final str = v.toString().trim();
-      if (str.isEmpty || str == 'null' || str == 'غير محدد') return null;
+      if (isPlaceholder(str)) return null;
       return str;
     }
 

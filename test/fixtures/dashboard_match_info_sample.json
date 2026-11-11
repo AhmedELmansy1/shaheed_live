@@ -1,0 +1,67 @@
+{
+  "match_id": 5795507,
+  "stadium": "غير محدد",
+  "stadium_name": "غير محدد",
+  "channel": "بي إن سبورت 1",
+  "channel_name": "بي إن سبورت 1",
+  "commentator": "التفاصيل",
+  "commentator_name": "التفاصيل",
+  "referee": "",
+  "referee_name": "",
+  "home_form": {
+    "team_name": "كريستال بالاس",
+    "wins": 1,
+    "draws": 1,
+    "losses": 3,
+    "recent_matches": [
+      {
+        "result": "lose",
+        "title": "كريستال بالاس 1-3 ليفربول"
+      },
+      {
+        "result": "draw",
+        "title": "كريستال بالاس 1-1 هوفنهايم"
+      },
+      {
+        "result": "lose",
+        "title": "توتنهام 2-0 كريستال بالاس"
+      },
+      {
+        "result": "win",
+        "title": "فولهام 0-1 كريستال بالاس"
+      },
+      {
+        "result": "lose",
+        "title": "كريستال بالاس 0-2 نيوكاسل"
+      }
+    ]
+  },
+  "away_form": {
+    "team_name": "ليفربول",
+    "wins": 2,
+    "draws": 1,
+    "losses": 2,
+    "recent_matches": [
+      {
+        "result": "win",
+        "title": "كريستال بالاس 1-3 ليفربول"
+      },
+      {
+        "result": "lose",
+        "title": "فنربخشة 3-2 ليفربول"
+      },
+      {
+        "result": "lose",
+        "title": "ليفربول 0-1 أرسنال"
+      },
+      {
+        "result": "draw",
+        "title": "ليفربول 1-1 تشيلسي"
+      },
+      {
+        "result": "win",
+        "title": "ليفربول 2-0 برايتون"
+      }
+    ]
+  }
+}

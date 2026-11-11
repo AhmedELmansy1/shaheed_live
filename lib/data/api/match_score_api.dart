@@ -159,6 +159,7 @@ class MatchStatusResolver {
     // 2. Finished (explicit status)
     if (badge == 'ended' ||
         ev == 'ended' ||
+        ev == 'finished' ||
         ev == 'ended_penalty' ||
         forced == 'ended' ||
         status == 4 ||
@@ -210,6 +211,7 @@ class MatchStatusResolver {
       _s(m['match_date']),
       rawTime,
       kickoffAt: (m['kickoff_at'] ?? m['kickoffAt']) as String?,
+      kickoffTzSource: (m['kickoff_tz_source'] ?? m['kickoffTzSource']) as String?,
       now: now,
     );
 

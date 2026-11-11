@@ -45,7 +45,7 @@ void main() {
 
       final info1 = MatchInfoModel.fromMap(jsonDecode(f1.readAsStringSync()) as Map<String, dynamic>);
       expect(info1.channel, 'بي إن سبورت 1');
-      expect(info1.commentator, 'التفاصيل');
+      expect(info1.commentator, isNull); // 'التفاصيل' is properly cleaned to null as a placeholder
 
       final info2 = MatchInfoModel.fromMap(jsonDecode(f2.readAsStringSync()) as Map<String, dynamic>);
       expect(info2.stadium, isNull); // 'غير محدد' is properly cleaned to null

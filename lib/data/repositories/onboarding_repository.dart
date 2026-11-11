@@ -509,21 +509,7 @@ class ApiOnboardingRepository implements OnboardingRepository {
         queryParameters: {'type': 'leagues'},
       );
 
-      List<LeagueModel> leagues = [];
-      if (response is Map<String, dynamic>) {
-        final list = response['leagues'] ?? response['data'];
-        if (list is List) {
-          leagues = list
-              .whereType<Map<String, dynamic>>()
-              .map((m) => LeagueModel.fromMap(m))
-              .toList();
-        }
-      } else if (response is List) {
-        leagues = response
-            .whereType<Map<String, dynamic>>()
-            .map((m) => LeagueModel.fromMap(m))
-            .toList();
-      }
+      final leagues = LeagueModel.fromListOrMap(response);
 
       if (leagues.isNotEmpty) {
         // Cache locally for offline resilience
@@ -583,21 +569,7 @@ class ApiOnboardingRepository implements OnboardingRepository {
         queryParameters: {'type': 'teams', 'league_id': leagueId},
       );
 
-      List<TeamModel> teams = [];
-      if (response is Map<String, dynamic>) {
-        final list = response['teams'] ?? response['data'];
-        if (list is List) {
-          teams = list
-              .whereType<Map<String, dynamic>>()
-              .map((m) => TeamModel.fromMap(m))
-              .toList();
-        }
-      } else if (response is List) {
-        teams = response
-            .whereType<Map<String, dynamic>>()
-            .map((m) => TeamModel.fromMap(m))
-            .toList();
-      }
+      final teams = TeamModel.fromListOrMap(response);
 
       if (teams.isNotEmpty) {
         final serialized = jsonEncode(teams.map((t) => t.toMap()).toList());

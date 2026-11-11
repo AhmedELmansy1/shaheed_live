@@ -32,6 +32,16 @@ class KickoffTime {
   /// Authoritative source timezone constant matching upstream provider.
   static const String sourceTimezone = upstreamFeedTimeZone;
 
+  /// The sole trusted upstream source for absolute kickoff timestamp (proven YsScores match details).
+  /// Any other source (e.g. 'cairo_riyadh_feed_utc3') or absent source cannot be trusted as absolute UTC.
+  static const String trustedKickoffTzSource = 'ys_match_datetime_input';
+
+  /// Evaluates whether [source] is proven and trusted to provide an absolute kickoff timestamp.
+  static bool isTrustedKickoffSource(String? source) {
+    if (source == null) return false;
+    return source.trim().toLowerCase() == trustedKickoffTzSource;
+  }
+
   static bool _timezonesInitialized = false;
 
   static void _ensureTimezonesInitialized() {
@@ -97,13 +107,17 @@ class KickoffTime {
   }
 
   /// Converts the match kickoff time to a true UTC instant.
-  /// If [kickoffAt] is provided and valid ISO 8601 (with offset or Z), it is used as source of truth.
+  /// If [kickoffAt] is provided, it is trusted ONLY when [kickoffTzSource] equals 'ys_match_datetime_input'.
+  /// For any other source or missing source, [kickoffAt] is ignored and date+time is parsed in Africa/Cairo.
   static DateTime? toUtc(
     String? rawDate,
     String? rawTime, {
     String? kickoffAt,
+    String? kickoffTzSource,
   }) {
-    if (kickoffAt != null && kickoffAt.trim().isNotEmpty) {
+    if (isTrustedKickoffSource(kickoffTzSource) &&
+        kickoffAt != null &&
+        kickoffAt.trim().isNotEmpty) {
       try {
         final parsed = DateTime.tryParse(kickoffAt.trim());
         if (parsed != null) {
@@ -119,14 +133,20 @@ class KickoffTime {
 
   /// Converts the match kickoff time to the device's local [DateTime],
   /// applying the optional [offsetHours] (or [globalOffsetHours] if 0).
-  /// If [kickoffAt] is provided and valid ISO 8601, it is used as source of truth.
+  /// Respects [kickoffTzSource] trust rules.
   static DateTime? toLocal(
     String? rawDate,
     String? rawTime, {
     String? kickoffAt,
+    String? kickoffTzSource,
     int offsetHours = 0,
   }) {
-    final utc = toUtc(rawDate, rawTime, kickoffAt: kickoffAt);
+    final utc = toUtc(
+      rawDate,
+      rawTime,
+      kickoffAt: kickoffAt,
+      kickoffTzSource: kickoffTzSource,
+    );
     if (utc == null) return null;
 
     var localDt = utc.toLocal();
@@ -141,15 +161,22 @@ class KickoffTime {
 
   /// Converts the kickoff time to a [tz.TZDateTime] in the specified target timezone
   /// (defaults to [tz.local]), incorporating the admin offset.
+  /// Respects [kickoffTzSource] trust rules.
   /// Used for accurate [FlutterLocalNotificationsPlugin] scheduling.
   static tz.TZDateTime? toTargetTZ(
     String? rawDate,
     String? rawTime, {
     String? kickoffAt,
+    String? kickoffTzSource,
     tz.Location? targetLocation,
     int offsetHours = 0,
   }) {
-    final utc = toUtc(rawDate, rawTime, kickoffAt: kickoffAt);
+    final utc = toUtc(
+      rawDate,
+      rawTime,
+      kickoffAt: kickoffAt,
+      kickoffTzSource: kickoffTzSource,
+    );
     if (utc == null) return null;
 
     final loc = targetLocation ?? tz.local;
@@ -169,16 +196,27 @@ class KickoffTime {
     String? rawDate,
     String? rawTime, {
     String? kickoffAt,
+    String? kickoffTzSource,
     int offsetHours = 0,
   }) {
-    if ((rawDate == null || rawDate.isEmpty) && (kickoffAt == null || kickoffAt.isEmpty)) {
+    final trustedKickoff =
+        isTrustedKickoffSource(kickoffTzSource) ? kickoffAt : null;
+    if ((rawDate == null || rawDate.isEmpty) &&
+        (trustedKickoff == null || trustedKickoff.isEmpty)) {
       return '----';
     }
-    if (isTimeTbd(rawTime) && (kickoffAt == null || kickoffAt.isEmpty)) {
+    if (isTimeTbd(rawTime) &&
+        (trustedKickoff == null || trustedKickoff.isEmpty)) {
       return 'غير محدد';
     }
 
-    final localDt = toLocal(rawDate, rawTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
+    final localDt = toLocal(
+      rawDate,
+      rawTime,
+      kickoffAt: trustedKickoff,
+      kickoffTzSource: kickoffTzSource,
+      offsetHours: offsetHours,
+    );
     if (localDt != null) {
       try {
         final formatted = DateFormat('h:mm a', 'ar').format(localDt);
@@ -216,12 +254,21 @@ class KickoffTime {
     String? rawDate,
     String? rawTime, {
     String? kickoffAt,
+    String? kickoffTzSource,
     DateTime? now,
     int offsetHours = 0,
   }) {
-    if (isTimeTbd(rawTime) && (kickoffAt == null || kickoffAt.isEmpty)) return null;
+    final trustedKickoff =
+        isTrustedKickoffSource(kickoffTzSource) ? kickoffAt : null;
+    if (isTimeTbd(rawTime) && (trustedKickoff == null || trustedKickoff.isEmpty)) return null;
 
-    final kickoffLocal = toLocal(rawDate, rawTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
+    final kickoffLocal = toLocal(
+      rawDate,
+      rawTime,
+      kickoffAt: trustedKickoff,
+      kickoffTzSource: kickoffTzSource,
+      offsetHours: offsetHours,
+    );
     if (kickoffLocal == null) return null;
 
     final current = now ?? DateTime.now();

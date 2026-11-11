@@ -648,8 +648,26 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
                         _buildInfoRow('المباراة', '${_firstLoadedMatch!.homeTeamName} × ${_firstLoadedMatch!.awayTeamName}'),
                         _buildInfoRow('التاريخ والوقت الخام', '${_firstLoadedMatch!.matchDate ?? '----'} / ${_firstLoadedMatch!.matchTime ?? '----'}'),
                         _buildInfoRow('حقل kickoff_at', _firstLoadedMatch!.kickoffAt ?? 'غير متوفر في كائن المباراة'),
-                        _buildInfoRow('المنطقة الزمنية المفترضة', KickoffTime.upstreamFeedTimeZone),
-                        _buildInfoRow('لحظة UTC المحسوبة', _firstLoadedMatch!.kickoffUtcDateTime?.toIso8601String() ?? 'غير متاح'),
+                        _buildInfoRow('مصدر توقيت الانطلاق (kickoff_tz_source)', _firstLoadedMatch!.kickoffTzSource ?? 'غير محدد (غير موثوق)'),
+                        _buildInfoRow('لحظة UTC من حقل kickoff_at', _firstLoadedMatch!.rawKickoffAtUtcDateTime?.toIso8601String() ?? 'غير متاح'),
+                        _buildInfoRow('لحظة UTC من تحليل القاهرة', _firstLoadedMatch!.cairoParsedUtcDateTime?.toIso8601String() ?? 'غير متاح'),
+                        () {
+                          final rawUtc = _firstLoadedMatch!.rawKickoffAtUtcDateTime;
+                          final cairoUtc = _firstLoadedMatch!.cairoParsedUtcDateTime;
+                          if (rawUtc != null && cairoUtc != null) {
+                            final diff = rawUtc.difference(cairoUtc).inMinutes;
+                            final isTrusted = KickoffTime.isTrustedKickoffSource(_firstLoadedMatch!.kickoffTzSource);
+                            if (diff != 0) {
+                              return _buildInfoRow(
+                                'مقارنة التوقيتين (الفارق بالدقائق)',
+                                '⚠️ تباين $diff دقيقة (${isTrusted ? "مصدر موثوق: اعتُمد kickoff_at" : "مصدر غير موثوق: تم تجاهل kickoff_at واعتماد تحليل القاهرة"})',
+                              );
+                            }
+                            return _buildInfoRow('مقارنة التوقيتين (الفارق بالدقائق)', '✅ متطابق بالكامل (الفرق 0 دقيقة)');
+                          }
+                          return _buildInfoRow('مقارنة التوقيتين (الفارق بالدقائق)', 'غير متاح (أحد التوقيتين غير متوفر)');
+                        }(),
+                        _buildInfoRow('لحظة UTC المعتمدة بالتطبيق', _firstLoadedMatch!.kickoffUtcDateTime?.toIso8601String() ?? 'غير متاح'),
                         _buildInfoRow('التوقيت المعروض بالتطبيق', _firstLoadedMatch!.formattedLocalTime),
                         _buildInfoRow('إزاحة التوقيت النشطة (Offset)', '${KickoffTime.globalOffsetHours} ساعة'),
                       ],

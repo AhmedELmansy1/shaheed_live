@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/utils/kickoff_time.dart';
 import '../api/match_score_api.dart' as api;
+import 'match_info_model.dart';
 
 /// Enum representing the normalized lifecycle status of a football match.
 enum MatchStatus { notStarted, live, paused, finished, postponed, cancelled }
@@ -104,6 +105,8 @@ class MatchModel {
   final String? channel;
   final String? commentator;
   final String? kickoffAt;
+  final String? kickoffTzSource;
+  final bool? kickoffKnown;
 
   const MatchModel({
     required this.matchId,
@@ -122,6 +125,8 @@ class MatchModel {
     this.channel,
     this.commentator,
     this.kickoffAt,
+    this.kickoffTzSource,
+    this.kickoffKnown,
   });
 
   // Convenience Getters for presentation layer
@@ -138,16 +143,56 @@ class MatchModel {
   String? get leagueLogo => championship.image;
   bool get isFinished => status == MatchStatus.finished;
   String get displayDate => matchDate ?? '';
-  String get formattedLocalTime =>
-      KickoffTime.format(matchDate, matchTime, kickoffAt: kickoffAt);
-  String formatLocalTime({int offsetHours = 0}) =>
-      KickoffTime.format(matchDate, matchTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
+
+  /// Determines whether the match has a confirmed, known kickoff time.
+  bool get isKickoffTimeKnown {
+    if (kickoffKnown != null) return kickoffKnown!;
+    return !KickoffTime.isTimeTbd(matchTime);
+  }
+
+  String get formattedLocalTime => formatLocalTime();
+
+  String formatLocalTime({int offsetHours = 0}) {
+    if (status == MatchStatus.finished) {
+      if (!isKickoffTimeKnown) {
+        if (matchDate != null && matchDate!.trim().isNotEmpty) {
+          final parsedDate = DateTime.tryParse(matchDate!.trim());
+          if (parsedDate != null) {
+            return DateFormatter.formatShortDate(parsedDate);
+          }
+          return matchDate!.trim();
+        }
+        return 'منتهية';
+      }
+    }
+    if (status == MatchStatus.notStarted) {
+      if (!isKickoffTimeKnown) {
+        return 'غير محدد';
+      }
+    }
+    return KickoffTime.format(
+      matchDate,
+      matchTime,
+      kickoffAt: kickoffAt,
+      kickoffTzSource: kickoffTzSource,
+      offsetHours: offsetHours,
+    );
+  }
+
   DateTime? get kickoffDateTime =>
-      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt);
+      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt, kickoffTzSource: kickoffTzSource);
   DateTime? getKickoffDateTime({int offsetHours = 0}) =>
-      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
+      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt, kickoffTzSource: kickoffTzSource, offsetHours: offsetHours);
   DateTime? get kickoffUtcDateTime =>
-      KickoffTime.toUtc(matchDate, matchTime, kickoffAt: kickoffAt);
+      KickoffTime.toUtc(matchDate, matchTime, kickoffAt: kickoffAt, kickoffTzSource: kickoffTzSource);
+
+  DateTime? get cairoParsedUtcDateTime =>
+      KickoffTime.parseCairo(matchDate, matchTime)?.toUtc();
+
+  DateTime? get rawKickoffAtUtcDateTime {
+    if (kickoffAt == null || kickoffAt!.trim().isEmpty) return null;
+    return DateTime.tryParse(kickoffAt!.trim())?.toUtc();
+  }
 
   /// Formatted remaining countdown to kickoff (e.g. "متبقي 2 س و 15 د", "متبقي 45 دقيقة").
   String get remainingTimeUntilKickoff =>
@@ -321,14 +366,23 @@ class MatchModel {
       adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
       adminTitle: resolvedAdminTitle,
       eventStatus: (map['event_status'] as String?)?.toLowerCase(),
-      channel: (rawChannel != null && rawChannel.isNotEmpty && rawChannel != 'null')
+      channel: (rawChannel != null &&
+              rawChannel.isNotEmpty &&
+              rawChannel != 'null' &&
+              !MatchInfoModel.isPlaceholder(rawChannel))
           ? rawChannel
           : null,
-      commentator:
-          (rawCommentator != null && rawCommentator.isNotEmpty && rawCommentator != 'null')
-              ? rawCommentator
-              : null,
+      commentator: (rawCommentator != null &&
+              rawCommentator.isNotEmpty &&
+              rawCommentator != 'null' &&
+              !MatchInfoModel.isPlaceholder(rawCommentator))
+          ? rawCommentator
+          : null,
       kickoffAt: (map['kickoff_at'] ?? map['kickoffAt'])?.toString().trim(),
+      kickoffTzSource:
+          (map['kickoff_tz_source'] ?? map['kickoffTzSource'])?.toString().trim(),
+      kickoffKnown:
+          (map['kickoff_known'] as bool?) ?? (map['kickoffKnown'] as bool?),
     );
   }
 }

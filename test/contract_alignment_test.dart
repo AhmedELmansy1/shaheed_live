@@ -1,12 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shoot_live/core/services/notification_deduplicator.dart';
 import 'package:shoot_live/data/api/match_score_api.dart';
+import 'package:shoot_live/data/models/league_model.dart';
+import 'package:shoot_live/data/models/match_info_model.dart';
 import 'package:shoot_live/data/models/match_model.dart';
 import 'package:shoot_live/data/models/match_stream_model.dart';
 import 'package:shoot_live/data/models/poll_model.dart';
 import 'package:shoot_live/data/models/sponsorship_model.dart';
+import 'package:shoot_live/data/models/team_model.dart';
 import 'package:shoot_live/data/models/ticker_config_model.dart';
 import 'package:shoot_live/data/models/tv_channel_model.dart';
 
@@ -345,21 +351,36 @@ void main() {
   });
 
   group('5. Kickoff Time & kickoff_at Tests', () {
-    test('kickoff_at ISO 8601 string is used as authoritative single source of truth', () {
+    test('kickoff_at ISO 8601 string is used when proven with ys_match_datetime_input', () {
       // ISO 8601 string with UTC Z
       const kickoffAtUtc = '2026-11-11T18:00:00Z';
-      final utcInstant = KickoffTime.toUtc(null, null, kickoffAt: kickoffAtUtc);
+      final utcInstant = KickoffTime.toUtc(
+        null,
+        null,
+        kickoffAt: kickoffAtUtc,
+        kickoffTzSource: 'ys_match_datetime_input',
+      );
       expect(utcInstant, isNotNull);
       expect(utcInstant!.toIso8601String(), '2026-11-11T18:00:00.000Z');
 
       // ISO 8601 string with offset (e.g. UTC+3)
       const kickoffAtOffset = '2026-11-11T21:00:00+03:00';
-      final parsedWithOffset = KickoffTime.toUtc(null, null, kickoffAt: kickoffAtOffset);
+      final parsedWithOffset = KickoffTime.toUtc(
+        null,
+        null,
+        kickoffAt: kickoffAtOffset,
+        kickoffTzSource: 'ys_match_datetime_input',
+      );
       expect(parsedWithOffset, isNotNull);
       expect(parsedWithOffset!.toIso8601String(), '2026-11-11T18:00:00.000Z');
 
       // Local conversion
-      final localDt = KickoffTime.toLocal(null, null, kickoffAt: kickoffAtUtc);
+      final localDt = KickoffTime.toLocal(
+        null,
+        null,
+        kickoffAt: kickoffAtUtc,
+        kickoffTzSource: 'ys_match_datetime_input',
+      );
       expect(localDt, isNotNull);
       expect(localDt!.toUtc(), DateTime.utc(2026, 11, 11, 18, 0, 0));
     });
@@ -372,31 +393,338 @@ void main() {
       expect(utcInstant.minute, 0);
     });
 
-    test('Offsets +1, -1, 0 are applied accurately to local time', () {
-      const kickoffAt = '2026-11-11T18:00:00Z';
-      final base = KickoffTime.toLocal(null, null, kickoffAt: kickoffAt, offsetHours: 0)!;
-      final plusOne = KickoffTime.toLocal(null, null, kickoffAt: kickoffAt, offsetHours: 1)!;
-      final minusOne = KickoffTime.toLocal(null, null, kickoffAt: kickoffAt, offsetHours: -1)!;
+    test('KickoffTime toLocal with offset calculation', () {
+      final base = KickoffTime.toLocal('2026-11-11', '18:00:00', offsetHours: 0)!;
+      final plusOne = KickoffTime.toLocal('2026-11-11', '18:00:00', offsetHours: 1)!;
+      final minusOne = KickoffTime.toLocal('2026-11-11', '18:00:00', offsetHours: -1)!;
 
       expect(plusOne.difference(base), const Duration(hours: 1));
       expect(base.difference(minusOne), const Duration(hours: 1));
     });
 
-    test('MatchModel forwards kickoffAt to kickoffDateTime and formattedLocalTime', () {
+    test('MatchModel forwards kickoffAt when kickoff_tz_source is ys_match_datetime_input', () {
       final matchMap = {
         'id': 12345,
         'match_date': '2026-11-11',
         'match_time': '18:00:00',
         'kickoff_at': '2026-11-11T17:30:00Z',
+        'kickoff_tz_source': 'ys_match_datetime_input',
         'home_team': {'name': 'ريال مدريد'},
         'away_team': {'name': 'برشلونة'},
       };
 
       final match = MatchModel.fromMap(matchMap);
       expect(match.kickoffAt, '2026-11-11T17:30:00Z');
+      expect(match.kickoffTzSource, 'ys_match_datetime_input');
       expect(match.kickoffUtcDateTime, DateTime.utc(2026, 11, 11, 17, 30, 0));
       expect(match.formattedLocalTime, isNotEmpty);
       expect(match.formattedLocalTime, isNot('غير محدد'));
+    });
+  });
+
+  group('5. Trust kickoff_at only when proven (kickoff_tz_source tests)', () {
+    test('1. Trusted source "ys_match_datetime_input": accepts kickoff_at as absolute UTC', () {
+      const kickoffAt = '2026-11-11T15:00:00Z';
+      const tzSource = 'ys_match_datetime_input';
+
+      // 18:00 Cairo in winter (Nov) is 16:00 UTC. But kickoff_at is 15:00 UTC.
+      final utc = KickoffTime.toUtc(
+        '2026-11-11',
+        '18:00:00',
+        kickoffAt: kickoffAt,
+        kickoffTzSource: tzSource,
+      );
+
+      expect(utc, equals(DateTime.utc(2026, 11, 11, 15, 0, 0)));
+    });
+
+    test('2. Unproven source "cairo_riyadh_feed_utc3": ignores kickoff_at, parses Cairo date+time', () {
+      const kickoffAt = '2026-11-11T15:00:00Z'; // Emitted with assumed UTC+3
+      const tzSource = 'cairo_riyadh_feed_utc3';
+
+      // Cairo in winter (Nov) is UTC+2: 18:00 Cairo -> 16:00 UTC.
+      final utc = KickoffTime.toUtc(
+        '2026-11-11',
+        '18:00:00',
+        kickoffAt: kickoffAt,
+        kickoffTzSource: tzSource,
+      );
+
+      // kickoff_at is ignored! Parsed Cairo is 16:00 UTC.
+      expect(utc, equals(DateTime.utc(2026, 11, 11, 16, 0, 0)));
+    });
+
+    test('3. Missing or unknown kickoff_tz_source: ignores kickoff_at, parses Cairo date+time', () {
+      const kickoffAt = '2026-11-11T15:00:00Z';
+
+      final utcWithoutSource = KickoffTime.toUtc(
+        '2026-11-11',
+        '18:00:00',
+        kickoffAt: kickoffAt,
+      );
+      expect(utcWithoutSource, equals(DateTime.utc(2026, 11, 11, 16, 0, 0)));
+
+      final utcWithUnknown = KickoffTime.toUtc(
+        '2026-11-11',
+        '18:00:00',
+        kickoffAt: kickoffAt,
+        kickoffTzSource: 'some_arbitrary_source',
+      );
+      expect(utcWithUnknown, equals(DateTime.utc(2026, 11, 11, 16, 0, 0)));
+    });
+
+    test('4. Case-insensitive and trimmed source recognition', () {
+      expect(KickoffTime.isTrustedKickoffSource('  YS_MATCH_DATETIME_INPUT  '), isTrue);
+      expect(KickoffTime.isTrustedKickoffSource('ys_match_datetime_input'), isTrue);
+      expect(KickoffTime.isTrustedKickoffSource('cairo_riyadh_feed_utc3'), isFalse);
+      expect(KickoffTime.isTrustedKickoffSource(null), isFalse);
+    });
+
+    test('5. MatchModel Diagnostics fields: computes difference between raw and Cairo UTC', () {
+      final match = MatchModel.fromMap({
+        'id': 777,
+        'match_date': '2026-11-11',
+        'match_time': '18:00:00',
+        'kickoff_at': '2026-11-11T15:00:00Z',
+        'kickoff_tz_source': 'cairo_riyadh_feed_utc3',
+      });
+
+      expect(match.rawKickoffAtUtcDateTime, equals(DateTime.utc(2026, 11, 11, 15, 0, 0)));
+      expect(match.cairoParsedUtcDateTime, equals(DateTime.utc(2026, 11, 11, 16, 0, 0)));
+
+      final diffMinutes = match.rawKickoffAtUtcDateTime!.difference(match.cairoParsedUtcDateTime!).inMinutes;
+      expect(diffMinutes, equals(-60)); // Disagrees by 1 hour (60 minutes)
+
+      // Verified: effective kickoffUtcDateTime ignores the unproven source
+      expect(match.kickoffUtcDateTime, equals(match.cairoParsedUtcDateTime));
+    });
+  });
+
+  group('6. TBD Must Never Hide A Real Result Tests', () {
+    test('1. Finished match from dashboard fixture (5795507 with time 00:00:00 and score 1-3)', () {
+      final fixtureFile = File('test/fixtures/dashboard_matches_by_date_sample.json');
+      expect(fixtureFile.existsSync(), isTrue);
+
+      final decoded = jsonDecode(fixtureFile.readAsStringSync()) as List<dynamic>;
+      final matchRaw = decoded.firstWhere((m) => m['match_id'] == 5795507) as Map<String, dynamic>;
+
+      final match = MatchModel.fromMap(matchRaw);
+
+      // Must be finished
+      expect(match.status, equals(MatchStatus.finished));
+      expect(match.isFinished, isTrue);
+
+      // Score must be preserved and never hidden
+      expect(match.homeScore, equals('1'));
+      expect(match.awayScore, equals('3'));
+
+      // For finished match with unknown/00:00:00 time, formattedLocalTime displays the date
+      expect(match.formattedLocalTime, isNot('غير محدد'));
+      expect(match.formattedLocalTime, contains('نوفمبر')); // 8 نوفمبر
+    });
+
+    test('2. Finished match 5795506 (Brighton vs Brentford, 2-0, 00:00:00)', () {
+      final fixtureFile = File('test/fixtures/dashboard_matches_by_date_sample.json');
+      final decoded = jsonDecode(fixtureFile.readAsStringSync()) as List<dynamic>;
+      final matchRaw = decoded.firstWhere((m) => m['match_id'] == 5795506) as Map<String, dynamic>;
+
+      final match = MatchModel.fromMap(matchRaw);
+
+      expect(match.status, equals(MatchStatus.finished));
+      expect(match.homeScore, equals('2'));
+      expect(match.awayScore, equals('0'));
+      expect(match.formattedLocalTime, isNot('غير محدد'));
+    });
+
+    test('3. Not-started match with 00:00:00 time shows "غير محدد" and no scores', () {
+      final match = MatchModel.fromMap({
+        'id': 8881,
+        'match_date': '2026-11-15',
+        'match_time': '00:00:00',
+        'status': '0',
+        'event_status': 'not_started',
+        'home_scores': 0,
+        'away_scores': 0,
+      });
+
+      expect(match.status, equals(MatchStatus.notStarted));
+      expect(match.homeScore, isNull);
+      expect(match.awayScore, isNull);
+      expect(match.formattedLocalTime, equals('غير محدد'));
+    });
+
+    test('4. kickoff_known flag handling', () {
+      // kickoff_known == false on not-started match
+      final unstartedUnknown = MatchModel.fromMap({
+        'id': 8882,
+        'match_date': '2026-11-15',
+        'match_time': '16:00:00',
+        'status': '0',
+        'kickoff_known': false,
+      });
+      expect(unstartedUnknown.isKickoffTimeKnown, isFalse);
+      expect(unstartedUnknown.formattedLocalTime, equals('غير محدد'));
+
+      // kickoff_known == false on finished match -> shows date, never "غير محدد"
+      final finishedUnknown = MatchModel.fromMap({
+        'id': 8883,
+        'match_date': '2026-11-15',
+        'match_time': '16:00:00',
+        'status': '4',
+        'home_scores': 2,
+        'away_scores': 1,
+        'kickoff_known': false,
+      });
+      expect(finishedUnknown.isKickoffTimeKnown, isFalse);
+      expect(finishedUnknown.homeScore, equals('2'));
+      expect(finishedUnknown.awayScore, equals('1'));
+      expect(finishedUnknown.formattedLocalTime, isNot('غير محدد'));
+      expect(finishedUnknown.formattedLocalTime, contains('نوفمبر'));
+    });
+  });
+
+  group('7. Tolerant Parsing of API Shapes (Leagues & Teams)', () {
+    test('1. Leagues from dashboard fixture (wrapped envelope with "leagues")', () {
+      final fixtureFile = File('test/fixtures/dashboard_leagues_sample.json');
+      expect(fixtureFile.existsSync(), isTrue);
+
+      final decoded = jsonDecode(fixtureFile.readAsStringSync());
+      final leagues = LeagueModel.fromListOrMap(decoded);
+
+      expect(leagues.length, equals(2));
+      expect(leagues[0].id, equals('943009'));
+      expect(leagues[0].name, equals('الدوري المصري'));
+      expect(leagues[0].country, equals('مصر'));
+      expect(leagues[0].logoUrl, isNull); // Empty logo in sample
+
+      expect(leagues[1].id, equals('937599'));
+      expect(leagues[1].name, equals('الدوري الإنجليزي الممتاز'));
+      expect(leagues[1].logoUrl, equals('https://imgs.ysscores.com/championship/48/3411694791422.png'));
+    });
+
+    test('2. Leagues from plain array with title/image variations', () {
+      final plainList = [
+        {
+          'id': 100,
+          'title': 'دوري أبطال أوروبا',
+          'image': 'https://imgs.ysscores.com/ucl.png',
+        },
+        {
+          'id': 200,
+          'name': 'الدوري الإسباني',
+          'logo': 'https://imgs.ysscores.com/laliga.png',
+        }
+      ];
+
+      final leagues = LeagueModel.fromListOrMap(plainList);
+      expect(leagues.length, equals(2));
+      expect(leagues[0].id, equals('100'));
+      expect(leagues[0].name, equals('دوري أبطال أوروبا'));
+      expect(leagues[0].logoUrl, equals('https://imgs.ysscores.com/ucl.png'));
+
+      expect(leagues[1].id, equals('200'));
+      expect(leagues[1].name, equals('الدوري الإسباني'));
+      expect(leagues[1].logoUrl, equals('https://imgs.ysscores.com/laliga.png'));
+    });
+
+    test('3. Teams from dashboard fixture (wrapped envelope with "teams")', () {
+      final fixtureFile = File('test/fixtures/dashboard_teams_sample.json');
+      expect(fixtureFile.existsSync(), isTrue);
+
+      final decoded = jsonDecode(fixtureFile.readAsStringSync());
+      final teams = TeamModel.fromListOrMap(decoded);
+
+      expect(teams.length, equals(2));
+      expect(teams[0].id, equals('293352'));
+      expect(teams[0].name, equals('آنسي'));
+      expect(teams[0].logoUrl, equals('https://imgs.ysscores.com/teams/64/5121690370573.png'));
+      expect(teams[0].leagueId, equals('952414'));
+
+      expect(teams[1].id, equals('8640'));
+      expect(teams[1].name, equals('آيندهوفن'));
+      expect(teams[1].leagueId, equals('937276'));
+    });
+
+    test('4. Teams from plain array with title/image/team_name variations', () {
+      final plainList = [
+        {
+          'row_id': 99,
+          'title': 'ريال مدريد',
+          'image': 'https://imgs.ysscores.com/rm.png',
+          'champ_id': 43,
+        },
+        {
+          'team_id': 88,
+          'team_name': 'برشلونة',
+          'logo': 'https://imgs.ysscores.com/fcb.png',
+          'league_id': 43,
+        }
+      ];
+
+      final teams = TeamModel.fromListOrMap(plainList);
+      expect(teams.length, equals(2));
+      expect(teams[0].id, equals('99'));
+      expect(teams[0].name, equals('ريال مدريد'));
+      expect(teams[0].logoUrl, equals('https://imgs.ysscores.com/rm.png'));
+      expect(teams[0].leagueId, equals('43'));
+
+      expect(teams[1].id, equals('88'));
+      expect(teams[1].name, equals('برشلونة'));
+      expect(teams[1].logoUrl, equals('https://imgs.ysscores.com/fcb.png'));
+      expect(teams[1].leagueId, equals('43'));
+    });
+  });
+
+  group('8. match_info Placeholder Filtering Tests', () {
+    test('1. Dashboard match_info sample: filters "غير محدد", "التفاصيل", and empty strings', () {
+      final fixtureFile = File('test/fixtures/dashboard_match_info_sample.json');
+      expect(fixtureFile.existsSync(), isTrue);
+
+      final decoded = jsonDecode(fixtureFile.readAsStringSync()) as Map<String, dynamic>;
+      final info = MatchInfoModel.fromMap(decoded);
+
+      expect(info.matchId, equals(5795507));
+      // In fixture: "stadium": "غير محدد"
+      expect(info.stadium, isNull);
+      // In fixture: "commentator": "التفاصيل"
+      expect(info.commentator, isNull);
+      // In fixture: "referee": ""
+      expect(info.refereeName, isNull);
+      // In fixture: "channel": "بي إن سبورت 1"
+      expect(info.channel, equals('بي إن سبورت 1'));
+    });
+
+    test('2. Exhaustive placeholder filtering in MatchInfoModel', () {
+      for (final ph in ['-', '--', '---', '----', '—', 'null', 'undefined', 'غير محدد', 'التفاصيل', 'تفاصيل', 'معلومات', 'لا يوجد', 'لم يحدد']) {
+        expect(MatchInfoModel.isPlaceholder(ph), isTrue, reason: 'Failed for placeholder "$ph"');
+        expect(MatchInfoModel.isPlaceholder('  $ph  '), isTrue, reason: 'Failed for trimmed placeholder "$ph"');
+      }
+
+      // Valid names must not be treated as placeholders
+      expect(MatchInfoModel.isPlaceholder('عصام الشوالي'), isFalse);
+      expect(MatchInfoModel.isPlaceholder('استاد القاهرة الدولي'), isFalse);
+      expect(MatchInfoModel.isPlaceholder('محمد عادل'), isFalse);
+      expect(MatchInfoModel.isPlaceholder('beIN Sports 1'), isFalse);
+    });
+
+    test('3. MatchModel filters channel and commentator placeholders on construction', () {
+      final match = MatchModel.fromMap({
+        'id': 1001,
+        'channel': 'التفاصيل',
+        'commentator': 'غير محدد',
+      });
+
+      expect(match.channel, isNull);
+      expect(match.commentator, isNull);
+
+      final validMatch = MatchModel.fromMap({
+        'id': 1002,
+        'channel': 'SSC Extra 1',
+        'commentator': 'فارس عوض',
+      });
+
+      expect(validMatch.channel, equals('SSC Extra 1'));
+      expect(validMatch.commentator, equals('فارس عوض'));
     });
   });
 }
