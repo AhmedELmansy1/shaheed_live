@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ignore_for_file: unused_local_variable
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shoot_live/core/config/app_constants.dart';
 import 'package:shoot_live/core/theme/theme_provider.dart';
 import 'package:shoot_live/core/utils/match_share_helper.dart';
+import 'package:shoot_live/core/utils/timezone_helper.dart';
 import 'package:shoot_live/data/models/match_model.dart';
 import 'package:shoot_live/presentation/home/providers/matches_provider.dart';
 import 'package:shoot_live/presentation/onboarding/providers/onboarding_provider.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('ar', null);
+    await TimezoneHelper.init();
+  });
 
   group('FEATURE 3: Light / Dark Theme Mode Provider Tests', () {
     test('Default theme mode is dark and persists changes', () async {

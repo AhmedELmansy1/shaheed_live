@@ -10,6 +10,7 @@ import '../../data/api/match_score_api.dart';
 import '../../data/models/match_model.dart';
 import '../../presentation/onboarding/providers/onboarding_provider.dart';
 import '../utils/date_formatter.dart';
+import '../utils/kickoff_time.dart';
 import '../utils/match_filter_helper.dart';
 import 'notification_service.dart';
 import 'team_resolver_service.dart';
@@ -693,40 +694,7 @@ class MatchReminderService {
   }
 
   tz.TZDateTime? _computeKickoffTime(String? matchDate, String? matchTime) {
-    if (matchDate == null ||
-        matchTime == null ||
-        matchDate.isEmpty ||
-        matchTime.isEmpty) {
-      return null;
-    }
-    try {
-      final dateParts = matchDate.trim().split('-');
-      final timeParts = matchTime.trim().split(':');
-
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
-      final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
-
-      final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
-      final sourceTZDateTime = tz.TZDateTime(
-        sourceLocation,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-      );
-
-      final localDateTime = sourceTZDateTime.toLocal();
-      return tz.TZDateTime.from(localDateTime, tz.local);
-    } catch (e) {
-      debugPrint('[MatchReminder] Error parsing match date/time: $e');
-      return null;
-    }
+    return KickoffTime.toTargetTZ(matchDate, matchTime);
   }
 
   Future<bool> isReminderSet(int matchId) async {

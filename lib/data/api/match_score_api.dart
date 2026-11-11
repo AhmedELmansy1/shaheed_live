@@ -24,7 +24,10 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:timezone/timezone.dart' as tz;
+
+import '../../core/utils/kickoff_time.dart';
+
+export '../../core/utils/kickoff_time.dart';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -103,53 +106,6 @@ class ImageUrls {
 }
 
 // ---------------------------------------------------------------------------
-// Kickoff time  (source timezone -> device local, DST-safe via IANA db)
-// Requires tz.initializeTimeZones() at startup (already done in the app).
-// ---------------------------------------------------------------------------
-class KickoffTime {
-  KickoffTime._();
-
-  static tz.TZDateTime? parse(String? date, String? time) {
-    try {
-      final d = _s(date).split('-');
-      final t = (_s(time).isEmpty ? '00:00:00' : _s(time)).split(':');
-      final loc = tz.getLocation(ApiConfig.sourceTimezone);
-      return tz.TZDateTime(
-        loc,
-        int.parse(d[0]),
-        int.parse(d[1]),
-        int.parse(d[2]),
-        int.parse(t[0]),
-        t.length > 1 ? int.parse(t[1]) : 0,
-        t.length > 2 ? int.parse(t[2]) : 0,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Kickoff as a plain device-local DateTime (null if unparsable).
-  static DateTime? toLocal(String? date, String? time) {
-    final k = parse(date, time);
-    if (k == null) return null;
-    return DateTime.fromMillisecondsSinceEpoch(k.millisecondsSinceEpoch);
-  }
-
-  /// Minutes since kickoff (negative = not started yet). Null if unparsable.
-  static int? minutesSinceKickoff(String? date, String? time, {DateTime? now}) {
-    final k = parse(date, time);
-    if (k == null) return null;
-    final n = (now ?? DateTime.now()).millisecondsSinceEpoch;
-    return ((n - k.millisecondsSinceEpoch) / 60000).floor();
-  }
-
-  static String apiDate(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
-}
-
-// ---------------------------------------------------------------------------
 // Match status  (merges our parseStatus rules + plugin ysip_normalize_match_state)
 // ---------------------------------------------------------------------------
 enum MatchState { notStarted, live, halfTime, finished, postponed, cancelled }
@@ -213,18 +169,25 @@ class MatchStatusResolver {
     // must NEVER be assumed finished just because kickoff time has passed or time difference exists.
     final statusText = _s(m['status_text']).trim();
     final hasStatus = m['status'] != null && _s(m['status']).isNotEmpty;
-    if (badge == 'soon' ||
+    final isExplicitlyNotStarted = badge == 'soon' ||
         ev == 'not_started' ||
         (hasStatus && status == 0) ||
         statusText == 'لم تبدأ' ||
         statusText.contains('لم تبدأ') ||
-        title == 'لم تبدأ') {
+        title == 'لم تبدأ';
+
+    if (isExplicitlyNotStarted) {
+      return mk(MatchState.notStarted);
+    }
+
+    final rawTime = _s(m['match_time']);
+    if (KickoffTime.isTimeTbd(rawTime)) {
       return mk(MatchState.notStarted);
     }
 
     final mins = KickoffTime.minutesSinceKickoff(
       _s(m['match_date']),
-      _s(m['match_time']),
+      rawTime,
       now: now,
     );
 
@@ -232,9 +195,15 @@ class MatchStatusResolver {
     if (liveFlag && mins != null && mins >= 0 && mins <= ApiConfig.liveWindowMinutes) {
       return mk(MatchState.live);
     }
-    // Long past kickoff with no explicit state -> assume finished.
+
+    // Long past kickoff with no explicit state -> assume finished only if:
+    // 1. Kickoff time was valid and NOT TBD (00:00:00 / empty).
+    // 2. The match was NOT unstarted (status 0).
+    // 3. Status text does not say "لم تبدأ".
     if (mins != null && mins > ApiConfig.liveWindowMinutes) {
-      return mk(MatchState.finished);
+      if (status != 0 && ev != 'not_started' && !statusText.contains('لم تبدأ')) {
+        return mk(MatchState.finished);
+      }
     }
     return mk(MatchState.notStarted);
   }

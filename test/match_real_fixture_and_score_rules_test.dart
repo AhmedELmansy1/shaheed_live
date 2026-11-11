@@ -4,13 +4,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shoot_live/core/theme/app_theme.dart';
 import 'package:shoot_live/core/utils/app_number_format.dart';
+import 'package:shoot_live/core/utils/timezone_helper.dart';
 import 'package:shoot_live/data/models/match_model.dart';
 import 'package:shoot_live/presentation/widgets/match_card.dart';
 import 'package:shoot_live/presentation/widgets/score_view.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('ar', null);
+    await TimezoneHelper.init();
+  });
   group('1. Real Cup Match Fixture Tests (test/fixtures/cup_match_11920752.json)', () {
     test('Parses real كأس مصر match fixture without empty team names and formatted scores', () {
       final file = File('test/fixtures/cup_match_11920752.json');

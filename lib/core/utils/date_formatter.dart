@@ -8,17 +8,10 @@ import 'app_number_format.dart';
 ///
 /// API TIMEZONE NOTE:
 /// Raw `match_date` (YYYY-MM-DD) and `match_time` (HH:mm:ss) values returned by the Worker matches API
-/// (https://matches-api.edwardmitrovic.workers.dev/) are served in the timezone defined by
-/// [ApiConfig.sourceTimezone] (currently 'Asia/Riyadh', fixed UTC+3, no DST).
+/// are served in the timezone defined by [ApiConfig.sourceTimezone] ('Africa/Cairo').
 ///
-/// Use [ApiConfig.sourceTimezone] everywhere as the single source-timezone constant.
-/// Converting the source instant to device-local is correct for every country; real kickoff
-/// times can be verified against the debug log.
-///
-/// IANA Timezone Resolution:
-/// Conversion to device local time is performed via [ApiConfig.sourceTimezone] and `tz.TZDateTime`,
-/// avoiding any hardcoded fixed UTC offsets (+03:00). DST rule shifts are resolved
-/// automatically by the `timezone` package database initialized at app startup in `TimezoneHelper.init()`.
+/// Use [KickoffTime] and [ApiConfig.sourceTimezone] everywhere as the single source-timezone constant.
+/// Converting the source instant to device-local is correct for every country.
 ///
 /// Day Bucketing Decision:
 /// All home screen tabs (Yesterday, Today, Tomorrow, Custom Date) compute target date strings (YYYY-MM-DD)
@@ -36,7 +29,7 @@ class DateFormatter {
   }
 
   /// Extracts (hour, minute, second) components defensively from any 12h or 24h string.
-  /// Handles: "20:00:00", "08:00 م", "08:00 ص", "08:00 PM", "08:00 AM", "08:00"
+  /// Handles: "20:00:00", "08:00 م", "08:00 ص", "08:00 PM", "08:00 AM", "08:00", `<i class="mb-meridiem">م</i>`
   static (int hour, int minute, int second) parseTimeComponents(String rawTime) {
     final clean = rawTime.trim();
     final isPM = clean.contains('م') || clean.toLowerCase().contains('pm');
@@ -64,112 +57,14 @@ class DateFormatter {
   /// using IANA data, converts to the device's local timezone, and formats as Arabic time string with Western numerals (e.g., "7:30 م").
   /// An optional [offsetHours] (clamped to [-3, +3]) adjusts for remote timezone/DST overrides without shifting date tabs.
   static String formatMatchTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
-    if (rawDate == null ||
-        rawDate.isEmpty ||
-        rawTime == null ||
-        rawTime.isEmpty) {
-      return '----';
-    }
-
-    final effectiveOffset = offsetHours != 0 ? offsetHours : globalKickoffOffsetHours;
-
-    try {
-      final dateParts = rawDate.trim().split('-');
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-
-      final (hour, minute, second) = parseTimeComponents(rawTime);
-
-      // Construct TZDateTime using the single source timezone constant (NO hardcoded offset)
-      final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
-      final sourceTZDateTime = tz.TZDateTime(
-        sourceLocation,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-      );
-
-      // Convert to local device timezone
-      var localDateTime = sourceTZDateTime.toLocal();
-
-      if (effectiveOffset != 0) {
-        final clamped = effectiveOffset.clamp(-3, 3);
-        localDateTime = localDateTime.add(Duration(hours: clamped));
-      }
-
-      final formatted = DateFormat('h:mm a', 'ar').format(localDateTime);
-      return AppNumberFormat.toLatinNumerals(formatted);
-    } catch (_) {
-      try {
-        final (hour, minute, _) = parseTimeComponents(rawTime);
-        var adjustedHour = hour;
-        if (effectiveOffset != 0) {
-          adjustedHour = (adjustedHour + effectiveOffset.clamp(-3, 3)) % 24;
-          if (adjustedHour < 0) adjustedHour += 24;
-        }
-        final period = adjustedHour >= 12 ? 'م' : 'ص';
-        final displayHour = adjustedHour % 12 == 0 ? 12 : adjustedHour % 12;
-        final minStr = minute.toString().padLeft(2, '0');
-        return AppNumberFormat.toLatinNumerals('$displayHour:$minStr $period');
-      } catch (_) {
-        return AppNumberFormat.toLatinNumerals(rawTime.substring(0, 5));
-      }
-    }
+    return KickoffTime.format(rawDate, rawTime, offsetHours: offsetHours);
   }
 
   /// Parses raw match date (YYYY-MM-DD) and match time (HH:mm:ss) in [ApiConfig.sourceTimezone]
   /// using IANA data, and returns the resolved local device [DateTime].
   /// An optional [offsetHours] (clamped to [-3, +3]) applies remote timezone/DST adjustment.
   static DateTime? parseCairoMatchDateTime(String? rawDate, String? rawTime, {int offsetHours = 0}) {
-    if (rawDate == null ||
-        rawDate.isEmpty ||
-        rawTime == null ||
-        rawTime.isEmpty) {
-      return null;
-    }
-
-    final effectiveOffset = offsetHours != 0 ? offsetHours : globalKickoffOffsetHours;
-
-    try {
-      final dateParts = rawDate.trim().split('-');
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-
-      final (hour, minute, second) = parseTimeComponents(rawTime);
-
-      final sourceLocation = tz.getLocation(ApiConfig.sourceTimezone);
-      final sourceTZDateTime = tz.TZDateTime(
-        sourceLocation,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-      );
-
-      var localDateTime = sourceTZDateTime.toLocal();
-      if (effectiveOffset != 0) {
-        final clamped = effectiveOffset.clamp(-3, 3);
-        localDateTime = localDateTime.add(Duration(hours: clamped));
-      }
-      return localDateTime;
-    } catch (_) {
-      try {
-        var dt = DateTime.parse('${rawDate.trim()} ${rawTime.trim()}');
-        if (offsetHours != 0) {
-          dt = dt.add(Duration(hours: offsetHours.clamp(-3, 3)));
-        }
-        return dt;
-      } catch (_) {
-        return null;
-      }
-    }
+    return KickoffTime.toLocal(rawDate, rawTime, offsetHours: offsetHours);
   }
 
   /// Formats remaining time until kickoff into concise Arabic text:
@@ -179,38 +74,7 @@ class DateFormatter {
   /// - e.g. "متبقي 1 يوم و 3 س"
   /// Returns empty string if match has already started or datetime is null.
   static String formatRemainingKickoff(DateTime? kickoff, {DateTime? now}) {
-    if (kickoff == null) return '';
-    final current = now ?? DateTime.now();
-    final diff = kickoff.difference(current);
-    if (diff.isNegative || diff == Duration.zero) {
-      return '';
-    }
-
-    final totalHours = diff.inHours;
-    final totalMinutes = diff.inMinutes;
-    final remMinutes = totalMinutes % 60;
-
-    if (totalHours >= 24) {
-      final days = diff.inDays;
-      final remHours = totalHours % 24;
-      if (remHours == 0) {
-        return toArabicNumerals('بعد $days أيام');
-      }
-      return toArabicNumerals('متبقي $days يوم و $remHours س');
-    }
-
-    if (totalHours > 0) {
-      if (remMinutes == 0) {
-        return toArabicNumerals('متبقي $totalHours س');
-      }
-      return toArabicNumerals('متبقي $totalHours س و $remMinutes د');
-    }
-
-    if (totalMinutes > 0) {
-      return toArabicNumerals('متبقي $totalMinutes دقيقة');
-    }
-
-    return 'تبدأ خلال لحظات';
+    return KickoffTime.formatRemainingKickoff(kickoff, now: now);
   }
 
   /// Debug-only helper: logs kickoff in source timezone vs device local.

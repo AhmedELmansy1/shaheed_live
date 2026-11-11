@@ -1,8 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shoot_live/core/utils/date_formatter.dart';
+import 'package:shoot_live/core/utils/timezone_helper.dart';
 import 'package:shoot_live/data/models/match_model.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('ar', null);
+    await TimezoneHelper.init();
+  });
   group('Kickoff Time Parsing & 12h/24h Resiliency', () {
     test('parseTimeComponents converts Arabic PM (م) correctly to 24h', () {
       final (hour, minute, _) = DateFormatter.parseTimeComponents('08:00 م');
@@ -85,9 +92,9 @@ void main() {
     });
 
     test('MatchModel remainingTimeUntilKickoff works properly for future match', () {
-      final now = DateTime.now();
-      final futureDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final futureHour = ((now.hour + 3) % 24).toString().padLeft(2, '0');
+      final future = DateTime.now().add(const Duration(hours: 3));
+      final futureDate = '${future.year}-${future.month.toString().padLeft(2, '0')}-${future.day.toString().padLeft(2, '0')}';
+      final futureHour = future.hour.toString().padLeft(2, '0');
 
       final match = MatchModel(
         matchId: 999123,

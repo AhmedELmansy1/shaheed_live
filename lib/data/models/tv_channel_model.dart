@@ -60,9 +60,16 @@ class TvChannelModel {
           ? (map['name'] as String).trim()
           : 'قناة رياضية',
       logoUrl: (map['logo_url'] as String?)?.trim() ?? '',
-      defaultStreamUrl: (map['default_stream_url'] as String?)?.trim() ?? '',
-      defaultPlayerType: TvPlayerType.fromString(map['default_player_type'] as String?),
-      defaultQuality: (map['default_quality'] as String?)?.trim().toLowerCase() ?? 'hd',
+      defaultStreamUrl: (map['default_stream_url'] as String?)?.trim() ??
+          (map['stream_url'] as String?)?.trim() ??
+          (map['url'] as String?)?.trim() ??
+          '',
+      defaultPlayerType: TvPlayerType.fromString(
+        (map['default_player_type'] ?? map['player_type']) as String?,
+      ),
+      defaultQuality:
+          (map['default_quality'] ?? map['quality'])?.toString().trim().toLowerCase() ??
+              'hd',
       isActive: (map['is_active'] as bool?) ?? true,
       order: parsedOrder,
     );
