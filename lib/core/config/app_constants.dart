@@ -1,10 +1,10 @@
 /// Single source of truth for application branding and constants.
 class AppConstants {
   /// Arabic brand display name across all user-facing UI
-  static const String appName = 'شوت لايف';
+  static const String appName = 'شاهد لايف';
 
   /// English brand display name
-  static const String appTitle = 'Shoot Live';
+  static const String appTitle = 'Shahid Live';
 
   static const String defaultLocale = 'ar';
 
