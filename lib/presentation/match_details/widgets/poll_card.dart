@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/poll_service.dart';
 import '../../../core/theme/app_radii.dart';
@@ -364,6 +365,27 @@ class _PollCardState extends ConsumerState<PollCard> {
             style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
           ),
           backgroundColor: context.primary,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } on PollServerException catch (_) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final primaryColor = context.primary;
+      // On 5xx server failure: Gracefully retain the vote locally in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('poll_voted_option_${widget.matchId}', optId);
+      if (!mounted) return;
+      setState(() {
+        _isVoting = false;
+      });
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'تم تسجيل تصويتك بنجاح! شكراً لمشاركتك 🎉',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: primaryColor,
           duration: const Duration(seconds: 3),
         ),
       );

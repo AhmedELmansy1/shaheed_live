@@ -298,6 +298,10 @@ class MatchModel {
       }
     }
 
+    if (computedStatus == MatchStatus.notStarted && resolvedAdminTitle == 'انتهت') {
+      resolvedAdminTitle = null;
+    }
+
     return MatchModel(
       matchId: parseMatchId(map['match_id'] ?? map['id']),
       matchDate: map['match_date'] as String?,
@@ -307,8 +311,8 @@ class MatchModel {
       championship: ChampionshipInfo.fromMap(map['championship']),
       homeTeam: homeTeam,
       awayTeam: awayTeam,
-      homeScore: parseScore(map['home_scores']),
-      awayScore: parseScore(map['away_scores']),
+      homeScore: computedStatus == MatchStatus.notStarted ? null : parseScore(map['home_scores']),
+      awayScore: computedStatus == MatchStatus.notStarted ? null : parseScore(map['away_scores']),
       adminBadge: (map['admin_badge'] as String?)?.toLowerCase(),
       adminTitle: resolvedAdminTitle,
       eventStatus: (map['event_status'] as String?)?.toLowerCase(),

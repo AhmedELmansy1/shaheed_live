@@ -285,7 +285,10 @@ class HeroMatchCard extends ConsumerWidget {
                                       ),
                                     ),
                                     child: Text(
-                                      match.formattedLocalTime,
+                                      (match.formattedLocalTime.isNotEmpty &&
+                                              match.formattedLocalTime != '----')
+                                          ? match.formattedLocalTime
+                                          : 'قريباً',
                                       style: AppTypography.labelLarge(
                                         color: textPrimary,
                                       ).copyWith(

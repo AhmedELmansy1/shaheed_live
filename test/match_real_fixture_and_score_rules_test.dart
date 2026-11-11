@@ -236,5 +236,47 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('Unstarted match with early/midnight kickoff never marked "انتهت" or "0:0"', (tester) async {
+      final unstartedCopaMatch = MatchModel.fromMap({
+        'match_id': 6386040,
+        'match_date': '2026-11-10',
+        'match_time': '01:00:00',
+        'status': '0',
+        'event_status': 'not_started',
+        'status_text': 'لم تبدأ',
+        'home_scores': 0,
+        'away_scores': 0,
+        'home_name': 'أنايتاسونا',
+        'away_name': 'ألافيس',
+        'home_team': {'title': 'أنايتاسونا'},
+        'away_team': {'title': 'ألافيس'},
+        'championship': {'title': 'كأس ملك إسبانيا'},
+      });
+
+      expect(unstartedCopaMatch.status, equals(MatchStatus.notStarted));
+      expect(unstartedCopaMatch.isFinished, isFalse);
+      expect(unstartedCopaMatch.homeScore, isNull);
+      expect(unstartedCopaMatch.awayScore, isNull);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Scaffold(
+              body: MatchCard(match: unstartedCopaMatch),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Must NOT display "انتهت" or "0 : 0"
+      expect(find.text('انتهت'), findsNothing);
+      expect(find.text('0'), findsNothing);
+      expect(find.text('0 : 0'), findsNothing);
+      // Kickoff time must be visible
+      expect(find.text(unstartedCopaMatch.formattedLocalTime), findsAtLeastNWidgets(1));
+    });
   });
 }

@@ -104,7 +104,7 @@ class StatusChip extends StatelessWidget {
     // Default: Upcoming match kickoff time
     final upcomingColor = AppColors.secondaryOf(context);
     final upcomingTextColor = AppColors.upcomingTextOf(context);
-    final timeStr = match.formattedLocalTime.isNotEmpty
+    final timeStr = (match.formattedLocalTime.isNotEmpty && match.formattedLocalTime != '----')
         ? match.formattedLocalTime
         : 'قريباً';
 

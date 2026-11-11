@@ -380,13 +380,14 @@ class MatchCard extends ConsumerWidget {
             rawKickoff != '0:0' &&
             rawKickoff != '00:00:00' &&
             rawKickoff != '· : ·' &&
-            rawKickoff != '٠ : ٠')
+            rawKickoff != '٠ : ٠' &&
+            rawKickoff != '----')
         ? rawKickoff
         : (match.matchTime != null &&
                 match.matchTime!.isNotEmpty &&
                 match.matchTime != '00:00:00'
             ? match.matchTime!.substring(0, 5)
-            : '— : —');
+            : 'قريباً');
 
     final textPrimary = AppColors.textPrimaryOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;

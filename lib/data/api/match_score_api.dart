@@ -208,9 +208,19 @@ class MatchStatusResolver {
       return mk(MatchState.live);
     }
 
-    // The server explicitly says "not started": trust it over live=1,
-    // because upcoming matches with a live broadcast also return live=1.
-    if (badge == 'soon') return mk(MatchState.notStarted);
+    // The server explicitly says "not started": trust it over live=1 and any elapsed time calculation.
+    // Unstarted matches (status == 0, event_status == "not_started", status_text == "لم تبدأ", badge == "soon")
+    // must NEVER be assumed finished just because kickoff time has passed or time difference exists.
+    final statusText = _s(m['status_text']).trim();
+    final hasStatus = m['status'] != null && _s(m['status']).isNotEmpty;
+    if (badge == 'soon' ||
+        ev == 'not_started' ||
+        (hasStatus && status == 0) ||
+        statusText == 'لم تبدأ' ||
+        statusText.contains('لم تبدأ') ||
+        title == 'لم تبدأ') {
+      return mk(MatchState.notStarted);
+    }
 
     final mins = KickoffTime.minutesSinceKickoff(
       _s(m['match_date']),
