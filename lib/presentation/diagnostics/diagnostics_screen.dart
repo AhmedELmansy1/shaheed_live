@@ -21,6 +21,9 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_number_format.dart';
+import '../../core/utils/kickoff_time.dart';
+import '../../data/models/match_model.dart';
+import '../home/providers/matches_provider.dart';
 import '../widgets/app_card.dart';
 
 /// Hidden diagnostics feature flag, enabled only when `--dart-define=ENABLE_DIAGNOSTICS=true` is passed.
@@ -57,6 +60,11 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
   // Live collection read tests
   Map<String, String> _collectionTestResults = {};
   bool _isTestingCollections = false;
+
+  // Canonical Schema Contract check
+  Map<String, ({List<String> found, List<String> missing})> _contractCheckResults = {};
+  bool _isCheckingContracts = false;
+  MatchModel? _firstLoadedMatch;
 
   @override
   void initState() {
@@ -184,6 +192,17 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
 
       // 10. Run live collection test
       await _runCollectionTests();
+
+      // 11. Run canonical contract check
+      await _runContractChecks();
+
+      // 12. First loaded match time audit
+      try {
+        final matches = ref.read(matchesProvider).value;
+        if (matches != null && matches.isNotEmpty) {
+          _firstLoadedMatch = matches.first;
+        }
+      } catch (_) {}
     } catch (e) {
       debugPrint('[Diagnostics] Error collecting diagnostic data: $e');
     } finally {
@@ -227,6 +246,103 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
       setState(() {
         _collectionTestResults = results;
         _isTestingCollections = false;
+      });
+    }
+  }
+
+  Future<void> _runContractChecks() async {
+    setState(() => _isCheckingContracts = true);
+    final results = <String, ({List<String> found, List<String> missing})>{};
+
+    final canonicalDefinitions = <String, List<String>>{
+      'config/app_settings': [
+        'latest_app_version',
+        'force_update',
+        'update_url',
+        'theme_config',
+        'ad_config',
+        'ticker_config',
+        'latest_notification',
+      ],
+      'match_streams (عينة)': [
+        'is_enabled',
+        'is_featured',
+        'stream_url',
+        'servers',
+      ],
+      'sponsorships (عينة)': [
+        'banner_url',
+        'click_url',
+        'enabled',
+        'start_date',
+        'end_date',
+        'placement',
+      ],
+      'match_polls (عينة)': [
+        'question',
+        'options',
+        'total_votes',
+        'enabled',
+      ],
+      'tv_channels (عينة)': [
+        'name',
+        'logo_url',
+        'default_stream_url',
+        'default_player_type',
+        'default_quality',
+        'is_active',
+        'order',
+      ],
+    };
+
+    final fs = FirebaseFirestore.instance;
+
+    for (final entry in canonicalDefinitions.entries) {
+      final name = entry.key;
+      final expectedKeys = entry.value;
+
+      try {
+        Map<String, dynamic>? data;
+        if (name == 'config/app_settings') {
+          final doc = await fs.collection('config').doc('app_settings').get();
+          data = doc.data();
+        } else if (name.startsWith('match_streams')) {
+          final snap = await fs.collection('match_streams').limit(1).get();
+          data = snap.docs.isNotEmpty ? snap.docs.first.data() : null;
+        } else if (name.startsWith('sponsorships')) {
+          final snap = await fs.collection('sponsorships').limit(1).get();
+          data = snap.docs.isNotEmpty ? snap.docs.first.data() : null;
+        } else if (name.startsWith('match_polls')) {
+          final snap = await fs.collection('match_polls').limit(1).get();
+          data = snap.docs.isNotEmpty ? snap.docs.first.data() : null;
+        } else if (name.startsWith('tv_channels')) {
+          final snap = await fs.collection('tv_channels').limit(1).get();
+          data = snap.docs.isNotEmpty ? snap.docs.first.data() : null;
+        }
+
+        if (data != null) {
+          final found = <String>[];
+          final missing = <String>[];
+          for (final key in expectedKeys) {
+            if (data.containsKey(key)) {
+              found.add(key);
+            } else {
+              missing.add(key);
+            }
+          }
+          results[name] = (found: found, missing: missing);
+        } else {
+          results[name] = (found: [], missing: expectedKeys);
+        }
+      } catch (_) {
+        results[name] = (found: [], missing: expectedKeys);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _contractCheckResults = results;
+        _isCheckingContracts = false;
       });
     }
   }
@@ -455,6 +571,88 @@ class _DiagnosticsScreenState extends ConsumerState<DiagnosticsScreen> {
                           ),
                         );
                       }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Canonical Schema Contract Check
+                _buildSectionHeader('فحص تطابق حقول العقد (Contract Check)'),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('الحقول القياسية المستلمة/المفقودة', style: AppTypography.titleSmall()),
+                          if (_isCheckingContracts)
+                            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          else
+                            TextButton.icon(
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: const Text('إعادة الفحص'),
+                              onPressed: _runContractChecks,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_contractCheckResults.isEmpty)
+                        Text('لم يتم إجراء فحص العقد بعد', style: AppTypography.bodySmall(color: textMuted))
+                      else
+                        ..._contractCheckResults.entries.map((e) {
+                          final found = e.value.found;
+                          final missing = e.value.missing;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  e.key,
+                                  style: AppTypography.bodySmall().copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'الموجودة (${found.length}): ${found.isNotEmpty ? found.join(', ') : 'لا يوجد'}',
+                                  style: const TextStyle(fontSize: 11, color: AppColors.primary),
+                                ),
+                                Text(
+                                  'المفقودة (${missing.length}): ${missing.isNotEmpty ? missing.join(', ') : 'لا يوجد (متطابق بالكامل)'}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: missing.isNotEmpty ? Colors.amber.shade700 : textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Match Kickoff Time Audit
+                _buildSectionHeader('تدقيق توقيت أول مباراة محملة (Kickoff Time Audit)'),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_firstLoadedMatch == null)
+                        Text('لم يتم تحميل أي مباريات بعد في جلسة التطبيق الحالية', style: AppTypography.bodySmall(color: textMuted))
+                      else ...[
+                        _buildInfoRow('المباراة', '${_firstLoadedMatch!.homeTeamName} × ${_firstLoadedMatch!.awayTeamName}'),
+                        _buildInfoRow('التاريخ والوقت الخام', '${_firstLoadedMatch!.matchDate ?? '----'} / ${_firstLoadedMatch!.matchTime ?? '----'}'),
+                        _buildInfoRow('حقل kickoff_at', _firstLoadedMatch!.kickoffAt ?? 'غير متوفر في كائن المباراة'),
+                        _buildInfoRow('المنطقة الزمنية المفترضة', KickoffTime.upstreamFeedTimeZone),
+                        _buildInfoRow('لحظة UTC المحسوبة', _firstLoadedMatch!.kickoffUtcDateTime?.toIso8601String() ?? 'غير متاح'),
+                        _buildInfoRow('التوقيت المعروض بالتطبيق', _firstLoadedMatch!.formattedLocalTime),
+                        _buildInfoRow('إزاحة التوقيت النشطة (Offset)', '${KickoffTime.globalOffsetHours} ساعة'),
+                      ],
                     ],
                   ),
                 ),

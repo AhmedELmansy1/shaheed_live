@@ -26,8 +26,11 @@ import 'date_formatter.dart';
 class KickoffTime {
   KickoffTime._();
 
+  /// Authoritative upstream feed timezone constant ('Africa/Cairo').
+  static const String upstreamFeedTimeZone = 'Africa/Cairo';
+
   /// Authoritative source timezone constant matching upstream provider.
-  static const String sourceTimezone = 'Africa/Cairo';
+  static const String sourceTimezone = upstreamFeedTimeZone;
 
   static bool _timezonesInitialized = false;
 
@@ -93,20 +96,40 @@ class KickoffTime {
     }
   }
 
-  /// Converts the Cairo kickoff time to a true UTC instant.
-  static DateTime? toUtc(String? rawDate, String? rawTime) {
+  /// Converts the match kickoff time to a true UTC instant.
+  /// If [kickoffAt] is provided and valid ISO 8601 (with offset or Z), it is used as source of truth.
+  static DateTime? toUtc(
+    String? rawDate,
+    String? rawTime, {
+    String? kickoffAt,
+  }) {
+    if (kickoffAt != null && kickoffAt.trim().isNotEmpty) {
+      try {
+        final parsed = DateTime.tryParse(kickoffAt.trim());
+        if (parsed != null) {
+          return parsed.toUtc();
+        }
+      } catch (_) {}
+    }
+
     final cairoDt = parseCairo(rawDate, rawTime);
     if (cairoDt == null) return null;
     return cairoDt.toUtc();
   }
 
-  /// Converts the Cairo kickoff time to the device's local [DateTime],
+  /// Converts the match kickoff time to the device's local [DateTime],
   /// applying the optional [offsetHours] (or [globalOffsetHours] if 0).
-  static DateTime? toLocal(String? rawDate, String? rawTime, {int offsetHours = 0}) {
-    final cairoDt = parseCairo(rawDate, rawTime);
-    if (cairoDt == null) return null;
+  /// If [kickoffAt] is provided and valid ISO 8601, it is used as source of truth.
+  static DateTime? toLocal(
+    String? rawDate,
+    String? rawTime, {
+    String? kickoffAt,
+    int offsetHours = 0,
+  }) {
+    final utc = toUtc(rawDate, rawTime, kickoffAt: kickoffAt);
+    if (utc == null) return null;
 
-    var localDt = cairoDt.toLocal();
+    var localDt = utc.toLocal();
 
     final effectiveOffset = offsetHours != 0 ? offsetHours : globalOffsetHours;
     if (effectiveOffset != 0) {
@@ -116,20 +139,21 @@ class KickoffTime {
     return localDt;
   }
 
-  /// Converts the Cairo kickoff time to a [tz.TZDateTime] in the specified target timezone
+  /// Converts the kickoff time to a [tz.TZDateTime] in the specified target timezone
   /// (defaults to [tz.local]), incorporating the admin offset.
   /// Used for accurate [FlutterLocalNotificationsPlugin] scheduling.
   static tz.TZDateTime? toTargetTZ(
     String? rawDate,
     String? rawTime, {
+    String? kickoffAt,
     tz.Location? targetLocation,
     int offsetHours = 0,
   }) {
-    final cairoDt = parseCairo(rawDate, rawTime);
-    if (cairoDt == null) return null;
+    final utc = toUtc(rawDate, rawTime, kickoffAt: kickoffAt);
+    if (utc == null) return null;
 
     final loc = targetLocation ?? tz.local;
-    var targetDt = tz.TZDateTime.from(cairoDt, loc);
+    var targetDt = tz.TZDateTime.from(utc, loc);
 
     final effectiveOffset = offsetHours != 0 ? offsetHours : globalOffsetHours;
     if (effectiveOffset != 0) {
@@ -141,11 +165,20 @@ class KickoffTime {
 
   /// Formats the kickoff time into a localized Arabic string with standard Latin numerals (e.g. "4:00 م").
   /// Returns "غير محدد" if time is TBD or unparsable.
-  static String format(String? rawDate, String? rawTime, {int offsetHours = 0}) {
-    if (rawDate == null || rawDate.isEmpty) return '----';
-    if (isTimeTbd(rawTime)) return 'غير محدد';
+  static String format(
+    String? rawDate,
+    String? rawTime, {
+    String? kickoffAt,
+    int offsetHours = 0,
+  }) {
+    if ((rawDate == null || rawDate.isEmpty) && (kickoffAt == null || kickoffAt.isEmpty)) {
+      return '----';
+    }
+    if (isTimeTbd(rawTime) && (kickoffAt == null || kickoffAt.isEmpty)) {
+      return 'غير محدد';
+    }
 
-    final localDt = toLocal(rawDate, rawTime, offsetHours: offsetHours);
+    final localDt = toLocal(rawDate, rawTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
     if (localDt != null) {
       try {
         final formatted = DateFormat('h:mm a', 'ar').format(localDt);
@@ -179,10 +212,16 @@ class KickoffTime {
   /// Computes the elapsed minutes since kickoff (positive = started, negative = not yet started).
   /// Returns `null` if the time is unannounced (TBD) or unparsable.
   /// Unannounced matches must NEVER be treated as elapsed or finished.
-  static int? minutesSinceKickoff(String? rawDate, String? rawTime, {DateTime? now, int offsetHours = 0}) {
-    if (isTimeTbd(rawTime)) return null;
+  static int? minutesSinceKickoff(
+    String? rawDate,
+    String? rawTime, {
+    String? kickoffAt,
+    DateTime? now,
+    int offsetHours = 0,
+  }) {
+    if (isTimeTbd(rawTime) && (kickoffAt == null || kickoffAt.isEmpty)) return null;
 
-    final kickoffLocal = toLocal(rawDate, rawTime, offsetHours: offsetHours);
+    final kickoffLocal = toLocal(rawDate, rawTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
     if (kickoffLocal == null) return null;
 
     final current = now ?? DateTime.now();

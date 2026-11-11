@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_ready_provider.dart';
 import 'match_reminder_service.dart';
+import 'notification_deduplicator.dart';
 import 'notification_service.dart';
 import 'remote_config_service.dart';
 import '../utils/date_formatter.dart';
@@ -38,6 +39,7 @@ final fcmServiceProvider = Provider<FcmService>((ref) {
 class FcmService {
   final NotificationService _notificationService;
   final Ref _ref;
+  final NotificationDeduplicator _deduplicator = NotificationDeduplicator();
 
   /// Global broadcast topic that all app instances subscribe to.
   static const String globalBroadcastTopic = 'all';
@@ -134,26 +136,22 @@ class FcmService {
         final notifId = notif['id']?.toString() ?? '';
         final title = notif['title']?.toString() ?? '';
         final body = notif['body']?.toString() ?? '';
+        final matchId = notif['match_id']?.toString();
         if (title.isEmpty && body.isEmpty) return;
 
-        final prefs = await SharedPreferences.getInstance();
-        final lastSeenId = prefs.getString('last_seen_firestore_notif_id');
+        final shouldShow = await _deduplicator.shouldDisplay(
+          id: notifId,
+          title: title,
+          body: body,
+          matchId: matchId,
+        );
 
-        // Check if this notification has already been processed
-        if (notifId.isNotEmpty && lastSeenId == notifId) {
+        if (!shouldShow) {
+          debugPrint('[FCM Dual] ⏭️ Notification already shown or duplicate, skipping Firestore broadcast: $notifId');
           return;
         }
-
-        // On cold start, record current ID without triggering notification to prevent stale alarms
-        if (lastSeenId == null) {
-          await prefs.setString('last_seen_firestore_notif_id', notifId);
-          return;
-        }
-
-        await prefs.setString('last_seen_firestore_notif_id', notifId);
 
         debugPrint('[FCM Dual] 🔔 Displaying instant notification from Firestore: $title');
-        final matchId = notif['match_id']?.toString();
         String? payload;
         if (matchId != null && matchId.isNotEmpty) {
           payload = jsonEncode({
@@ -346,6 +344,21 @@ class FcmService {
     body = DateFormatter.toArabicNumerals(body);
 
     final matchId = data['match_id']?.toString();
+    final notifId = message.messageId ?? (data['id']?.toString()) ?? '';
+
+    final shouldShow = await _deduplicator.shouldDisplay(
+      id: notifId,
+      title: title,
+      body: body,
+      matchId: matchId,
+      timestamp: message.sentTime,
+    );
+
+    if (!shouldShow) {
+      debugPrint('[FCM Foreground] ⏭️ Notification already shown or duplicate, skipping: $notifId');
+      return;
+    }
+
     final isPreMatchReminder =
         eventType == 'reminder_1hr' || eventType == 'reminder_15min';
 

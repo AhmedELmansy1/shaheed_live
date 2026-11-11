@@ -8,12 +8,19 @@ enum SponsorshipPlacement {
   static SponsorshipPlacement fromString(String? val) {
     switch (val?.trim().toLowerCase()) {
       case 'match_details_top':
+      case 'banner_match':
+      case 'match':
         return SponsorshipPlacement.matchDetailsTop;
       case 'popup_dialog':
+      case 'popup':
         return SponsorshipPlacement.popupDialog;
       case 'native_list':
+      case 'native':
+      case 'list':
         return SponsorshipPlacement.nativeList;
       case 'home_top_banner':
+      case 'banner_home':
+      case 'home':
       default:
         return SponsorshipPlacement.homeTopBanner;
     }
@@ -75,7 +82,7 @@ class SponsorshipCampaign {
     return true;
   }
 
-  factory SponsorshipCampaign.fromMap(Map<String, dynamic> map, String docId) {
+  factory SponsorshipCampaign.fromMap(Map<String, dynamic> map, [String docId = '']) {
     int parseNum(dynamic val) {
       if (val is num) return val.toInt();
       return int.tryParse(val?.toString() ?? '') ?? 0;
@@ -85,14 +92,18 @@ class SponsorshipCampaign {
       id: docId,
       title: (map['title'] as String?)?.trim() ?? 'حملة إعلانية',
       sponsorName: (map['sponsor_name'] as String?)?.trim() ?? 'الراعي الرسمي',
-      bannerUrl: (map['banner_url'] as String?)?.trim() ?? '',
-      clickUrl: (map['click_url'] as String?)?.trim() ?? '',
+      bannerUrl: (map['banner_url'] as String?)?.trim() ??
+          (map['image_url'] as String?)?.trim() ??
+          '',
+      clickUrl: (map['click_url'] as String?)?.trim() ??
+          (map['target_url'] as String?)?.trim() ??
+          '',
       placement: SponsorshipPlacement.fromString(map['placement'] as String?),
       startDate: (map['start_date'] as String?)?.trim() ?? '',
       endDate: (map['end_date'] as String?)?.trim() ?? '',
       impressionCount: parseNum(map['impression_count']),
       clickCount: parseNum(map['click_count']),
-      enabled: (map['enabled'] as bool?) ?? true,
+      enabled: (map['enabled'] as bool?) ?? (map['is_active'] as bool?) ?? true,
     );
   }
 }

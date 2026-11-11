@@ -120,22 +120,12 @@ class PollService {
   }
 
   /// Listens to real-time updates for a single match poll from Firestore.
+  ///
+  /// Strictly shows a poll ONLY if `match_polls/{matchId}` exists, has non-empty
+  /// options, and `enabled == true`. Never falls back to synthesized fake options.
   Stream<PollModel?> streamPoll(String matchId) {
     if (EnvConfig.isDemoMode) {
-      // Demo mock poll
-      return Stream.value(
-        PollModel(
-          matchId: matchId,
-          question: 'من تتوقع أن يفوز بمباراة اليوم؟',
-          options: const [
-            PollOption(id: 'opt_1', label: 'الفريق المستضيف', votes: 142),
-            PollOption(id: 'opt_2', label: 'التعادل', votes: 45),
-            PollOption(id: 'opt_3', label: 'الفريق الضيف', votes: 118),
-          ],
-          totalVotes: 305,
-          enabled: true,
-        ),
-      );
+      return Stream.value(null);
     }
 
     final fs = _firestore;
@@ -143,8 +133,34 @@ class PollService {
 
     return fs.collection('match_polls').doc(matchId).snapshots().asyncMap((snap) async {
       if (!snap.exists || snap.data() == null) return null;
-      final cachedVote = await getCachedVote(matchId);
-      return PollModel.fromMap(snap.data()!, matchId, userVotedOptionId: cachedVote);
+      final data = snap.data()!;
+      final isEnabled = data['enabled'] == true || data['enabled'] == 1;
+      if (!isEnabled) return null;
+
+      final poll = PollModel.fromMap(data, matchId);
+      if (poll.options.isEmpty || !poll.enabled) return null;
+
+      // Check user vote receipt: subcollection match_polls/{matchId}/votes/{uid} or cached vote
+      String? votedOption = await getCachedVote(matchId);
+      final currentUid = _auth?.currentUser?.uid;
+      if (currentUid != null) {
+        try {
+          final receiptDoc = await fs
+              .collection('match_polls')
+              .doc(matchId)
+              .collection('votes')
+              .doc(currentUid)
+              .get();
+          if (receiptDoc.exists && receiptDoc.data() != null) {
+            final receipt = receiptDoc.data()!;
+            votedOption = receipt['option_id']?.toString() ??
+                receipt['optionId']?.toString() ??
+                votedOption;
+          }
+        } catch (_) {}
+      }
+
+      return poll.copyWith(userVotedOptionId: votedOption);
     }).handleError((err) {
       if (err is FirebaseException && err.code == 'permission-denied') {
         debugPrint('[PollService] 🔒 PERMISSION DENIED reading match_polls/$matchId. Firestore rules must allow read.');
@@ -185,13 +201,9 @@ class PollService {
 
       return PollModel(
         matchId: matchId,
-        question: 'من تتوقع أن يفوز بمباراة اليوم؟',
-        options: [
-          PollOption(id: 'opt_1', label: 'الفريق المستضيف', votes: optionId == 'opt_1' ? 143 : 142),
-          PollOption(id: 'opt_2', label: 'التعادل', votes: optionId == 'opt_2' ? 46 : 45),
-          PollOption(id: 'opt_3', label: 'الفريق الضيف', votes: optionId == 'opt_3' ? 119 : 118),
-        ],
-        totalVotes: 306,
+        question: '',
+        options: [PollOption(id: optionId, label: '', votes: 1)],
+        totalVotes: 1,
         enabled: true,
         userVotedOptionId: optionId,
       );

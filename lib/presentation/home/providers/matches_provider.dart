@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/config/app_constants.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/services/league_resolver_service.dart';
 import '../../../core/services/team_resolver_service.dart';
@@ -14,6 +15,7 @@ import '../../../data/models/league_model.dart';
 import '../../../data/models/match_model.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/matches_repository.dart';
+import '../../match_details/providers/match_stream_provider.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 
 export '../../../core/utils/match_filter_helper.dart';
@@ -566,12 +568,17 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
     }
 
     // 1. Hero match
+    final featuredMatchId = AppConstants.enableStreaming
+        ? ref.watch(featuredMatchIdStreamProvider).value
+        : null;
+
     final heroMatch = selectHeroMatch(
       matches: matches,
       selectedTeamIds: selectedTeamIds,
       selectedLeagueIds: selectedLeagueIds,
       allTeams: allTeams,
       allLeagues: allLeagues,
+      featuredMatchId: featuredMatchId,
     );
 
     // 2. Favorite team matches (for pinned "مبارياتك" top section)

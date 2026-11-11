@@ -130,48 +130,68 @@ class MatchStatusResolver {
 
   static MatchStatusInfo resolve(Map<String, dynamic> m, {DateTime? now}) {
     final badge = _s(m['admin_badge']).toLowerCase();
-    final title = _s(m['admin_title']);
+    final title = _s(m['admin_title']).trim();
     final ev = _s(m['event_status']).toLowerCase();
     final forced = _s(m['forced_status']).toLowerCase();
-    final status = _i(m['status']);
+    final status = m['status'] != null ? _i(m['status']) : null;
+    final statusText = _s(m['status_text']).trim();
     final liveFlag = _i(m['live']) == 1;
 
-    MatchStatusInfo mk(MatchState s) => MatchStatusInfo(s, title);
+    MatchStatusInfo mk(MatchState s) =>
+        MatchStatusInfo(s, title.isNotEmpty ? title : statusText);
 
-    if (badge == 'postponed' || ev == 'postponed') {
+    // 1. Postponed / Cancelled (explicit status)
+    if (badge == 'postponed' ||
+        ev == 'postponed' ||
+        statusText.contains('تأجل') ||
+        title.contains('تأجل')) {
       return mk(MatchState.postponed);
     }
     if (badge == 'canceled' ||
         badge == 'cancelled' ||
         ev == 'canceled' ||
-        ev == 'cancelled') {
+        ev == 'cancelled' ||
+        statusText.contains('ألغيت') ||
+        title.contains('ألغيت')) {
       return mk(MatchState.cancelled);
     }
+
+    // 2. Finished (explicit status)
     if (badge == 'ended' ||
         ev == 'ended' ||
         ev == 'ended_penalty' ||
         forced == 'ended' ||
-        status == 4) {
+        status == 4 ||
+        statusText == 'انتهت' ||
+        statusText.contains('نهاية') ||
+        title == 'انتهت') {
       return mk(MatchState.finished);
     }
-    if (badge == 'half' || status == 2 || title.contains('استراحة')) {
+
+    // 3. Half-time
+    if (badge == 'half' ||
+        status == 2 ||
+        title.contains('استراحة') ||
+        statusText.contains('استراحة') ||
+        statusText.contains('بين الشوطين')) {
       return mk(MatchState.halfTime);
     }
+
+    // 4. Live / Overrun / Extra Time / Penalties
     if (badge == 'live' ||
         ev == 'live' ||
         forced == 'live' ||
-        _liveStatusCodes.contains(status)) {
+        (status != null && _liveStatusCodes.contains(status)) ||
+        statusText.contains('مباشر') ||
+        statusText.contains('شوط إضافي') ||
+        statusText.contains('ركلات الترجيح')) {
       return mk(MatchState.live);
     }
 
-    // The server explicitly says "not started": trust it over live=1 and any elapsed time calculation.
-    // Unstarted matches (status == 0, event_status == "not_started", status_text == "لم تبدأ", badge == "soon")
-    // must NEVER be assumed finished just because kickoff time has passed or time difference exists.
-    final statusText = _s(m['status_text']).trim();
-    final hasStatus = m['status'] != null && _s(m['status']).isNotEmpty;
+    // 5. Explicitly Not Started (server says not started)
     final isExplicitlyNotStarted = badge == 'soon' ||
         ev == 'not_started' ||
-        (hasStatus && status == 0) ||
+        status == 0 ||
         statusText == 'لم تبدأ' ||
         statusText.contains('لم تبدأ') ||
         title == 'لم تبدأ';
@@ -180,6 +200,7 @@ class MatchStatusResolver {
       return mk(MatchState.notStarted);
     }
 
+    // 6. Time-based evaluation & TBD checks
     final rawTime = _s(m['match_time']);
     if (KickoffTime.isTimeTbd(rawTime)) {
       return mk(MatchState.notStarted);
@@ -188,6 +209,7 @@ class MatchStatusResolver {
     final mins = KickoffTime.minutesSinceKickoff(
       _s(m['match_date']),
       rawTime,
+      kickoffAt: (m['kickoff_at'] ?? m['kickoffAt']) as String?,
       now: now,
     );
 
@@ -196,15 +218,19 @@ class MatchStatusResolver {
       return mk(MatchState.live);
     }
 
-    // Long past kickoff with no explicit state -> assume finished only if:
-    // 1. Kickoff time was valid and NOT TBD (00:00:00 / empty).
-    // 2. The match was NOT unstarted (status 0).
-    // 3. Status text does not say "لم تبدأ".
-    if (mins != null && mins > ApiConfig.liveWindowMinutes) {
-      if (status != 0 && ev != 'not_started' && !statusText.contains('لم تبدأ')) {
-        return mk(MatchState.finished);
-      }
+    // 7. Last-resort fallback for finished:
+    // ONLY when NO status fields exist at all AND kickoff is known AND > 6 hours (360 mins) have passed.
+    // Never for explicit not-started, postponed, cancelled, or TBD matches.
+    final hasAnyStatusField = m['status'] != null ||
+        ev.isNotEmpty ||
+        statusText.isNotEmpty ||
+        badge.isNotEmpty ||
+        forced.isNotEmpty;
+
+    if (!hasAnyStatusField && mins != null && mins > 360) {
+      return mk(MatchState.finished);
     }
+
     return mk(MatchState.notStarted);
   }
 }

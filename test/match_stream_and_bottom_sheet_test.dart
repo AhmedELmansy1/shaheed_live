@@ -27,6 +27,9 @@ class FakeStreamRepository implements MatchStreamRepository {
   Future<MatchStreamModel?> getMatchStreamOnce(int matchId) async {
     return null;
   }
+
+  @override
+  Stream<int?> listenToFeaturedMatchId() => Stream.value(null);
 }
 
 void main() {

@@ -33,6 +33,9 @@ class MockStreamRepository implements MatchStreamRepository {
   Future<MatchStreamModel?> getMatchStreamOnce(int matchId) async {
     return currentModel;
   }
+
+  @override
+  Stream<int?> listenToFeaturedMatchId() => Stream.value(null);
 }
 
 class FakeMatchesRepo implements MatchesRepository {

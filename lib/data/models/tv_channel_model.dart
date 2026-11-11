@@ -70,7 +70,7 @@ class TvChannelModel {
       defaultQuality:
           (map['default_quality'] ?? map['quality'])?.toString().trim().toLowerCase() ??
               'hd',
-      isActive: (map['is_active'] as bool?) ?? true,
+      isActive: (map['is_active'] as bool?) ?? (map['enabled'] as bool?) ?? true,
       order: parsedOrder,
     );
   }

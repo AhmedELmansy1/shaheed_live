@@ -62,7 +62,6 @@ class SponsorshipService {
 
     return fs
         .collection('sponsorships')
-        .where('enabled', isEqualTo: true)
         .snapshots()
         .map((snap) {
           final list = <SponsorshipCampaign>[];

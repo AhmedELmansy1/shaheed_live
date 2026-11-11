@@ -15,6 +15,7 @@ class SyncQueueService {
 
   static const String keyPendingOnboardingSync = 'pending_onboarding_sync';
   static const String keyPendingSyncTeams = 'pending_sync_teams';
+  static const String keyPendingSyncLeagues = 'pending_sync_leagues';
 
   SyncQueueService(this._ref);
 
@@ -24,12 +25,20 @@ class SyncQueueService {
     return prefs.getBool(keyPendingOnboardingSync) ?? false;
   }
 
-  /// Records that onboarding completion or team modification needs cloud sync reconciliation.
-  Future<void> enqueueOnboardingSync(List<String> teamIds) async {
+  /// Records that onboarding completion or team/league modification needs cloud sync reconciliation.
+  Future<void> enqueueOnboardingSync(
+    List<String> teamIds, {
+    List<String>? leagueIds,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(keyPendingOnboardingSync, true);
     await prefs.setStringList(keyPendingSyncTeams, teamIds);
-    debugPrint('[SyncQueueService] Enqueued pending sync for ${teamIds.length} teams.');
+    if (leagueIds != null) {
+      await prefs.setStringList(keyPendingSyncLeagues, leagueIds);
+    }
+    debugPrint(
+      '[SyncQueueService] Enqueued pending sync for ${teamIds.length} teams and ${leagueIds?.length ?? 0} leagues.',
+    );
   }
 
   /// Attempts to reconcile pending FCM topic subscriptions and Firestore user document sync.
@@ -51,6 +60,9 @@ class SyncQueueService {
       final teams = prefs.getStringList(keyPendingSyncTeams) ??
           prefs.getStringList('selected_teams') ??
           <String>[];
+      final leagues = prefs.getStringList(keyPendingSyncLeagues) ??
+          prefs.getStringList('selected_leagues') ??
+          <String>[];
 
       // 1. Wait for Firebase to be ready (up to 5 seconds timeout)
       final isFirebaseReady = await _ref
@@ -65,10 +77,11 @@ class SyncQueueService {
       bool fcmSuccess = false;
       bool firestoreSuccess = false;
 
-      // 2. Reconcile FCM topic subscriptions for selected teams
+      // 2. Reconcile FCM topic subscriptions for selected teams & leagues
       try {
         final reminderService = _ref.read(matchReminderServiceProvider);
         await reminderService.syncTeamTopicSubscriptions(teams);
+        await reminderService.syncLeagueTopicSubscriptions(leagues);
         fcmSuccess = true;
       } catch (e) {
         debugPrint('[SyncQueueService] FCM topic sync failed: $e');
@@ -86,7 +99,10 @@ class SyncQueueService {
       if (fcmSuccess && firestoreSuccess) {
         await prefs.setBool(keyPendingOnboardingSync, false);
         await prefs.remove(keyPendingSyncTeams);
-        debugPrint('[SyncQueueService] Successfully reconciled deferred sync for ${teams.length} teams.');
+        await prefs.remove(keyPendingSyncLeagues);
+        debugPrint(
+          '[SyncQueueService] Successfully reconciled deferred sync for ${teams.length} teams and ${leagues.length} leagues.',
+        );
         return true;
       } else {
         debugPrint(

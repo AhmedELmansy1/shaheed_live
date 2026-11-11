@@ -173,6 +173,11 @@ class MatchReminderService {
   final Ref _ref;
   static const String _storageKey = 'match_reminders';
   static const String _teamTopicsKey = 'subscribed_team_topics';
+  static const String _leagueTopicsKey = 'subscribed_league_topics';
+  static final RegExp validTopicRegex = RegExp(r'^[a-zA-Z0-9_\-]{3,64}$');
+
+  /// Validates a topic name against FCM requirements: ^[a-zA-Z0-9_\-]{3,64}$
+  static bool isValidTopic(String topic) => validTopicRegex.hasMatch(topic);
 
   // Deterministic Notification IDs
   static int getConfirmationNotificationId(int matchId) => matchId * 10;
@@ -522,7 +527,12 @@ class MatchReminderService {
     for (final id in selectedTeamIds) {
       final apiRowId = await TeamResolverService.resolveToApiRowId(id);
       if (apiRowId != null) {
-        desiredTopics.add('team_$apiRowId');
+        final topic = 'team_$apiRowId';
+        if (isValidTopic(topic)) {
+          desiredTopics.add(topic);
+        } else {
+          debugPrint('[MatchReminder] ⚠️ Invalid team topic rejected: $topic');
+        }
       }
     }
 
@@ -561,6 +571,62 @@ class MatchReminderService {
     if (kDebugMode) {
       debugPrint(
         '[MatchReminder] 📋 Final active subscribed FCM team topics: $updatedList',
+      );
+    }
+  }
+
+  /// Synchronizes FCM topic subscriptions for the user's followed leagues.
+  /// Subscribes to `league_{leagueId}` matching dashboard sends.
+  /// Unsubscribes when the user removes a league.
+  /// Validates all topic names against ^[a-zA-Z0-9_\-]{3,64}$.
+  Future<void> syncLeagueTopicSubscriptions(List<String> selectedLeagueIds) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentTopics = prefs.getStringList(_leagueTopicsKey) ?? [];
+
+    final desiredTopics = <String>{};
+    for (final id in selectedLeagueIds) {
+      final topic = 'league_${id.trim()}';
+      if (isValidTopic(topic)) {
+        desiredTopics.add(topic);
+      } else {
+        debugPrint('[MatchReminder] ⚠️ Invalid league topic rejected: $topic');
+      }
+    }
+
+    final toSubscribe = desiredTopics.difference(currentTopics.toSet());
+    final toUnsubscribe = currentTopics.toSet().difference(desiredTopics);
+
+    debugPrint(
+      '[MatchReminder] 🔄 Syncing league topics: ${toSubscribe.length} to subscribe, ${toUnsubscribe.length} to unsubscribe',
+    );
+
+    for (final topic in toSubscribe) {
+      try {
+        await FirebaseMessaging.instance.subscribeToTopic(topic);
+        debugPrint('[MatchReminder] ✅ Auto-subscribed to league FCM topic: $topic');
+      } catch (e) {
+        debugPrint('[MatchReminder] ⚠️ Error subscribing to league topic $topic: $e');
+      }
+    }
+
+    for (final topic in toUnsubscribe) {
+      try {
+        await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
+        debugPrint('[MatchReminder] 🛑 Unsubscribed from league FCM topic: $topic');
+      } catch (e) {
+        debugPrint('[MatchReminder] ⚠️ Error unsubscribing from league topic $topic: $e');
+      }
+    }
+
+    final updatedList = desiredTopics.toList()..sort();
+    await prefs.setStringList(_leagueTopicsKey, updatedList);
+    debugPrint(
+      '[MatchReminder] Persisted ${updatedList.length} subscribed league topics.',
+    );
+
+    if (kDebugMode) {
+      debugPrint(
+        '[MatchReminder] 📋 Final active subscribed FCM league topics: $updatedList',
       );
     }
   }
@@ -628,7 +694,17 @@ class MatchReminderService {
     // 2. Restore team topics
     await reapplyTeamTopicSubscriptions();
 
-    // 3. Restore test topic if explicitly enabled
+    // 3. Restore league topics
+    try {
+      final selectedLeagues = prefs.getStringList('selected_leagues') ?? [];
+      if (selectedLeagues.isNotEmpty) {
+        await syncLeagueTopicSubscriptions(selectedLeagues);
+      }
+    } catch (e) {
+      debugPrint('[MatchReminder] ⚠️ Error restoring league topic subscriptions: $e');
+    }
+
+    // 4. Restore test topic if explicitly enabled
     try {
       final isTestEnabled = prefs.getBool('is_test_notification_topic_enabled') ?? false;
       if (isTestEnabled) {

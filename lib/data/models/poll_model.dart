@@ -95,7 +95,7 @@ class PollModel {
       question: (map['question']?.toString()) ?? 'من تتوقع أن يفوز بمباراة اليوم؟',
       options: optionsList,
       totalVotes: parseTotal(map['total_votes']),
-      enabled: map['enabled'] == true || map['enabled'] == null || map['enabled'] == 1,
+      enabled: map['enabled'] == true || map['enabled'] == 1,
       userVotedOptionId: userVotedOptionId,
     );
   }

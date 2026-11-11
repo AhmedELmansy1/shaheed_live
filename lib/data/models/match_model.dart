@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/kickoff_time.dart';
 import '../api/match_score_api.dart' as api;
 
 /// Enum representing the normalized lifecycle status of a football match.
@@ -102,6 +103,7 @@ class MatchModel {
   final String? eventStatus;
   final String? channel;
   final String? commentator;
+  final String? kickoffAt;
 
   const MatchModel({
     required this.matchId,
@@ -119,6 +121,7 @@ class MatchModel {
     this.eventStatus,
     this.channel,
     this.commentator,
+    this.kickoffAt,
   });
 
   // Convenience Getters for presentation layer
@@ -136,19 +139,21 @@ class MatchModel {
   bool get isFinished => status == MatchStatus.finished;
   String get displayDate => matchDate ?? '';
   String get formattedLocalTime =>
-      DateFormatter.formatMatchTime(matchDate, matchTime);
+      KickoffTime.format(matchDate, matchTime, kickoffAt: kickoffAt);
   String formatLocalTime({int offsetHours = 0}) =>
-      DateFormatter.formatMatchTime(matchDate, matchTime, offsetHours: offsetHours);
+      KickoffTime.format(matchDate, matchTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
   DateTime? get kickoffDateTime =>
-      DateFormatter.parseCairoMatchDateTime(matchDate, matchTime);
+      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt);
   DateTime? getKickoffDateTime({int offsetHours = 0}) =>
-      DateFormatter.parseCairoMatchDateTime(matchDate, matchTime, offsetHours: offsetHours);
+      KickoffTime.toLocal(matchDate, matchTime, kickoffAt: kickoffAt, offsetHours: offsetHours);
+  DateTime? get kickoffUtcDateTime =>
+      KickoffTime.toUtc(matchDate, matchTime, kickoffAt: kickoffAt);
 
   /// Formatted remaining countdown to kickoff (e.g. "متبقي 2 س و 15 د", "متبقي 45 دقيقة").
   String get remainingTimeUntilKickoff =>
-      DateFormatter.formatRemainingKickoff(kickoffDateTime);
+      KickoffTime.formatRemainingKickoff(kickoffDateTime);
   String getRemainingTimeUntilKickoff({int offsetHours = 0}) =>
-      DateFormatter.formatRemainingKickoff(getKickoffDateTime(offsetHours: offsetHours));
+      KickoffTime.formatRemainingKickoff(getKickoffDateTime(offsetHours: offsetHours));
 
   /// Returns the formatted live minute or status (e.g. "45'", "90+4'", "استراحة"), or null if not live.
   String? get currentMinute {
@@ -323,6 +328,7 @@ class MatchModel {
           (rawCommentator != null && rawCommentator.isNotEmpty && rawCommentator != 'null')
               ? rawCommentator
               : null,
+      kickoffAt: (map['kickoff_at'] ?? map['kickoffAt'])?.toString().trim(),
     );
   }
 }

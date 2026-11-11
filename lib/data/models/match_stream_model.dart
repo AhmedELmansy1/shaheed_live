@@ -41,6 +41,9 @@ class StreamServerModel {
   final int priority;
   final String? quality;
 
+  String get type => playerType.toValue();
+  String get url => streamUrl;
+
   const StreamServerModel({
     required this.id,
     required this.name,
@@ -100,7 +103,7 @@ class StreamServerModel {
       return int.tryParse(p?.toString() ?? '') ?? 99;
     }
 
-    final rawUrl = normalizeStreamUrl((map['stream_url'] ?? map['url'] ?? '').toString());
+    final rawUrl = normalizeStreamUrl((map['url'] ?? map['stream_url'] ?? '').toString());
 
     return StreamServerModel(
       id: (map['id'] ?? map['server_id'] ?? '').toString(),
@@ -132,12 +135,14 @@ class StreamServerModel {
 class MatchStreamModel {
   final int matchId;
   final bool isEnabled;
+  final bool isFeatured;
   final String? streamUrl;
   final List<StreamServerModel> servers;
 
   const MatchStreamModel({
     required this.matchId,
     required this.isEnabled,
+    this.isFeatured = false,
     this.streamUrl,
     required this.servers,
   });
@@ -147,6 +152,7 @@ class MatchStreamModel {
     return MatchStreamModel(
       matchId: matchId,
       isEnabled: false,
+      isFeatured: false,
       streamUrl: null,
       servers: const [],
     );
@@ -240,14 +246,20 @@ class MatchStreamModel {
         ? directUrl
         : (serversList.isNotEmpty ? serversList.first.streamUrl : null);
 
-    final isEnabled = (map['enabled'] as bool?) ??
-        (map['is_enabled'] as bool?) ??
+    final isEnabled = (map['is_enabled'] as bool?) ??
+        (map['is_stream_enabled'] as bool?) ??
+        (map['enabled'] as bool?) ??
         (map['isEnabled'] as bool?) ??
         true;
+
+    final isFeatured = (map['is_featured'] as bool?) ??
+        (map['isFeatured'] as bool?) ??
+        false;
 
     return MatchStreamModel(
       matchId: parseMatchId(map['match_id'] ?? map['matchId']),
       isEnabled: isEnabled,
+      isFeatured: isFeatured,
       streamUrl: effectiveStreamUrl,
       servers: serversList,
     );
@@ -257,6 +269,7 @@ class MatchStreamModel {
     return {
       'match_id': matchId,
       'is_enabled': isEnabled,
+      'is_featured': isFeatured,
       'servers': servers.map((s) => s.toMap()).toList(),
     };
   }

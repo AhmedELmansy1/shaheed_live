@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/env_config.dart';
 import '../models/tv_channel_model.dart';
 
 /// Repository responsible for reading, caching, and streaming live TV channels from Firestore.
@@ -75,7 +77,42 @@ class TvChannelsRepository {
     }
   }
 
-  /// Real-time stream of TV channels from Firestore `tv_channels`.
+  /// Fallback fetch from dashboard API `GET /api/channels`.
+  Future<List<TvChannelModel>?> fetchFromApi() async {
+    try {
+      final dio = Dio();
+      final url = '${EnvConfig.dashboardBaseUrl}/api/channels';
+      final res = await dio.get(
+        url,
+        options: Options(
+          headers: {'Accept': 'application/json'},
+          responseType: ResponseType.json,
+          receiveTimeout: const Duration(seconds: 6),
+          sendTimeout: const Duration(seconds: 6),
+        ),
+      );
+      if (res.statusCode == 200 && res.data != null) {
+        final body = res.data is String ? json.decode(res.data as String) : res.data;
+        final list = (body is Map ? body['channels'] : body) as List?;
+        if (list != null && list.isNotEmpty) {
+          final channels = list
+              .map((item) => TvChannelModel.fromMap(
+                    Map<String, dynamic>.from(item as Map),
+                    item['id']?.toString() ?? '',
+                  ))
+              .toList();
+          channels.sort((a, b) => a.order.compareTo(b.order));
+          await _persistChannels(channels);
+          return channels;
+        }
+      }
+    } catch (e) {
+      debugPrint('[TvChannelsRepository] HTTP fallback error: $e');
+    }
+    return null;
+  }
+
+  /// Real-time stream of TV channels from Firestore `tv_channels` with HTTP fallback.
   /// Immediately yields cached items, then emits live Firestore updates.
   Stream<List<TvChannelModel>> listenToChannels() async* {
     // 1. Emit cached/default channels first for instant render
@@ -84,6 +121,10 @@ class TvChannelsRepository {
 
     final fs = _firestore;
     if (fs == null) {
+      final apiChannels = await fetchFromApi();
+      if (apiChannels != null && apiChannels.isNotEmpty) {
+        yield apiChannels;
+      }
       return;
     }
 
@@ -107,35 +148,48 @@ class TvChannelsRepository {
         _persistChannels(channels);
 
         return channels;
-      }).handleError((err) {
-        debugPrint('[TvChannelsRepository] Firestore stream error: $err');
-        return initial;
+      }).handleError((err) async* {
+        debugPrint('[TvChannelsRepository] Firestore stream error: $err, trying HTTP fallback');
+        final apiChannels = await fetchFromApi();
+        if (apiChannels != null && apiChannels.isNotEmpty) {
+          yield apiChannels;
+        } else {
+          yield initial;
+        }
       });
     } catch (e) {
       debugPrint('[TvChannelsRepository] Failed to initialize Firestore listener: $e');
+      final apiChannels = await fetchFromApi();
+      if (apiChannels != null && apiChannels.isNotEmpty) {
+        yield apiChannels;
+      }
     }
   }
 
-  /// One-off fetch of TV channels.
+  /// One-off fetch of TV channels with HTTP fallback.
   Future<List<TvChannelModel>> fetchChannels() async {
     final fs = _firestore;
-    if (fs == null) {
-      return getCachedChannels();
+    if (fs != null) {
+      try {
+        final snap = await fs.collection('tv_channels').orderBy('order').get();
+        if (snap.docs.isNotEmpty) {
+          final channels = snap.docs.map((doc) => TvChannelModel.fromMap(doc.data(), doc.id)).toList();
+          channels.sort((a, b) => a.order.compareTo(b.order));
+          await _persistChannels(channels);
+          return channels;
+        }
+      } catch (e) {
+        debugPrint('[TvChannelsRepository] Fetch error: $e');
+      }
     }
 
-    try {
-      final snap = await fs.collection('tv_channels').orderBy('order').get();
-      if (snap.docs.isEmpty) {
-        return TvChannelModel.defaultChannels;
-      }
-      final channels = snap.docs.map((doc) => TvChannelModel.fromMap(doc.data(), doc.id)).toList();
-      channels.sort((a, b) => a.order.compareTo(b.order));
-      await _persistChannels(channels);
-      return channels;
-    } catch (e) {
-      debugPrint('[TvChannelsRepository] Fetch error: $e');
-      return getCachedChannels();
+    // Try HTTP fallback
+    final apiChannels = await fetchFromApi();
+    if (apiChannels != null && apiChannels.isNotEmpty) {
+      return apiChannels;
     }
+
+    return getCachedChannels();
   }
 }
 

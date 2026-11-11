@@ -16,10 +16,22 @@ class TickerConfigModel {
 
   factory TickerConfigModel.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const TickerConfigModel();
+    final rawType = (map['type'] as String?)?.trim().toLowerCase();
+    String resolvedType = 'breaking';
+    if (rawType != null && rawType.isNotEmpty) {
+      if (rawType == 'alert' ||
+          rawType == 'warning' ||
+          rawType == 'breaking' ||
+          rawType == 'info') {
+        resolvedType = rawType;
+      } else {
+        resolvedType = 'info';
+      }
+    }
     return TickerConfigModel(
       enabled: map['enabled'] as bool? ?? false,
       text: (map['text'] as String?)?.trim() ?? '',
-      type: (map['type'] as String?)?.trim() ?? 'breaking',
+      type: resolvedType,
       actionUrl: (map['action_url'] as String?)?.trim(),
     );
   }

@@ -265,6 +265,7 @@ List<MatchModel> prioritizeMatches({
 }
 
 /// Helper that selects the featured / hero match according to the 4-tier hierarchy:
+/// (0) Featured stream match pinned from dashboard (`match_streams.is_featured == true`)
 /// (a) Live match involving a favorite team
 /// (b) Any live match (prefer followed league if available)
 /// (c) Next upcoming match involving a favorite team (earliest kickoff)
@@ -276,8 +277,18 @@ MatchModel? selectHeroMatch({
   required List<String> selectedLeagueIds,
   required List<TeamModel> allTeams,
   required List<LeagueModel> allLeagues,
+  int? featuredMatchId,
 }) {
   if (matches.isEmpty) return null;
+
+  // (0) Featured hero pinning from dashboard (when streaming is enabled)
+  if (featuredMatchId != null) {
+    for (final m in matches) {
+      if (m.matchId == featuredMatchId) {
+        return m;
+      }
+    }
+  }
 
   // (a) Live match involving a favorite team
   final liveFavTeamMatches = matches.where(

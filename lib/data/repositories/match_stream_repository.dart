@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import '../../core/config/app_constants.dart';
 import '../models/match_stream_model.dart';
 
 abstract class MatchStreamRepository {
@@ -10,6 +11,9 @@ abstract class MatchStreamRepository {
 
   /// One-time fetch for match stream config.
   Future<MatchStreamModel?> getMatchStreamOnce(int matchId);
+
+  /// Real-time stream of the featured match ID pinned for hero display.
+  Stream<int?> listenToFeaturedMatchId();
 }
 
 class FirestoreMatchStreamRepository implements MatchStreamRepository {
@@ -110,6 +114,45 @@ class FirestoreMatchStreamRepository implements MatchStreamRepository {
     } catch (e) {
       debugPrint('[MatchStreamRepo] Error fetching match stream once: $e');
       return null;
+    }
+  }
+
+  @override
+  Stream<int?> listenToFeaturedMatchId() async* {
+    if (!AppConstants.enableStreaming) {
+      yield null;
+      return;
+    }
+    try {
+      final fs = _firestore;
+      if (fs == null) {
+        yield null;
+        return;
+      }
+      await _ensureAuth();
+      yield* fs
+          .collection('match_streams')
+          .where('is_featured', isEqualTo: true)
+          .limit(1)
+          .snapshots()
+          .map((snap) {
+            if (snap.docs.isEmpty) return null;
+            final doc = snap.docs.first;
+            final data = doc.data();
+            final isEnabled = (data['is_enabled'] as bool?) ??
+                (data['is_stream_enabled'] as bool?) ??
+                (data['enabled'] as bool?) ??
+                false;
+            if (!isEnabled) return null;
+            return int.tryParse(doc.id);
+          })
+          .handleError((e) {
+            debugPrint('[MatchStreamRepo] Featured match stream error: $e');
+            return null;
+          });
+    } catch (e) {
+      debugPrint('[MatchStreamRepo] Exception setting up featured match stream: $e');
+      yield null;
     }
   }
 }

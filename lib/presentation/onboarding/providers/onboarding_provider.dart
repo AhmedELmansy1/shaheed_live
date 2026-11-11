@@ -260,9 +260,12 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     await prefs.setStringList('selected_teams', selectedTeams);
     await prefs.setBool('hasCompletedOnboarding', true);
 
-    // 2. Enqueue deferred sync work (persists pending flag + teams)
+    // 2. Enqueue deferred sync work (persists pending flag + teams & leagues)
     final syncQueue = ref.read(syncQueueServiceProvider);
-    await syncQueue.enqueueOnboardingSync(selectedTeams);
+    await syncQueue.enqueueOnboardingSync(
+      selectedTeams,
+      leagueIds: List<String>.from(state.selectedLeagueIds),
+    );
 
     // 3. Offload immediate sync attempt to background without blocking the UI
     Future.microtask(() async {

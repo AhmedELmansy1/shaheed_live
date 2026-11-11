@@ -153,14 +153,16 @@ class _BreakingNewsTickerState extends ConsumerState<BreakingNewsTicker> {
   }
 
   (Color, String, IconData) _resolveStyle(String type) {
-    switch (type) {
+    switch (type.toLowerCase()) {
+      case 'alert':
+        return (const Color(0xFFD32F2F), 'إنذار', Icons.error_outline_rounded);
       case 'warning':
         return (Colors.amber.shade800, 'تنبيه', Icons.warning_amber_rounded);
-      case 'info':
-        return (const Color(0xFF3B5BDB), 'معلومة', Icons.info_outline_rounded);
       case 'breaking':
-      default:
         return (const Color(0xFFE5482D), 'عاجل', Icons.local_fire_department_rounded);
+      case 'info':
+      default:
+        return (const Color(0xFF3B5BDB), 'معلومة', Icons.info_outline_rounded);
     }
   }
 }

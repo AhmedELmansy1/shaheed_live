@@ -19,3 +19,13 @@ final matchStreamProvider =
   final repo = ref.watch(matchStreamRepositoryProvider);
   return repo.listenToMatchStream(matchId);
 });
+
+/// Riverpod [StreamProvider] emitting the match ID marked as featured for the hero card.
+/// When [AppConstants.enableStreaming] is false, yields null with zero Firestore reads.
+final featuredMatchIdStreamProvider = StreamProvider<int?>((ref) {
+  if (!AppConstants.enableStreaming) {
+    return Stream.value(null);
+  }
+  final repo = ref.watch(matchStreamRepositoryProvider);
+  return repo.listenToFeaturedMatchId();
+});
