@@ -32,12 +32,35 @@ class AppLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final emblem = SizedBox(
+    final emblem = Container(
       width: size,
       height: size,
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: ShootLiveLogoPainter(progress: progress),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
+            blurRadius: size * 0.25,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        child: Image.asset(
+          'assets/branding/shoot_live_premium_logo.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => SizedBox(
+            width: size,
+            height: size,
+            child: CustomPaint(
+              size: Size(size, size),
+              painter: ShootLiveLogoPainter(progress: progress),
+            ),
+          ),
+        ),
       ),
     );
 
