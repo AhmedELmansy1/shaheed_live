@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
@@ -17,6 +18,19 @@ import '../../match_details/screens/hls_player_screen.dart';
 class QuickTvChannelsStrip extends ConsumerWidget {
   const QuickTvChannelsStrip({super.key});
 
+  Future<void> _launchExternalUrl(BuildContext context, String urlString) async {
+    final uri = Uri.tryParse(urlString.trim());
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح الرابط الخارجي.')),
+        );
+      }
+    }
+  }
+
   void _onChannelTap(BuildContext context, TvChannelModel channel) {
     HapticFeedback.lightImpact();
 
@@ -30,7 +44,9 @@ class QuickTvChannelsStrip extends ConsumerWidget {
       return;
     }
 
-    if (channel.defaultPlayerType == TvPlayerType.embed) {
+    final effectiveType = channel.effectivePlayerType;
+
+    if (effectiveType == TvPlayerType.embed) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => EmbedPlayerScreen(
@@ -41,6 +57,8 @@ class QuickTvChannelsStrip extends ConsumerWidget {
           ),
         ),
       );
+    } else if (effectiveType == TvPlayerType.external) {
+      _launchExternalUrl(context, channel.defaultStreamUrl);
     } else {
       Navigator.of(context).push(
         MaterialPageRoute(

@@ -9,6 +9,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/models/match_stream_model.dart';
 import '../widgets/stream_report_sheet.dart';
+import 'embed_player_screen.dart';
 
 class HlsPlayerScreen extends StatefulWidget {
   final String streamUrl;
@@ -88,6 +89,36 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
       _hasError = false;
       _isInitialized = false;
     });
+
+    // Auto-detect web embed URLs mistakenly routed to HLS native player
+    final clean = _currentStreamUrl.toLowerCase().trim();
+    if (!clean.contains('.m3u8') &&
+        !clean.contains('.mp4') &&
+        (clean.endsWith('.php') ||
+            clean.contains('.php?') ||
+            clean.endsWith('.html') ||
+            clean.contains('.html?') ||
+            clean.endsWith('.htm') ||
+            clean.contains('.htm?') ||
+            clean.contains('embed') ||
+            clean.contains('iframe'))) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => EmbedPlayerScreen(
+                streamUrl: _currentStreamUrl,
+                serverName: _currentServerName,
+                matchId: widget.matchId,
+                matchTitle: widget.matchTitle ?? 'بث مباشر',
+                serverId: widget.serverId ?? 'srv_default',
+              ),
+            ),
+          );
+        }
+      });
+      return;
+    }
 
     try {
       final uri = Uri.parse(_currentStreamUrl);
@@ -616,8 +647,10 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
             children: [
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -631,8 +664,31 @@ class _HlsPlayerScreenState extends State<HlsPlayerScreen> {
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('إعادة المحاولة'),
               ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => EmbedPlayerScreen(
+                        streamUrl: _currentStreamUrl,
+                        serverName: _currentServerName,
+                        matchId: widget.matchId,
+                        matchTitle: widget.matchTitle ?? 'بث مباشر',
+                        serverId: widget.serverId ?? 'srv_default',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.web_rounded),
+                label: const Text('تشغيل كمشغل ويب (Embed)'),
+              ),
               if (widget.servers != null && widget.servers!.length > 1) ...[
-                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueGrey.shade800,

@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -31,6 +32,19 @@ class _ChannelsScreenState extends ConsumerState<ChannelsScreen> {
     super.dispose();
   }
 
+  Future<void> _launchExternalUrl(String urlString) async {
+    final uri = Uri.tryParse(urlString.trim());
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح الرابط الخارجي.')),
+        );
+      }
+    }
+  }
+
   void _onChannelTap(TvChannelModel channel) {
     HapticFeedback.lightImpact();
 
@@ -44,7 +58,9 @@ class _ChannelsScreenState extends ConsumerState<ChannelsScreen> {
       return;
     }
 
-    if (channel.defaultPlayerType == TvPlayerType.embed) {
+    final effectiveType = channel.effectivePlayerType;
+
+    if (effectiveType == TvPlayerType.embed) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => EmbedPlayerScreen(
@@ -55,6 +71,8 @@ class _ChannelsScreenState extends ConsumerState<ChannelsScreen> {
           ),
         ),
       );
+    } else if (effectiveType == TvPlayerType.external) {
+      _launchExternalUrl(channel.defaultStreamUrl);
     } else {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -91,10 +109,10 @@ class _ChannelsScreenState extends ConsumerState<ChannelsScreen> {
       if (_selectedFilter == 'hd' && c.defaultQuality.toLowerCase() != 'hd') {
         return false;
       }
-      if (_selectedFilter == 'hls' && c.defaultPlayerType != TvPlayerType.hls) {
+      if (_selectedFilter == 'hls' && c.effectivePlayerType != TvPlayerType.hls) {
         return false;
       }
-      if (_selectedFilter == 'embed' && c.defaultPlayerType != TvPlayerType.embed) {
+      if (_selectedFilter == 'embed' && c.effectivePlayerType != TvPlayerType.embed) {
         return false;
       }
 

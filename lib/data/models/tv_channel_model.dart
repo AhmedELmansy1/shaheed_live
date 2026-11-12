@@ -3,18 +3,45 @@ import 'package:flutter/foundation.dart';
 /// Player playback engine supported for TV channels.
 enum TvPlayerType {
   hls,
-  embed;
+  embed,
+  external;
 
   static TvPlayerType fromString(String? val) {
-    if (val?.trim().toLowerCase() == 'embed') {
-      return TvPlayerType.embed;
+    switch (val?.trim().toLowerCase()) {
+      case 'embed':
+      case 'iframe':
+      case 'webview':
+        return TvPlayerType.embed;
+      case 'external':
+        return TvPlayerType.external;
+      case 'hls':
+      case 'm3u8':
+      default:
+        return TvPlayerType.hls;
     }
-    return TvPlayerType.hls;
   }
 
-  String get key => this == TvPlayerType.embed ? 'embed' : 'hls';
+  String get key {
+    switch (this) {
+      case TvPlayerType.embed:
+        return 'embed';
+      case TvPlayerType.external:
+        return 'external';
+      case TvPlayerType.hls:
+        return 'hls';
+    }
+  }
 
-  String get labelArabic => this == TvPlayerType.embed ? 'مشغل ويب' : 'بث HLS مباشر';
+  String get labelArabic {
+    switch (this) {
+      case TvPlayerType.embed:
+        return 'مشغل ويب';
+      case TvPlayerType.external:
+        return 'مشغل خارجي';
+      case TvPlayerType.hls:
+        return 'بث HLS مباشر';
+    }
+  }
 }
 
 /// Represents a live TV sports channel managed via Firestore `tv_channels` collection.
@@ -109,6 +136,39 @@ class TvChannelModel {
       isActive: isActive ?? this.isActive,
       order: order ?? this.order,
     );
+  }
+
+  /// Resolves the actual player engine to use, intelligently detecting if a URL
+  /// is an HTML webpage/embed vs a direct video stream (.m3u8/.mp4).
+  TvPlayerType get effectivePlayerType {
+    final clean = defaultStreamUrl.toLowerCase().trim();
+    if (clean.isEmpty) return defaultPlayerType;
+
+    // Explicit external intent URLs
+    if (defaultPlayerType == TvPlayerType.external) {
+      return TvPlayerType.external;
+    }
+
+    // Direct video stream extensions -> always native HLS
+    if (clean.contains('.m3u8') || clean.contains('.mp4')) {
+      return TvPlayerType.hls;
+    }
+
+    // Explicit web player / embed pages -> Embed WebView player
+    if (clean.endsWith('.php') ||
+        clean.contains('.php?') ||
+        clean.endsWith('.html') ||
+        clean.contains('.html?') ||
+        clean.endsWith('.htm') ||
+        clean.contains('.htm?') ||
+        clean.contains('embed') ||
+        clean.contains('iframe') ||
+        clean.contains('/tv/') ||
+        clean.contains('/live/')) {
+      return TvPlayerType.embed;
+    }
+
+    return defaultPlayerType;
   }
 
   /// Formatted quality badge string (e.g. FHD 1080p, HD 720p).

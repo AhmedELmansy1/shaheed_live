@@ -70,6 +70,40 @@ void main() {
       final restored = TvChannelModel.fromMap(map, original.id);
       expect(restored, equals(original));
     });
+
+    test('4. effectivePlayerType intelligently detects web embed URLs vs native HLS', () {
+      const phpChannel = TvChannelModel(
+        id: 'bein_1',
+        name: 'beIN 1',
+        defaultStreamUrl: 'https://www.elahmad.ru/tv/oman.php',
+        defaultPlayerType: TvPlayerType.hls, // mistakenly saved as HLS
+      );
+      expect(phpChannel.effectivePlayerType, equals(TvPlayerType.embed));
+
+      const htmlChannel = TvChannelModel(
+        id: 'bein_2',
+        name: 'beIN 2',
+        defaultStreamUrl: 'https://goalador.space/kora.html?m=908',
+        defaultPlayerType: TvPlayerType.hls,
+      );
+      expect(htmlChannel.effectivePlayerType, equals(TvPlayerType.embed));
+
+      const m3u8Channel = TvChannelModel(
+        id: 'ad_1',
+        name: 'AD Sports 1',
+        defaultStreamUrl: 'https://example.com/live/stream.m3u8',
+        defaultPlayerType: TvPlayerType.hls,
+      );
+      expect(m3u8Channel.effectivePlayerType, equals(TvPlayerType.hls));
+
+      const externalChannel = TvChannelModel(
+        id: 'ext_1',
+        name: 'External Player',
+        defaultStreamUrl: 'intent://play#Intent;package=com.mxtech.videoplayer',
+        defaultPlayerType: TvPlayerType.external,
+      );
+      expect(externalChannel.effectivePlayerType, equals(TvPlayerType.external));
+    });
   });
 
   group('TvChannelsRepository Cache & Fallback Tests', () {
