@@ -96,6 +96,27 @@ void main() {
         expect(list[i].order <= list[i + 1].order, isTrue);
       }
     });
+
+    test('3. Parses Firestore REST API response fields format correctly', () {
+      final restFields = {
+        'name': {'stringValue': 'قناة رياضية 5'},
+        'order': {'integerValue': '5'},
+        'is_active': {'booleanValue': true},
+        'default_stream_url': {'stringValue': 'https://example.com/live/stream.m3u8'},
+        'default_player_type': {'stringValue': 'hls'},
+        'default_quality': {'stringValue': 'hd'},
+        'logo_url': {'stringValue': 'https://imgs.ysscores.com/championship/48/3411694791422.png'},
+      };
+
+      final parsed = TvChannelsRepository.parseRestDocForTesting(restFields, 'channel_1794490681873');
+      expect(parsed.id, equals('channel_1794490681873'));
+      expect(parsed.name, equals('قناة رياضية 5'));
+      expect(parsed.order, equals(5));
+      expect(parsed.isActive, isTrue);
+      expect(parsed.defaultStreamUrl, equals('https://example.com/live/stream.m3u8'));
+      expect(parsed.defaultQuality, equals('hd'));
+      expect(parsed.defaultPlayerType, equals(TvPlayerType.hls));
+    });
   });
 
   group('ThemeConfigModel Seasonal Dark Fix Test', () {

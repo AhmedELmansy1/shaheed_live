@@ -280,9 +280,16 @@ class _ChannelsScreenState extends ConsumerState<ChannelsScreen> {
               ),
             ),
           ],
-          body: filteredChannels.isEmpty
-              ? _buildEmptyState(context)
-              : _buildChannelsGrid(context, filteredChannels),
+          body: RefreshIndicator(
+            onRefresh: () async {
+              HapticFeedback.lightImpact();
+              ref.invalidate(tvChannelsStreamProvider);
+              await ref.read(tvChannelsRepositoryProvider).fetchChannels();
+            },
+            child: filteredChannels.isEmpty
+                ? _buildEmptyState(context)
+                : _buildChannelsGrid(context, filteredChannels),
+          ),
         ),
       ),
     );
