@@ -19,6 +19,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_number_format.dart';
 import '../onboarding/providers/onboarding_provider.dart';
 import '../../data/models/sponsorship_model.dart';
+import '../update/widgets/app_update_dialog.dart';
 import '../update/widgets/soft_update_banner.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_chip.dart';
@@ -36,7 +37,6 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/sponsorship_banner_widget.dart';
 import 'widgets/breaking_news_ticker.dart';
 import 'widgets/instant_notification_banner.dart';
-import 'widgets/quick_tv_channels_strip.dart';
 import '../widgets/section_header.dart';
 import 'providers/matches_provider.dart';
 
@@ -61,6 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkBatteryGuidance();
+      AppUpdateDialog.checkAndShow(context, ref);
     });
   }
 
@@ -502,12 +503,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         parent: BouncingScrollPhysics(),
       ),
       children: [
-        // Live TV Channels Strip (catalog managed via dashboard tv_channels)
-        const Padding(
-          padding: EdgeInsets.only(bottom: AppSpacing.sm),
-          child: QuickTvChannelsStrip(),
-        ),
-
         // 1. Featured / Hero Match Card
         if (featuredMatch != null) ...[
           Padding(

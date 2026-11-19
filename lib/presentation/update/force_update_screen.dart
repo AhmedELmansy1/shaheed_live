@@ -19,20 +19,12 @@ class ForceUpdateScreen extends ConsumerWidget {
   const ForceUpdateScreen({super.key});
 
   Future<void> _launchUpdateUrl(BuildContext context, String url) async {
-    if (url.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'رابط التحديث غير متوفر حالياً، يرجى مراجعة متجر التطبيقات',
-          ),
-          backgroundColor: AppColors.live,
-        ),
-      );
-      return;
-    }
+    final targetUrl = url.trim().isNotEmpty
+        ? url.trim()
+        : AppConstants.defaultUpdateDownloadUrl;
 
     try {
-      final uri = Uri.parse(url);
+      final uri = Uri.parse(targetUrl);
       final launched = await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,

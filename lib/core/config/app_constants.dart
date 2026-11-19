@@ -13,4 +13,10 @@ class AppConstants {
   /// `--dart-define=ENABLE_STREAMING=false`.
   static bool enableStreaming =
       const bool.fromEnvironment('ENABLE_STREAMING', defaultValue: true);
+
+  /// الرابط الافتراضي لتحميل التحديث الجديد لتطبيق شاهد لايف (يمكن تغييره من هنا أو من لوحة التحكم Remote Config)
+  static const String defaultUpdateDownloadUrl = 'https://example.com/download';
+
+  /// تفعيل ظهور نافذة إشعار التحديث الجديد للمشتركين عند فتح التطبيق
+  static const bool showUpdatePromptOnStart = true;
 }

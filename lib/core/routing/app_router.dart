@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/league_model.dart';
 import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
-import '../../presentation/channels/channels_screen.dart';
 import '../../presentation/diagnostics/design_gallery_screen.dart';
 import '../../presentation/diagnostics/diagnostics_screen.dart';
 import '../../presentation/favorites/favorite_teams_screen.dart';
@@ -92,16 +91,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Branch 2: Channels (Live TV)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/channels',
-                builder: (context, state) => const ChannelsScreen(),
-              ),
-            ],
-          ),
-          // Branch 3: Settings
+          // Branch 2: Settings
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -111,6 +101,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      // Redirect legacy /channels path cleanly to /home
+      GoRoute(
+        path: '/channels',
+        redirect: (context, state) => '/home',
       ),
       // Search screen
       GoRoute(
