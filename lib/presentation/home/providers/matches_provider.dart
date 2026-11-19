@@ -511,17 +511,27 @@ class LeagueGroupData {
 /// Comprehensive, pre-sorted data structure for the Home screen presentation layer.
 class HomeSectionData {
   final MatchModel? heroMatch;
-  final List<MatchModel> favoriteMatches; // Matches of user's favorite teams
-  final List<LeagueGroupData> leagueGroups; // Followed leagues first, then popular!
+  final List<MatchModel> favoriteMatches; // Matches of user's favorite teams (#1 Priority)
+  final List<LeagueGroupData> followedLeagueGroups; // Followed leagues with matches (#2 Priority)
+  final List<LeagueGroupData> popularLeagueGroups; // Strong / popular leagues (#3 Priority)
+  final List<LeagueGroupData> otherLeagueGroups; // Other / minor leagues (expandable)
+  final List<LeagueGroupData> leagueGroups; // Followed leagues first, then popular, then other!
   final List<MatchModel> liveMatches;
   final List<MatchModel> allFilteredMatches;
+  final bool userHasSelections;
+  final bool hasFollowedMatches;
 
   const HomeSectionData({
     required this.heroMatch,
     required this.favoriteMatches,
+    this.followedLeagueGroups = const [],
+    this.popularLeagueGroups = const [],
+    this.otherLeagueGroups = const [],
     required this.leagueGroups,
     required this.liveMatches,
     required this.allFilteredMatches,
+    this.userHasSelections = false,
+    this.hasFollowedMatches = false,
   });
 
   bool get isEmpty => allFilteredMatches.isEmpty;
@@ -544,9 +554,10 @@ List<MatchModel> sortMatchesLiveFirstThenTime(List<MatchModel> list) {
 
 /// Provider that computes and memoizes structured sections for the Home screen:
 /// - Hero match with priority
-/// - (a) Pinned section "مبارياتك" for user favorite teams
-/// - (b) Matches of followed leagues
-/// - (c) Everything else grouped by league (popular leagues first)
+/// - (a) Pinned section "مباريات أنديتك" for user favorite teams (#1 Priority)
+/// - (b) Matches of followed leagues (#2 Priority)
+/// - (c) Strong / popular leagues (#3 Priority)
+/// - (d) Other leagues (kept clean and collapsed by default)
 /// Inside each group: live matches first, then by kickoff time.
 final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
   final filteredAsync = ref.watch(filteredMatchesProvider);
@@ -561,11 +572,18 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
       return const HomeSectionData(
         heroMatch: null,
         favoriteMatches: [],
+        followedLeagueGroups: [],
+        popularLeagueGroups: [],
+        otherLeagueGroups: [],
         leagueGroups: [],
         liveMatches: [],
         allFilteredMatches: [],
+        userHasSelections: false,
+        hasFollowedMatches: false,
       );
     }
+
+    final userHasSelections = selectedTeamIds.isNotEmpty || selectedLeagueIds.isNotEmpty;
 
     // 1. Hero match
     final featuredMatchId = AppConstants.enableStreaming
@@ -581,7 +599,7 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
       featuredMatchId: featuredMatchId,
     );
 
-    // 2. Favorite team matches (for pinned "مبارياتك" top section)
+    // 2. Favorite team matches (for pinned "مباريات أنديتك" #1 priority top section)
     final rawFavorites = selectedTeamIds.isNotEmpty
         ? matches
             .where((m) => isFavoriteTeamMatch(m, selectedTeamIds, allTeams))
@@ -602,7 +620,7 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
     }
 
     // 5. Build LeagueGroupData: inside each group, live matches first then kickoff time
-    final leagueGroups = rawGroups.entries.map((entry) {
+    final allGroups = rawGroups.entries.map((entry) {
       final title = entry.key;
       final groupMatches = sortMatchesLiveFirstThenTime(entry.value);
       final firstMatch = groupMatches.first;
@@ -617,50 +635,73 @@ final homeSectionDataProvider = Provider<AsyncValue<HomeSectionData>>((ref) {
             orElse: () => null,
           );
 
+      final isPopular = (resolvedLeague?.isPopular ?? false) ||
+          isMajorCompetitionTitle(title) ||
+          (resolvedLeague != null && resolvedLeague.displayOrder <= 15) ||
+          groupMatches.any((m) => m.isLive);
+
       return LeagueGroupData(
         leagueTitle: title,
         leagueLogo: logo,
         isFollowed: isFollowed,
-        isPopular: resolvedLeague?.isPopular ?? false,
+        isPopular: isPopular,
         displayOrder: resolvedLeague?.displayOrder ?? 100,
         matches: groupMatches,
       );
     }).toList();
 
-    // 6. Sort league groups:
-    // (b) Matches of followed leagues first
-    // (c) Remaining leagues: popular leagues first, then by displayOrder, then live matches
-    leagueGroups.sort((a, b) {
-      // Followed leagues first
-      if (a.isFollowed && !b.isFollowed) return -1;
-      if (!a.isFollowed && b.isFollowed) return 1;
+    // 6. Partition groups into:
+    // (a) Followed leagues (Priority #2)
+    final followedLeagueGroups = allGroups.where((g) => g.isFollowed).toList()
+      ..sort((a, b) {
+        if (a.displayOrder != b.displayOrder) {
+          return a.displayOrder.compareTo(b.displayOrder);
+        }
+        final aLive = a.matches.any((m) => m.isLive);
+        final bLive = b.matches.any((m) => m.isLive);
+        if (aLive && !bLive) return -1;
+        if (!aLive && bLive) return 1;
+        return a.leagueTitle.compareTo(b.leagueTitle);
+      });
 
-      // Popular leagues first
-      if (a.isPopular && !b.isPopular) return -1;
-      if (!a.isPopular && b.isPopular) return 1;
+    // (b) Popular / Strong leagues (Priority #3)
+    final popularLeagueGroups = allGroups.where((g) => !g.isFollowed && g.isPopular).toList()
+      ..sort((a, b) {
+        final aLive = a.matches.any((m) => m.isLive);
+        final bLive = b.matches.any((m) => m.isLive);
+        if (aLive && !bLive) return -1;
+        if (!aLive && bLive) return 1;
+        if (a.displayOrder != b.displayOrder) {
+          return a.displayOrder.compareTo(b.displayOrder);
+        }
+        return a.leagueTitle.compareTo(b.leagueTitle);
+      });
 
-      // Display order (smaller order = higher priority)
-      if (a.displayOrder != b.displayOrder) {
-        return a.displayOrder.compareTo(b.displayOrder);
-      }
+    // (c) Other minor / obscure leagues
+    final otherLeagueGroups = allGroups.where((g) => !g.isFollowed && !g.isPopular).toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
-      // Active live matches inside league
-      final aHasLive = a.matches.any((m) => m.isLive);
-      final bHasLive = b.matches.any((m) => m.isLive);
-      if (aHasLive && !bHasLive) return -1;
-      if (!aHasLive && bHasLive) return 1;
+    final hasFollowedMatches = favoriteMatches.isNotEmpty || followedLeagueGroups.isNotEmpty;
 
-      return a.leagueTitle.compareTo(b.leagueTitle);
-    });
+    final combinedLeagueGroups = [
+      ...followedLeagueGroups,
+      ...popularLeagueGroups,
+      ...otherLeagueGroups,
+    ];
 
     final liveMatches = matches.where((m) => m.isLive).toList();
 
     return HomeSectionData(
       heroMatch: heroMatch,
       favoriteMatches: favoriteMatches,
-      leagueGroups: leagueGroups,
+      followedLeagueGroups: followedLeagueGroups,
+      popularLeagueGroups: popularLeagueGroups,
+      otherLeagueGroups: otherLeagueGroups,
+      leagueGroups: combinedLeagueGroups,
       liveMatches: liveMatches,
       allFilteredMatches: matches,
+      userHasSelections: userHasSelections,
+      hasFollowedMatches: hasFollowedMatches,
     );
   });
 });

@@ -3,6 +3,48 @@ import '../../data/models/match_model.dart';
 import '../../data/models/team_model.dart';
 import '../services/league_resolver_service.dart';
 
+/// Checks if a championship title corresponds to a major / strong competition
+bool isMajorCompetitionTitle(String title) {
+  var t = title.toLowerCase().trim();
+  if (t.isEmpty) return false;
+
+  // Normalize Alefs for rock-solid Arabic keyword matching
+  t = t.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
+
+  const majorKeywords = [
+    'ابطال اوروبا', 'champions league', 'ucl',
+    'الدوري الاوروبي', 'europa league', 'uel',
+    'انجليزي', 'premier league',
+    'اسباني', 'la liga', 'laliga',
+    'مصري', 'الدوري المصري',
+    'روشن', 'سعودي', 'الدوري السعودي',
+    'ايطالي', 'serie a',
+    'الماني', 'bundesliga',
+    'فرنسي', 'ligue 1',
+    'ابطال افريقيا', 'caf',
+    'ابطال اسيا', 'afc',
+    'كاس العالم', 'world cup',
+    'امم اوروبا', 'euro',
+    'امم افريقيا',
+    'كاس اسيا',
+    'كوبا امريكا', 'copa america',
+    'دوري الامم', 'nations league',
+    'كونكاكاف', 'concacaf',
+    'مغربي', 'المغربي', 'botola',
+    'جزائري', 'الجزائري',
+    'تونسي', 'التونسي',
+    'اماراتي', 'adnoc',
+    'عراقي', 'العراقي',
+    'قطري', 'القطري',
+    'كاس الملك', 'كاس الاتحاد', 'كاس مصر', 'كاس الرابطة', 'كاس السوبر',
+  ];
+
+  for (final kw in majorKeywords) {
+    if (t.contains(kw)) return true;
+  }
+  return false;
+}
+
 /// Checks if a match involves one of the user's favorite/followed teams.
 bool isFavoriteTeamMatch(
   MatchModel m,

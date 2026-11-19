@@ -30,7 +30,6 @@ import '../widgets/banner_ad_widget.dart';
 import '../widgets/battery_guidance_dialog.dart';
 import '../widgets/day_selector.dart';
 import '../widgets/hero_match_card.dart';
-import '../widgets/live_badge.dart';
 import '../widgets/match_card.dart';
 import '../widgets/matches_skeleton.dart';
 import '../widgets/native_ad_card.dart';
@@ -56,6 +55,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _showAllOtherLeagues = false;
+
   @override
   void initState() {
     super.initState();
@@ -474,10 +475,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     MatchFilterType activeFilter,
   ) {
     final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
     final featuredMatch = sectionData.heroMatch;
     final favoriteMatches = sectionData.favoriteMatches;
-    final liveMatches = sectionData.liveMatches;
-    final leagueGroups = sectionData.leagueGroups;
+    final followedLeagueGroups = sectionData.followedLeagueGroups;
+    final popularLeagueGroups = sectionData.popularLeagueGroups;
+    final otherLeagueGroups = sectionData.otherLeagueGroups;
+    final userHasSelections = sectionData.userHasSelections;
+    final hasFollowedMatches = sectionData.hasFollowedMatches;
+
     final onboardingState = ref.watch(onboardingProvider);
     final isReducedMotion = AppMotion.isReducedMotion(context);
 
@@ -502,14 +508,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
     }
 
+    // Determine if hero match should be rendered above favorite matches
+    final showHeroAboveFavorites = favoriteMatches.isEmpty && featuredMatch != null;
+    final heroMatchInFavorites = favoriteMatches.isNotEmpty &&
+        featuredMatch != null &&
+        favoriteMatches.any((m) => m.matchId == featuredMatch.matchId);
+
+    // List of favorite matches to render (omit hero if hero is already rendered)
+    final favoriteCardsList = heroMatchInFavorites
+        ? favoriteMatches.where((m) => m.matchId != featuredMatch.matchId).toList()
+        : favoriteMatches;
+
     return ListView(
       padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 120),
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
       children: [
-        // 1. Featured / Hero Match Card
-        if (featuredMatch != null) ...[
+        // 0. Banner when user has followed teams/leagues but none play today
+        if (userHasSelections && !hasFollowedMatches && activeFilter == MatchFilterType.all) ...[
+          Container(
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xs,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevatedOf(context),
+              borderRadius: AppRadii.lgRadius,
+              border: Border.all(
+                color: AppColors.primaryOf(context).withValues(alpha: 0.35),
+                width: 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryOf(context).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.sports_soccer_rounded,
+                    color: AppColors.primaryOf(context),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'لا توجد مباريات لفرقك أو دورياتك المفضلة اليوم',
+                        style: AppTypography.titleSmall(color: textPrimary).copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'نعرض لك أهم وأقوى مباريات اليوم حتى لا يفوتك أي حدث كروي ⚽',
+                        style: AppTypography.caption(color: textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+
+        // 1. Featured / Hero Match Card (Shown if it's the user's favorite match, or if no favorites exist)
+        if (heroMatchInFavorites || showHeroAboveFavorites) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
@@ -520,7 +592,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const Icon(Icons.star_rounded, size: 18, color: AppColors.gold),
                 const SizedBox(width: AppSpacing.xs + 2),
                 Text(
-                  'المباراة المميزة',
+                  heroMatchInFavorites ? 'مباراة فريقك المميزة' : 'المباراة المميزة',
                   style: AppTypography.titleSmall(color: textPrimary).copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -532,8 +604,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: AppSpacing.sm),
         ],
 
-        // 2. Favorites Section ("مبارياتك")
-        if (favoriteMatches.isNotEmpty) ...[
+        // 2. Priority 1: مباريات أنديتك المفضلة (#1 Priority)
+        if (favoriteCardsList.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
@@ -558,7 +630,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'مبارياتك',
+                  'مباريات أنديتك المفضلة',
                   style: AppTypography.titleMedium(color: textPrimary).copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -586,7 +658,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          ...favoriteMatches.asMap().entries.map((entry) {
+          ...favoriteCardsList.asMap().entries.map((entry) {
             final idx = entry.key;
             final m = entry.value;
             final card = animateItem(MatchCard(match: m), idx);
@@ -605,97 +677,174 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: AppSpacing.md),
         ],
 
-        // 3. Live Now Section (if there are live matches and not filtered by live)
-        if (liveMatches.isNotEmpty && activeFilter != MatchFilterType.live) ...[
+        // 3. Priority 2: دورياتك المفضلة (#2 Priority)
+        if (followedLeagueGroups.isNotEmpty) ...[
+          ...followedLeagueGroups.map((group) {
+            return _buildLeagueGroupSection(
+              context,
+              group: group,
+              onboardingState: onboardingState,
+              nativeConfig: nativeConfig,
+              insertEvery: insertEvery,
+              animateItem: animateItem,
+              nextIndex: () => matchCounter++,
+            );
+          }),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+
+        // 4. Priority 3: أقوى المباريات والبطولات الأخرى (#3 Priority)
+        if (popularLeagueGroups.isNotEmpty) ...[
+          if (hasFollowedMatches) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 18,
+                    color: AppColors.primaryOf(context),
+                  ),
+                  const SizedBox(width: AppSpacing.xs + 2),
+                  Text(
+                    'أقوى المباريات والبطولات الأخرى',
+                    style: AppTypography.titleSmall(color: textPrimary).copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          ...popularLeagueGroups.map((group) {
+            return _buildLeagueGroupSection(
+              context,
+              group: group,
+              onboardingState: onboardingState,
+              nativeConfig: nativeConfig,
+              insertEvery: insertEvery,
+              animateItem: animateItem,
+              nextIndex: () => matchCounter++,
+            );
+          }),
+        ],
+
+        // 5. Expandable / Collapsed Other Minor Leagues
+        if (otherLeagueGroups.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
+              vertical: AppSpacing.md,
             ),
-            child: Row(
-              children: [
-                const LiveBadge(minuteText: 'مباشر الآن', isLarge: true),
-                const Spacer(),
-                Container(
+            child: Center(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryOf(context),
+                  side: BorderSide(
+                    color: AppColors.borderOf(context),
+                    width: 1.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                  ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOf(context).withValues(alpha: 0.12),
-                    borderRadius: AppRadii.fullRadius,
-                    border: Border.all(
-                      color: AppColors.primaryOf(context).withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Text(
-                    AppNumberFormat.formatCount(liveMatches.length),
-                    style: AppTypography.labelSmall(
-                      color: AppColors.vermilionTextOf(context),
-                    ).copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    horizontal: 18,
+                    vertical: 10,
                   ),
                 ),
-              ],
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => _showAllOtherLeagues = !_showAllOtherLeagues);
+                },
+                icon: Icon(
+                  _showAllOtherLeagues
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  _showAllOtherLeagues
+                      ? 'إخفاء المباريات الإضافية'
+                      : 'عرض باقي مباريات اليوم (${otherLeagueGroups.fold<int>(0, (sum, g) => sum + g.matches.length)} مباراة)',
+                  style: AppTypography.labelMedium(
+                    color: AppColors.primaryOf(context),
+                  ).copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ),
           ),
-          ...liveMatches.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final m = entry.value;
-            return animateItem(MatchCard(match: m), idx);
-          }),
-          const SizedBox(height: AppSpacing.md),
+          if (_showAllOtherLeagues) ...[
+            ...otherLeagueGroups.map((group) {
+              return _buildLeagueGroupSection(
+                context,
+                group: group,
+                onboardingState: onboardingState,
+                nativeConfig: nativeConfig,
+                insertEvery: insertEvery,
+                animateItem: animateItem,
+                nextIndex: () => matchCounter++,
+              );
+            }),
+          ],
         ],
+      ],
+    );
+  }
 
-        // 4. League Sections (Pre-sorted: Followed Leagues FIRST!)
-        ...leagueGroups.map((group) {
-          final title = group.leagueTitle;
-          final champMatches = group.matches;
-          final champLogo = group.leagueLogo;
-          final isFollowed = group.isFollowed;
+  Widget _buildLeagueGroupSection(
+    BuildContext context, {
+    required LeagueGroupData group,
+    required OnboardingState onboardingState,
+    required dynamic nativeConfig,
+    required int insertEvery,
+    required Widget Function(Widget child, int index) animateItem,
+    required int Function() nextIndex,
+  }) {
+    final title = group.leagueTitle;
+    final champMatches = group.matches;
+    final champLogo = group.leagueLogo;
+    final isFollowed = group.isFollowed;
 
-          final List<Widget> items = [];
+    final resolvedLeagueId = LeagueResolverService.resolveToOnboardingLeagueId(
+      champTitle: title,
+      allLeagues: onboardingState.leagues,
+    );
 
-          final resolvedLeagueId = LeagueResolverService.resolveToOnboardingLeagueId(
-            champTitle: title,
-            allLeagues: onboardingState.leagues,
-          );
-
-          // Competition Header with SectionHeader
-          items.add(
-            SectionHeader(
-              title: title,
-              logoUrl: champLogo,
-              count: champMatches.length,
-              isFollowed: isFollowed,
-              onTap: resolvedLeagueId != null
-                  ? () {
-                      HapticFeedback.lightImpact();
-                      context.push('/league/$resolvedLeagueId');
-                    }
-                  : null,
-            ),
-          );
-
-          // Match Cards with Staggered Entrance & Native Ad insertion
-          for (final m in champMatches) {
-            final itemIndex = matchCounter;
-            items.add(animateItem(MatchCard(match: m), itemIndex));
-            matchCounter++;
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: title,
+          logoUrl: champLogo,
+          count: champMatches.length,
+          isFollowed: isFollowed,
+          onTap: resolvedLeagueId != null
+              ? () {
+                  HapticFeedback.lightImpact();
+                  context.push('/league/$resolvedLeagueId');
+                }
+              : null,
+        ),
+        for (final m in champMatches) ...[
+          Builder(builder: (ctx) {
+            final idx = nextIndex();
+            final card = animateItem(MatchCard(match: m), idx);
             if (nativeConfig.enabled &&
                 insertEvery > 0 &&
-                matchCounter % insertEvery == 0) {
-              items.add(const NativeAdCard());
+                idx % insertEvery == 0) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [card, const NativeAdCard()],
+              );
             }
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: items,
-          );
-        }),
+            return card;
+          }),
+        ],
       ],
     );
   }
