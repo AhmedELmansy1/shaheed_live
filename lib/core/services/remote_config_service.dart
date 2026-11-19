@@ -18,6 +18,7 @@ class RemoteConfigModel {
   final bool forceUpdate;
   final String minSupportedVersion;
   final String? updateMessage;
+  final bool showUpdatePrompt;
 
   const RemoteConfigModel({
     this.apiBaseUrlOverride,
@@ -26,6 +27,7 @@ class RemoteConfigModel {
     this.forceUpdate = false,
     this.minSupportedVersion = '1.0.0',
     this.updateMessage,
+    this.showUpdatePrompt = false,
   });
 
   factory RemoteConfigModel.fromMap(Map<String, dynamic> map) {
@@ -36,6 +38,7 @@ class RemoteConfigModel {
       forceUpdate: (map['force_update'] as bool?) ?? false,
       minSupportedVersion: (map['min_supported_version'] as String?) ?? '1.0.0',
       updateMessage: (map['update_message'] as String?) ?? (map['update_notes'] as String?),
+      showUpdatePrompt: (map['show_update_prompt'] as bool?) ?? false,
     );
   }
 }

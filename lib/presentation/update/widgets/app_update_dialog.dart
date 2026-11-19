@@ -50,11 +50,19 @@ class AppUpdateDialog extends StatelessWidget {
     final updateInfo = ref.read(appUpdateInfoProvider);
     final remoteConfig = ref.read(remoteConfigStreamProvider).value;
 
-    final shouldShow = AppConstants.showUpdatePromptOnStart ||
-        updateInfo.isSoftPrompt ||
-        updateInfo.isHardBlocked ||
-        (remoteConfig != null &&
-            remoteConfig.updateDownloadUrl.trim().isNotEmpty);
+    // Do NOT show the update prompt unconditionally just because a download URL is set in config.
+    // The dialog should ONLY appear when explicitly triggered from the dashboard:
+    // 1) The admin turned on the force update toggle in the dashboard (`force_update: true`).
+    // 2) The admin enabled `show_update_prompt: true`.
+    // 3) Or version comparison requires an update (`isSoftPrompt` or `isHardBlocked`).
+    final isTriggeredRemotely = (remoteConfig != null &&
+        (remoteConfig.forceUpdate ||
+            remoteConfig.showUpdatePrompt ||
+            updateInfo.isSoftPrompt ||
+            updateInfo.isHardBlocked));
+
+    final shouldShow =
+        AppConstants.showUpdatePromptOnStart || isTriggeredRemotely;
 
     if (shouldShow && context.mounted) {
       ref.read(updateDialogShownSessionProvider.notifier).markShown();

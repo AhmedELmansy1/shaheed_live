@@ -17,6 +17,7 @@ class AppConstants {
   /// الرابط الافتراضي لتحميل التحديث الجديد لتطبيق شاهد لايف (يمكن تغييره من هنا أو من لوحة التحكم Remote Config)
   static const String defaultUpdateDownloadUrl = 'https://example.com/download';
 
-  /// تفعيل ظهور نافذة إشعار التحديث الجديد للمشتركين عند فتح التطبيق
-  static const bool showUpdatePromptOnStart = true;
+  /// تفعيل ظهور نافذة إشعار التحديث الجديد للمشتركين عند فتح التطبيق افتراضياً.
+  /// تم ضبطها على false لكي لا تظهر الرسالة إطلاقاً إلا إذا تم تفعيل زر التحديث من لوحة التحكم (Dashboard).
+  static const bool showUpdatePromptOnStart = false;
 }
