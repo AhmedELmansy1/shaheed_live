@@ -1,53 +1,53 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens for the "Dark Sports Broadcast" design system.
+/// Design tokens for the "Midnight Stadium — Amber Edition" design system.
 ///
 /// High-craft, broadcast-grade aesthetic inspired by FotMob Pro, SofaScore,
 /// Apple Sports, and UEFA Champions League dark broadcast graphics.
 ///
-/// Brand identity: deep obsidian, elevated multi-layered surfaces with specular
-/// highlights, electric cyan/blue primary accents, metallic gold for championships,
-/// neon emerald for live/win indicators, and coral crimson for away/loss/red-cards.
+/// Brand identity: near-black obsidian, elevated warm-tinted surfaces,
+/// Amber Flame primary accents, hot-red live indicators, neon emerald for wins.
 class AppColors {
-  // ─── Dark Palette — "Obsidian Broadcast Dark" ─────────────────────────────
+  // ─── Dark Palette — "Midnight Stadium — Amber Edition" ────────────────────
 
-  static const Color darkBackground = Color(0xFF070B14);
-  static const Color darkSurface = Color(0xFF0E1526);
-  static const Color darkSurfaceElevated = Color(0xFF141F36);
-  static const Color darkSurfaceHigh = Color(0xFF1B2846);
-  static const Color darkSurfaceLight = Color(0xFF141F36);
-  static const Color darkBorder = Color(0xFF1E2D4A);
-  static const Color darkCardBorder = Color(0xFF1E2D4A);
-  static const Color darkDivider = Color(0xFF1E2D4A);
+  static const Color darkBackground = Color(0xFF080C0F);
+  static const Color darkSurface = Color(0xFF0F1419);
+  static const Color darkSurfaceElevated = Color(0xFF161D23);
+  static const Color darkSurfaceHigh = Color(0xFF1E2832);
+  static const Color darkSurfaceLight = Color(0xFF161D23);
+  static const Color darkBorder = Color(0xFF252F3A);
+  static const Color darkCardBorder = Color(0xFF252F3A);
+  static const Color darkDivider = Color(0xFF1A2229);
 
-  static const Color darkTextPrimary = Color(0xFFF8FAFC);
-  static const Color darkTextSecondary = Color(0xFFA0AEC0);
-  static const Color darkTextMuted = Color(0xFF718096);
+  static const Color darkTextPrimary = Color(0xFFF5EDD6);
+  static const Color darkTextSecondary = Color(0xFF9EA8B0);
+  static const Color darkTextMuted = Color(0xFF5C6670);
 
-  /// Electric blue / cyan — primary action, selected nav, home team indicators.
-  static const Color darkPrimary = Color(0xFF2979FF);
-  static const Color electricBlue = Color(0xFF2979FF);
-  static const Color electricCyan = Color(0xFF00E5FF);
-  static const Color darkPrimaryContainer = Color(0xFF102A6B);
-  static const Color darkOnPrimary = Color(0xFFFFFFFF);
+  /// Amber Flame — primary action, selected nav, featured indicators.
+  static const Color darkPrimary = Color(0xFFF5A623);
+  static const Color electricBlue = Color(0xFFF5A623);
+  static const Color electricCyan = Color(0xFF5B9BD5);
+  static const Color darkPrimaryContainer = Color(0xFF3A2800);
+  static const Color darkOnPrimary = Color(0xFF0A0600);
 
   /// Metallic & Championship Gold — featured cards, trophy badges, draws.
-  static const Color metallicGold = Color(0xFFFFB300);
-  static const Color championshipGold = Color(0xFFF59E0B);
+  static const Color metallicGold = Color(0xFFF5A623);
+  static const Color championshipGold = Color(0xFFF5A623);
 
-  /// Neon Emerald — live badges, winning form, tactical turf accents.
-  static const Color neonEmerald = Color(0xFF00E676);
-  static const Color darkLive = Color(0xFF00E676);
+  /// Neon Emerald — winning form, win indicators.
+  static const Color neonEmerald = Color(0xFF2ECC71);
+  /// Hot Red — live badges, live match borders.
+  static const Color darkLive = Color(0xFFFF4747);
 
   /// Coral Crimson — away team comparison, red cards, losses, alert pills.
-  static const Color coralCrimson = Color(0xFFFF3D57);
-  static const Color darkDanger = Color(0xFFFF3D57);
+  static const Color coralCrimson = Color(0xFFFF4747);
+  static const Color darkDanger = Color(0xFFFF3B3B);
 
   /// Amber — warnings, yellow cards, postponed matches.
-  static const Color darkWarning = Color(0xFFFFB300);
+  static const Color darkWarning = Color(0xFFFFAA00);
 
-  /// Ice-blue / Cyan — info banners, secondary actions.
-  static const Color darkInfo = Color(0xFF00E5FF);
+  /// Steel Blue — info banners, secondary actions.
+  static const Color darkInfo = Color(0xFF5B9BD5);
 
   // ─── Light Palette — "Midnight Stadium Light" ─────────────────────────────
 
@@ -64,7 +64,7 @@ class AppColors {
   static const Color lightTextSecondary = Color(0xFF4A5878);
   static const Color lightTextMuted = Color(0xFF5F6C8A);
 
-  static const Color lightPrimary = Color(0xFF1F5FE0);
+  static const Color lightPrimary = Color(0xFFD4860D);
   static const Color lightPrimaryContainer = Color(0xFFE6EEFF);
   static const Color lightOnPrimary = Color(0xFFFFFFFF);
 
@@ -75,24 +75,24 @@ class AppColors {
 
   // ─── Signature Gradients ──────────────────────────────────────────────────
 
-  /// Stadium hero gradient with subtle diagonal lighting
+  /// Stadium hero gradient — subtle dark forest diagonal
   static const LinearGradient signatureGradientDark = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0F2042), Color(0xFF091224)],
+    colors: [Color(0xFF0F1A10), Color(0xFF080C0F)],
   );
 
   static const LinearGradient stadiumAtmosphereGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF132347), Color(0xFF0A1326), Color(0xFF070B14)],
+    colors: [Color(0xFF0F1A10), Color(0xFF080C0F), Color(0xFF080C0F)],
   );
 
-  /// Electric Blue to Cyan CTA Gradient
+  /// Amber-to-Gold CTA Gradient
   static const LinearGradient electricCtaGradient = LinearGradient(
     begin: Alignment.centerRight,
     end: Alignment.centerLeft,
-    colors: [Color(0xFF2979FF), Color(0xFF00E5FF)],
+    colors: [Color(0xFFF5A623), Color(0xFFE8891A)],
   );
 
   static const LinearGradient signatureGradientLight = LinearGradient(
@@ -108,12 +108,12 @@ class AppColors {
   // ─── Form Result Indicators ───────────────────────────────────────────────
   // W = Neon Emerald | D = Metallic Gold / Neutral | L = Coral Crimson
 
-  static const Color darkWinBg = Color(0x2400E676);
-  static const Color darkWinText = Color(0xFF00E676);
-  static const Color darkDrawBg = Color(0x24F59E0B);
-  static const Color darkDrawText = Color(0xFFF59E0B);
-  static const Color darkLossBg = Color(0x24FF3D57);
-  static const Color darkLossText = Color(0xFFFF3D57);
+  static const Color darkWinBg = Color(0x200D2E1A);
+  static const Color darkWinText = Color(0xFF2ECC71);
+  static const Color darkDrawBg = Color(0x202A2000);
+  static const Color darkDrawText = Color(0xFFF5A623);
+  static const Color darkLossBg = Color(0x202E0D0D);
+  static const Color darkLossText = Color(0xFFFF4747);
 
   static const Color lightWinBg = Color(0x1F00C853);
   static const Color lightWinText = Color(0xFF008933);
@@ -124,8 +124,8 @@ class AppColors {
 
   // ─── Shimmer / Skeleton ───────────────────────────────────────────────────
 
-  static const Color darkShimmerBase = Color(0xFF141F36);
-  static const Color darkShimmerHighlight = Color(0xFF1B2846);
+  static const Color darkShimmerBase = Color(0xFF161D23);
+  static const Color darkShimmerHighlight = Color(0xFF1E2832);
   static const Color lightShimmerBase = Color(0xFFE3E8F3);
   static const Color lightShimmerHighlight = Color(0xFFF4F6FB);
 
@@ -153,8 +153,8 @@ class AppColors {
   /// @deprecated Never green! Use info (ice-blue) for success states.
   static const Color success = darkInfo;
 
-  static const Color gold = Color(0xFFD97706);
-  static const Color goldGlow = Color(0x33D97706);
+  static const Color gold = Color(0xFFF5A623);
+  static const Color goldGlow = Color(0x33F5A623);
 
   static const Color accentCyan = darkInfo;
   static const Color accentBlue = darkPrimary;
@@ -171,9 +171,9 @@ class AppColors {
   static const Color textSecondary = darkTextSecondary;
   static const Color textMuted = darkTextMuted;
 
-  static const Color primaryGlow = Color(0x223D7BFF);
-  static const Color secondaryGlow = Color(0x223D7BFF);
-  static const Color liveGlowColor = Color(0x22FF4D3D);
+  static const Color primaryGlow = Color(0x22F5A623);
+  static const Color secondaryGlow = Color(0x22F5A623);
+  static const Color liveGlowColor = Color(0x22FF4747);
 
   /// Legacy names for surface levels.
   static const Color darkSurfaceRaised = darkSurfaceHigh;
@@ -245,11 +245,11 @@ class AppColors {
   static LinearGradient signatureGradientOf(BuildContext context) =>
       isDark(context) ? signatureGradientDark : signatureGradientLight;
 
-  /// Alias: `darkUpcoming` = `darkPrimary` (blue).
+  /// Alias: `darkUpcoming` = `darkPrimary` (amber).
   static const Color darkUpcoming = darkPrimary;
-  static const Color darkUpcomingText = Color(0xFF7B9BFF);
+  static const Color darkUpcomingText = Color(0xFFF5A623);
   static const Color lightUpcoming = lightPrimary;
-  static const Color lightUpcomingText = lightPrimary;
+  static const Color lightUpcomingText = Color(0xFF7A4500);
   static const Color darkFinished = Color(0xFF98A2B3);
   static const Color darkFinishedText = Color(0xFF98A2B3);
   static const Color lightFinished = lightTextMuted;
@@ -411,7 +411,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     vermilion: AppColors.lightLive,
     vermilionText: AppColors.lightLive,
     upcoming: AppColors.lightPrimary,
-    upcomingText: AppColors.lightPrimary,
+    upcomingText: AppColors.lightUpcomingText,
     finished: AppColors.lightTextMuted,
     finishedText: AppColors.lightTextMuted,
     winBg: AppColors.lightWinBg,

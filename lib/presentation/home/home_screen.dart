@@ -124,13 +124,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: vermilion,
+                        color: AppColors.liveOf(context),
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'بث مباشر وأهداف لحظة بلحظة',
+                      'مباشر · أهداف · نتائج',
                       style: AppTypography.labelSmall(color: textSecondary).copyWith(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.1,
@@ -315,7 +315,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     BuildContext context,
     MatchFilterType activeFilter,
   ) {
-    final surface = AppColors.surfaceOf(context);
     final border = AppColors.borderOf(context);
     final liveColor = AppColors.primaryOf(context);
     final scope = ref.watch(homeFeedScopeProvider);
@@ -331,8 +330,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         vertical: AppSpacing.xs + 2,
       ),
       decoration: BoxDecoration(
-        color: surface,
-        border: Border(bottom: BorderSide(color: border, width: 1.0)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.surfaceOf(context),
+            AppColors.backgroundOf(context),
+          ],
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

@@ -31,10 +31,10 @@ class AppChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final selectedBg = isDark
-        ? AppColors.darkSurfaceElevated
-        : const Color(0xFF14161C);
+        ? AppColors.darkPrimary
+        : AppColors.lightPrimary;
     final selectedFg = isDark
-        ? AppColors.darkTextPrimary
+        ? AppColors.darkOnPrimary
         : Colors.white;
 
     final unselectedBg = AppColors.surfaceOf(context);

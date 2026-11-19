@@ -63,7 +63,7 @@ class _LiveBadgeState extends State<LiveBadge>
 
   @override
   Widget build(BuildContext context) {
-    final emerald = AppColors.neonEmerald;
+    final liveColor = AppColors.liveOf(context);
     final isReducedMotion = AppMotion.isReducedMotion(context);
 
     final rawMinute = widget.minuteText?.trim();
@@ -84,10 +84,10 @@ class _LiveBadgeState extends State<LiveBadge>
         vertical: widget.isLarge ? AppSpacing.xs : AppSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: emerald.withValues(alpha: 0.14),
+        color: liveColor.withValues(alpha: 0.14),
         borderRadius: AppRadii.fullRadius,
         border: Border.all(
-          color: emerald.withValues(alpha: 0.5),
+          color: liveColor.withValues(alpha: 0.5),
           width: 1.0,
         ),
       ),
@@ -101,7 +101,7 @@ class _LiveBadgeState extends State<LiveBadge>
               width: dotSize,
               height: dotSize,
               decoration: BoxDecoration(
-                color: emerald,
+                color: liveColor,
                 shape: BoxShape.circle,
               ),
             )
@@ -113,13 +113,13 @@ class _LiveBadgeState extends State<LiveBadge>
                   width: dotSize,
                   height: dotSize,
                   decoration: BoxDecoration(
-                    color: emerald.withValues(
+                    color: liveColor.withValues(
                       alpha: _opacityAnimation.value,
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: emerald.withValues(alpha: 0.6),
+                        color: liveColor.withValues(alpha: 0.6),
                         blurRadius: 4,
                       ),
                     ],
@@ -130,7 +130,7 @@ class _LiveBadgeState extends State<LiveBadge>
           const SizedBox(width: AppSpacing.xs),
           Text(
             displayText,
-            style: AppTypography.labelSmall(color: emerald).copyWith(
+            style: AppTypography.labelSmall(color: liveColor).copyWith(
               fontSize: fontSize,
               fontWeight: FontWeight.w800,
             ),

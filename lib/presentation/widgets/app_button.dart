@@ -90,10 +90,12 @@ class _AppButtonState extends State<AppButton>
 
     final vermilion = AppColors.primaryOf(context);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     switch (widget.variant) {
       case AppButtonVariant.primary:
         bg = vermilion;
-        fg = Colors.white;
+        fg = isDark ? const Color(0xFF0A0600) : Colors.white;
         break;
       case AppButtonVariant.secondary:
         bg = AppColors.surfaceElevatedOf(context);
@@ -101,7 +103,7 @@ class _AppButtonState extends State<AppButton>
         borderColor = AppColors.borderOf(context);
         break;
       case AppButtonVariant.danger:
-        bg = vermilion;
+        bg = AppColors.dangerOf(context);
         fg = Colors.white;
         break;
       case AppButtonVariant.ghost:

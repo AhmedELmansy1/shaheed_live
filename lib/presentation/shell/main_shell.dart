@@ -1,19 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radii.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 
-/// Clean, editorial Bottom Navigation Dock in "Paper × Ink × Vermilion".
-///
-/// Features:
-/// - Tactile surface boundary with crisp 1px border (NO neon glows, NO heavy blur).
-/// - Distinct active state in vermilion accent with subtle capsule indicator.
-/// - Minimum 48dp touch targets per tab.
-/// - Full RTL layout support.
 class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -32,61 +24,82 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIndex = navigationShell.currentIndex;
-    final bg = AppColors.backgroundOf(context);
-    final surface = AppColors.surfaceOf(context);
-    final border = AppColors.borderOf(context);
-    final textSecondary = AppColors.textSecondaryOf(context);
     final primary = AppColors.primaryOf(context);
+    final surface = AppColors.surfaceOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppColors.backgroundOf(context),
+      extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          decoration: BoxDecoration(
-            color: surface,
-            border: Border(top: BorderSide(color: border, width: 1.0)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.xs,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  context,
-                  index: 0,
-                  currentIndex: currentIndex,
-                  label: 'الرئيسية',
-                  activeIcon: Icons.sports_soccer_rounded,
-                  inactiveIcon: Icons.sports_soccer_outlined,
-                  primaryColor: primary,
-                  inactiveColor: textSecondary,
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          bottom: bottomPad + 16,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: surface.withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: primary.withValues(alpha: 0.18),
+                  width: 1.0,
                 ),
-                _buildNavItem(
-                  context,
-                  index: 1,
-                  currentIndex: currentIndex,
-                  label: 'الدوريات',
-                  activeIcon: Icons.emoji_events_rounded,
-                  inactiveIcon: Icons.emoji_events_outlined,
-                  primaryColor: primary,
-                  inactiveColor: textSecondary,
-                ),
-                _buildNavItem(
-                  context,
-                  index: 2,
-                  currentIndex: currentIndex,
-                  label: 'الإعدادات',
-                  activeIcon: Icons.settings_rounded,
-                  inactiveIcon: Icons.settings_outlined,
-                  primaryColor: primary,
-                  inactiveColor: textSecondary,
-                ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(
+                    context,
+                    index: 0,
+                    currentIndex: currentIndex,
+                    label: 'الرئيسية',
+                    activeIcon: Icons.sports_soccer_rounded,
+                    inactiveIcon: Icons.sports_soccer_outlined,
+                    primaryColor: primary,
+                    inactiveColor: textSecondary,
+                  ),
+                  _buildNavItem(
+                    context,
+                    index: 1,
+                    currentIndex: currentIndex,
+                    label: 'الدوريات',
+                    activeIcon: Icons.emoji_events_rounded,
+                    inactiveIcon: Icons.emoji_events_outlined,
+                    primaryColor: primary,
+                    inactiveColor: textSecondary,
+                  ),
+                  _buildNavItem(
+                    context,
+                    index: 2,
+                    currentIndex: currentIndex,
+                    label: 'الإعدادات',
+                    activeIcon: Icons.settings_rounded,
+                    inactiveIcon: Icons.settings_outlined,
+                    primaryColor: primary,
+                    inactiveColor: textSecondary,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -105,38 +118,51 @@ class MainShell extends StatelessWidget {
     required Color inactiveColor,
   }) {
     final isSelected = index == currentIndex;
-    final iconColor = isSelected ? primaryColor : inactiveColor;
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: AppRadii.mdRadius,
-          onTap: () => _onTap(index),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 52),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isSelected ? activeIcon : inactiveIcon,
-                    color: iconColor,
-                    size: 22,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    label,
-                    style: AppTypography.labelSmall(color: iconColor).copyWith(
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+      child: GestureDetector(
+        onTap: () => _onTap(index),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? primaryColor.withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            border: isSelected
+                ? Border.all(
+                    color: primaryColor.withValues(alpha: 0.3),
+                    width: 1.0,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Icon(
+                  isSelected ? activeIcon : inactiveIcon,
+                  key: ValueKey(isSelected),
+                  color: isSelected ? primaryColor : inactiveColor,
+                  size: 22,
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTypography.labelSmall(
+                  color: isSelected ? primaryColor : inactiveColor,
+                ).copyWith(
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
         ),
       ),

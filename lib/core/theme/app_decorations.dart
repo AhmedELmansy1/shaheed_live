@@ -83,21 +83,23 @@ class AppDecorations {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF132244),
-          Color(0xFF0F1A33),
-          Color(0xFF0A1224),
+          Color(0xFF161D23),
+          Color(0xFF0F1419),
+          Color(0xFF080C0F),
         ],
         stops: [0.0, 0.45, 1.0],
       ),
       border: Border.all(
-        color: isLive ? AppColors.neonEmerald.withValues(alpha: 0.5) : const Color(0xFF263A64),
+        color: isLive
+            ? Color(0x80FF4747)
+            : const Color(0x80F5A623),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
           color: isLive
-              ? AppColors.neonEmerald.withValues(alpha: 0.12)
-              : const Color(0xFF1E3A8A).withValues(alpha: 0.16),
+              ? const Color(0xFFFF4747).withValues(alpha: 0.14)
+              : const Color(0xFFF5A623).withValues(alpha: 0.14),
           blurRadius: 20,
           spreadRadius: 0,
           offset: const Offset(0, 6),

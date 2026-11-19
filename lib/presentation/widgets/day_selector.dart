@@ -81,13 +81,12 @@ class DaySelector extends StatelessWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final vermilion = AppColors.primaryOf(context);
-    final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
 
     final selectedBg = isDark
-        ? AppColors.darkSurfaceElevated
+        ? AppColors.primaryOf(context).withValues(alpha: 0.16)
         : const Color(0xFF14161C); // Ink pill in light mode
-    final selectedTextColor = isDark ? textPrimary : Colors.white;
+    final selectedTextColor = isDark ? AppColors.primaryOf(context) : Colors.white;
 
     return Expanded(
       child: Semantics(
@@ -144,13 +143,12 @@ class DaySelector extends StatelessWidget {
   Widget _buildCalendarItem(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = activeTab == HomeTab.customDate;
-    final textPrimary = AppColors.textPrimaryOf(context);
     final textSecondary = AppColors.textSecondaryOf(context);
 
     final selectedBg = isDark
-        ? AppColors.darkSurfaceElevated
+        ? AppColors.primaryOf(context).withValues(alpha: 0.16)
         : const Color(0xFF14161C);
-    final selectedTextColor = isDark ? textPrimary : Colors.white;
+    final selectedTextColor = isDark ? AppColors.primaryOf(context) : Colors.white;
 
     String dateLabel = '';
     if (isSelected && customDate != null) {

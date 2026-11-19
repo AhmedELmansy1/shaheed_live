@@ -46,7 +46,7 @@ class MatchCard extends ConsumerWidget {
     final surfaceColor = AppColors.surfaceOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isLive
-        ? AppColors.neonEmerald.withValues(alpha: 0.6)
+        ? AppColors.liveOf(context).withValues(alpha: 0.5)
         : AppColors.borderOf(context);
 
     final textPrimary = AppColors.textPrimaryOf(context);
@@ -72,7 +72,7 @@ class MatchCard extends ConsumerWidget {
             if (isDark)
               BoxShadow(
                 color: isLive
-                    ? AppColors.neonEmerald.withValues(alpha: 0.08)
+                    ? AppColors.liveOf(context).withValues(alpha: 0.08)
                     : Colors.black.withValues(alpha: 0.22),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
@@ -108,13 +108,13 @@ class MatchCard extends ConsumerWidget {
                     child: Container(
                       width: 3.5,
                       decoration: BoxDecoration(
-                        color: AppColors.neonEmerald,
+                        color: AppColors.liveOf(context),
                         borderRadius: const BorderRadiusDirectional.horizontal(
                           end: Radius.circular(3),
                         ),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x6600E676),
+                            color: AppColors.liveOf(context).withValues(alpha: 0.4),
                             blurRadius: 6,
                           ),
                         ],

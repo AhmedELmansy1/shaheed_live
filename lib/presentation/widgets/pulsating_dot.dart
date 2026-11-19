@@ -65,7 +65,7 @@ class _PulsatingDotState extends State<PulsatingDot>
 
   @override
   Widget build(BuildContext context) {
-    final dotColor = widget.color ?? AppColors.primaryOf(context);
+    final dotColor = widget.color ?? AppColors.liveOf(context);
     final isReducedMotion = AppMotion.isReducedMotion(context);
 
     if (isReducedMotion || !widget.animate) {

@@ -281,7 +281,7 @@ class HeroMatchCard extends ConsumerWidget {
                                       color: surfaceElevated,
                                       borderRadius: AppRadii.fullRadius,
                                       border: Border.all(
-                                        color: isDark ? const Color(0xFF2C3E63) : border,
+                                        color: border,
                                       ),
                                     ),
                                     child: Text(
@@ -353,7 +353,7 @@ class HeroMatchCard extends ConsumerWidget {
                             gradient: AppColors.electricCtaGradient,
                             boxShadow: const [
                               BoxShadow(
-                                color: Color(0x402979FF),
+                                color: Color(0x40F5A623),
                                 blurRadius: 14,
                                 offset: Offset(0, 4),
                               ),
@@ -401,17 +401,17 @@ class HeroMatchCard extends ConsumerWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isLive
-        ? AppColors.neonEmerald
-        : (isHome ? AppColors.electricCyan : AppColors.coralCrimson);
+        ? AppColors.liveOf(context)
+        : (isHome ? AppColors.primaryOf(context) : AppColors.textSecondaryOf(context));
 
     return Container(
       width: 70,
       height: 70,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isDark ? const Color(0x1F142344) : const Color(0x08000000),
+        color: isDark ? AppColors.surfaceElevatedOf(context) : const Color(0x08000000),
         border: Border.all(
-          color: isDark ? accent.withValues(alpha: 0.25) : AppColors.lightBorder,
+          color: isDark ? accent.withValues(alpha: 0.35) : AppColors.lightBorder,
           width: 1.2,
         ),
         boxShadow: [

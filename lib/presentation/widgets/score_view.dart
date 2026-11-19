@@ -28,7 +28,7 @@ class ScoreView extends StatelessWidget {
     final aScore = AppNumberFormat.tryFormatScore(awayScore);
 
     final scoreColor = isLive
-        ? AppColors.neonEmerald
+        ? AppColors.liveOf(context)
         : (isFinished
             ? AppColors.textPrimaryOf(context)
             : AppColors.textSecondaryOf(context));

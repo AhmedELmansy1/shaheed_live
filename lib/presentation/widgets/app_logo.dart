@@ -39,7 +39,7 @@ class AppLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(size * 0.22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
+            color: const Color(0xFFF5A623).withValues(alpha: 0.22),
             blurRadius: size * 0.25,
             spreadRadius: 1,
           ),

@@ -238,7 +238,7 @@ class _LeaguesScreenState extends ConsumerState<LeaguesScreen> {
               ),
             ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+          const SliverToBoxAdapter(child: SizedBox(height: 110)),
         ],
       ),
     );

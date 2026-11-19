@@ -51,7 +51,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     const bg = AppColors.darkBackground;
     const textPrimary = AppColors.darkTextPrimary;
     const textSecondary = AppColors.darkTextSecondary;
-    const primary = AppColors.darkVermilion;
+    const primary = AppColors.darkPrimary;
 
     return Scaffold(
       backgroundColor: bg,
